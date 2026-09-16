@@ -1,0 +1,516 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		08726D99F870145971A83E5F /* ScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B1343A9D7B47174973E386F /* ScannerView.swift */; };
+		09C1DFFBE4CA67AD1499B5C6 /* BTHomeData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32FA1174EA1EC0A26BD7A3D /* BTHomeData.swift */; };
+		3EF20E822BA8CE3DB5B86206 /* DeviceFingerprinter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BB29E4AFBE36BD2F647E166 /* DeviceFingerprinter.swift */; };
+		450F341525D90DDF79614BDE /* ServerConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62ADF22AF5C4BCD095F0BBCC /* ServerConfig.swift */; };
+		5D736AD4CF443BE15BB83FA7 /* DeviceRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA9286612E9DB42C2132B18 /* DeviceRowView.swift */; };
+		5E5E235530D2A23BF09AFC3A /* SignalStrengthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF4A32BFA3601546407FDDB4 /* SignalStrengthView.swift */; };
+		5EDF605203126AA977FA6C08 /* DiscoveredDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = E497F7F1F542491CCCC9DD4A /* DiscoveredDevice.swift */; };
+		7464E070EF41934D799DCD12 /* HomeNodeServerClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04281739B594DC9B66EB58BC /* HomeNodeServerClient.swift */; };
+		778581DDCB5B072E49DE8CD0 /* SensorMetricBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2375A4F98FD49F6FC6D1BB4 /* SensorMetricBadge.swift */; };
+		91EA390C46669265976F1501 /* mHomeNodeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3FFDDE938980A977754E63F /* mHomeNodeApp.swift */; };
+		93F24D55044EF8E9E1D9C0AE /* BLEScannerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86333B2F37318EBA181C25F6 /* BLEScannerService.swift */; };
+		9D4E4EB3A9D52CA47965A154 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A4EBE9981B1D585B74C2C11E /* Assets.xcassets */; };
+		A4E5F23904C5E58859DE85FC /* BTHomeParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB4D82A9E68B915F8381D573 /* BTHomeParser.swift */; };
+		AB96CC22CB7D323E7976E174 /* ServerStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55364BCEC06FCE7D7043087C /* ServerStatusView.swift */; };
+		B0D02913C35EF51883F29A14 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE71337FF9C0731AF128A4F4 /* ContentView.swift */; };
+		C87997131AD168D86C8A55E7 /* BTHomeParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80446116079B27DB2D104532 /* BTHomeParserTests.swift */; };
+		D6D3CF9BA659874224B0AC3D /* DeviceFingerprinterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86DE2B00863F1B5A0AB899B8 /* DeviceFingerprinterTests.swift */; };
+		D945AB60A95C0AFE891E5A95 /* DeviceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85FBD0516FCDAC06E3F9A1B7 /* DeviceDetailView.swift */; };
+		E0481886BF702CFB6782CD90 /* ScannerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5749131E0183103C5FF1A55 /* ScannerViewModel.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		CE443B3C47ADC0559F5D21DE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 167F87279077329EEB062A71 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C15F1053C95C439BF64E51FC;
+			remoteInfo = mHomeNode;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		04281739B594DC9B66EB58BC /* HomeNodeServerClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeNodeServerClient.swift; sourceTree = "<group>"; };
+		0B1343A9D7B47174973E386F /* ScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerView.swift; sourceTree = "<group>"; };
+		1AA9286612E9DB42C2132B18 /* DeviceRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceRowView.swift; sourceTree = "<group>"; };
+		2BB29E4AFBE36BD2F647E166 /* DeviceFingerprinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceFingerprinter.swift; sourceTree = "<group>"; };
+		3870044FB35F416735463846 /* mHomeNodeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = mHomeNodeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		55364BCEC06FCE7D7043087C /* ServerStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerStatusView.swift; sourceTree = "<group>"; };
+		62ADF22AF5C4BCD095F0BBCC /* ServerConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerConfig.swift; sourceTree = "<group>"; };
+		80446116079B27DB2D104532 /* BTHomeParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BTHomeParserTests.swift; sourceTree = "<group>"; };
+		85FBD0516FCDAC06E3F9A1B7 /* DeviceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceDetailView.swift; sourceTree = "<group>"; };
+		86333B2F37318EBA181C25F6 /* BLEScannerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEScannerService.swift; sourceTree = "<group>"; };
+		86DE2B00863F1B5A0AB899B8 /* DeviceFingerprinterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceFingerprinterTests.swift; sourceTree = "<group>"; };
+		879C2CC7F0485C71806D8855 /* mHomeNode.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = mHomeNode.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A32FA1174EA1EC0A26BD7A3D /* BTHomeData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BTHomeData.swift; sourceTree = "<group>"; };
+		A4EBE9981B1D585B74C2C11E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AB4D82A9E68B915F8381D573 /* BTHomeParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BTHomeParser.swift; sourceTree = "<group>"; };
+		B2375A4F98FD49F6FC6D1BB4 /* SensorMetricBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorMetricBadge.swift; sourceTree = "<group>"; };
+		CA6194BF56B4ADE59A75223D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		CF4A32BFA3601546407FDDB4 /* SignalStrengthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalStrengthView.swift; sourceTree = "<group>"; };
+		D3FFDDE938980A977754E63F /* mHomeNodeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = mHomeNodeApp.swift; sourceTree = "<group>"; };
+		D5749131E0183103C5FF1A55 /* ScannerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerViewModel.swift; sourceTree = "<group>"; };
+		E497F7F1F542491CCCC9DD4A /* DiscoveredDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveredDevice.swift; sourceTree = "<group>"; };
+		EE71337FF9C0731AF128A4F4 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		56BAF137DAAFD967197255D3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		72EAF812E2D653AC0BDA8C73 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		377B79A7B896A8C75889DB7E /* Server */ = {
+			isa = PBXGroup;
+			children = (
+				04281739B594DC9B66EB58BC /* HomeNodeServerClient.swift */,
+			);
+			path = Server;
+			sourceTree = "<group>";
+		};
+		508B330CCDE923938D8FFB64 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				CF4A32BFA3601546407FDDB4 /* SignalStrengthView.swift */,
+				B2375A4F98FD49F6FC6D1BB4 /* SensorMetricBadge.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		5E352101050D6F403183E231 = {
+			isa = PBXGroup;
+			children = (
+				7D894AAFDF26E9CF2BA5E8E9 /* mHomeNode */,
+				E6705C2F08B0BDFBE53C5783 /* mHomeNodeTests */,
+				7A7C58CB6098771DDC350CE2 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		78EF4B0EA3FDA2A792BCF074 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				EE71337FF9C0731AF128A4F4 /* ContentView.swift */,
+				ADEB32716AD1CE1BE264CB57 /* Scanner */,
+				B055D2E8C87F30F9F81D1BA4 /* Server */,
+				508B330CCDE923938D8FFB64 /* Components */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		7A7C58CB6098771DDC350CE2 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				879C2CC7F0485C71806D8855 /* mHomeNode.app */,
+				3870044FB35F416735463846 /* mHomeNodeTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		7D894AAFDF26E9CF2BA5E8E9 /* mHomeNode */ = {
+			isa = PBXGroup;
+			children = (
+				D3FFDDE938980A977754E63F /* mHomeNodeApp.swift */,
+				CA608C0B22E7B6F9B389BDDD /* Models */,
+				95DF61116CBC7317336DBE03 /* Services */,
+				E3EEF78AC67933824D83D3B4 /* ViewModels */,
+				78EF4B0EA3FDA2A792BCF074 /* Views */,
+				A4EBE9981B1D585B74C2C11E /* Assets.xcassets */,
+				CA6194BF56B4ADE59A75223D /* Info.plist */,
+			);
+			path = mHomeNode;
+			sourceTree = "<group>";
+		};
+		918DA749BF06CE26CE0A8ABD /* Bluetooth */ = {
+			isa = PBXGroup;
+			children = (
+				AB4D82A9E68B915F8381D573 /* BTHomeParser.swift */,
+				2BB29E4AFBE36BD2F647E166 /* DeviceFingerprinter.swift */,
+				86333B2F37318EBA181C25F6 /* BLEScannerService.swift */,
+			);
+			path = Bluetooth;
+			sourceTree = "<group>";
+		};
+		95DF61116CBC7317336DBE03 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				918DA749BF06CE26CE0A8ABD /* Bluetooth */,
+				377B79A7B896A8C75889DB7E /* Server */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		ADEB32716AD1CE1BE264CB57 /* Scanner */ = {
+			isa = PBXGroup;
+			children = (
+				0B1343A9D7B47174973E386F /* ScannerView.swift */,
+				1AA9286612E9DB42C2132B18 /* DeviceRowView.swift */,
+				85FBD0516FCDAC06E3F9A1B7 /* DeviceDetailView.swift */,
+			);
+			path = Scanner;
+			sourceTree = "<group>";
+		};
+		B055D2E8C87F30F9F81D1BA4 /* Server */ = {
+			isa = PBXGroup;
+			children = (
+				55364BCEC06FCE7D7043087C /* ServerStatusView.swift */,
+			);
+			path = Server;
+			sourceTree = "<group>";
+		};
+		CA608C0B22E7B6F9B389BDDD /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A32FA1174EA1EC0A26BD7A3D /* BTHomeData.swift */,
+				E497F7F1F542491CCCC9DD4A /* DiscoveredDevice.swift */,
+				62ADF22AF5C4BCD095F0BBCC /* ServerConfig.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		E3EEF78AC67933824D83D3B4 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				D5749131E0183103C5FF1A55 /* ScannerViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		E6705C2F08B0BDFBE53C5783 /* mHomeNodeTests */ = {
+			isa = PBXGroup;
+			children = (
+				80446116079B27DB2D104532 /* BTHomeParserTests.swift */,
+				86DE2B00863F1B5A0AB899B8 /* DeviceFingerprinterTests.swift */,
+			);
+			path = mHomeNodeTests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		C15F1053C95C439BF64E51FC /* mHomeNode */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E850913E5F419DF1836B1B18 /* Build configuration list for PBXNativeTarget "mHomeNode" */;
+			buildPhases = (
+				869AA75568406BC6181D282D /* Sources */,
+				56BAF137DAAFD967197255D3 /* Frameworks */,
+				77417434AB4C68AD87C05857 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = mHomeNode;
+			productName = mHomeNode;
+			productReference = 879C2CC7F0485C71806D8855 /* mHomeNode.app */;
+			productType = "com.apple.product-type.application";
+		};
+		EDCBAD7DEA52BCE81A89D3EE /* mHomeNodeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 48EA9C817F74F26250070E59 /* Build configuration list for PBXNativeTarget "mHomeNodeTests" */;
+			buildPhases = (
+				6E010B3D85AA514D3FB28B7F /* Sources */,
+				72EAF812E2D653AC0BDA8C73 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C3D2A2CF3E5815C09519AA0E /* PBXTargetDependency */,
+			);
+			name = mHomeNodeTests;
+			productName = mHomeNodeTests;
+			productReference = 3870044FB35F416735463846 /* mHomeNodeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		167F87279077329EEB062A71 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					C15F1053C95C439BF64E51FC = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					EDCBAD7DEA52BCE81A89D3EE = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = C15F1053C95C439BF64E51FC;
+					};
+				};
+			};
+			buildConfigurationList = CB7CBE0C3B42E7D081FECC31 /* Build configuration list for PBXProject "mHomeNode" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 5E352101050D6F403183E231;
+			productRefGroup = 7A7C58CB6098771DDC350CE2 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				C15F1053C95C439BF64E51FC /* mHomeNode */,
+				EDCBAD7DEA52BCE81A89D3EE /* mHomeNodeTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		77417434AB4C68AD87C05857 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9D4E4EB3A9D52CA47965A154 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		6E010B3D85AA514D3FB28B7F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C87997131AD168D86C8A55E7 /* BTHomeParserTests.swift in Sources */,
+				D6D3CF9BA659874224B0AC3D /* DeviceFingerprinterTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		869AA75568406BC6181D282D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				91EA390C46669265976F1501 /* mHomeNodeApp.swift in Sources */,
+				09C1DFFBE4CA67AD1499B5C6 /* BTHomeData.swift in Sources */,
+				5EDF605203126AA977FA6C08 /* DiscoveredDevice.swift in Sources */,
+				450F341525D90DDF79614BDE /* ServerConfig.swift in Sources */,
+				A4E5F23904C5E58859DE85FC /* BTHomeParser.swift in Sources */,
+				3EF20E822BA8CE3DB5B86206 /* DeviceFingerprinter.swift in Sources */,
+				93F24D55044EF8E9E1D9C0AE /* BLEScannerService.swift in Sources */,
+				7464E070EF41934D799DCD12 /* HomeNodeServerClient.swift in Sources */,
+				E0481886BF702CFB6782CD90 /* ScannerViewModel.swift in Sources */,
+				5E5E235530D2A23BF09AFC3A /* SignalStrengthView.swift in Sources */,
+				778581DDCB5B072E49DE8CD0 /* SensorMetricBadge.swift in Sources */,
+				5D736AD4CF443BE15BB83FA7 /* DeviceRowView.swift in Sources */,
+				D945AB60A95C0AFE891E5A95 /* DeviceDetailView.swift in Sources */,
+				08726D99F870145971A83E5F /* ScannerView.swift in Sources */,
+				AB96CC22CB7D323E7976E174 /* ServerStatusView.swift in Sources */,
+				B0D02913C35EF51883F29A14 /* ContentView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C3D2A2CF3E5815C09519AA0E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C15F1053C95C439BF64E51FC /* mHomeNode */;
+			targetProxy = CE443B3C47ADC0559F5D21DE /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		3F973061B829CD18B8DC0697 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = NV9LC295QZ;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = mHomeNode/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = mHomeNode;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.zehrer.homenode.mHomeNode;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		484B7C5B47A7F1ADBEBBEBD0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.zehrer.homenode.mHomeNodeTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/mHomeNode.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/mHomeNode";
+			};
+			name = Debug;
+		};
+		540546482BF13AAB117506A6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		8F099EA5D9C1C7C51ACBD1DD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.zehrer.homenode.mHomeNodeTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/mHomeNode.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/mHomeNode";
+			};
+			name = Release;
+		};
+		B6672A7CAFF32B5AAD895E42 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = NV9LC295QZ;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = mHomeNode/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = mHomeNode;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.zehrer.homenode.mHomeNode;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		C33178FB9E2FFA68E15EBD85 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		48EA9C817F74F26250070E59 /* Build configuration list for PBXNativeTarget "mHomeNodeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				484B7C5B47A7F1ADBEBBEBD0 /* Debug */,
+				8F099EA5D9C1C7C51ACBD1DD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CB7CBE0C3B42E7D081FECC31 /* Build configuration list for PBXProject "mHomeNode" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C33178FB9E2FFA68E15EBD85 /* Debug */,
+				540546482BF13AAB117506A6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E850913E5F419DF1836B1B18 /* Build configuration list for PBXNativeTarget "mHomeNode" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B6672A7CAFF32B5AAD895E42 /* Debug */,
+				3F973061B829CD18B8DC0697 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 167F87279077329EEB062A71 /* Project object */;
+}
