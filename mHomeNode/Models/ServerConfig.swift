@@ -8,7 +8,7 @@ public struct ServerConfig: Codable, Sendable, Equatable {
     public var isAutoSyncEnabled: Bool
 
     public init(
-        host: String = "homenode.local",
+        host: String = "127.0.0.1",
         port: Int = 8080,
         useTLS: Bool = false,
         apiKey: String? = nil,

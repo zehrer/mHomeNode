@@ -8,7 +8,7 @@ public enum DeviceFamily: String, Codable, Sendable {
     case standardBLE = "Bluetooth LE Device"
 }
 
-public struct DiscoveredDevice: Identifiable, Sendable, Equatable {
+public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
     public let id: UUID
     public var name: String
     public var rssi: Int
@@ -19,6 +19,9 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable {
     public var family: DeviceFamily
     public var isConnectable: Bool
     public var assignedRoom: String?
+    public var customName: String?
+    public var isIgnored: Bool
+    public var macAddress: String?
     public var firstSeen: Date
     public var lastSeen: Date
 
@@ -33,6 +36,9 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable {
         family: DeviceFamily = .standardBLE,
         isConnectable: Bool = false,
         assignedRoom: String? = nil,
+        customName: String? = nil,
+        isIgnored: Bool = false,
+        macAddress: String? = nil,
         firstSeen: Date = Date(),
         lastSeen: Date = Date()
     ) {
@@ -46,8 +52,16 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable {
         self.family = family
         self.isConnectable = isConnectable
         self.assignedRoom = assignedRoom
+        self.customName = customName
+        self.isIgnored = isIgnored
+        self.macAddress = macAddress
         self.firstSeen = firstSeen
         self.lastSeen = lastSeen
+    }
+
+    /// Whether this device has advertised recently (within the last 45 seconds)
+    public var isCurrentlyActive: Bool {
+        Date().timeIntervalSince(lastSeen) < 45.0
     }
 
     /// Signal strength quality level: 0 (poor) to 4 (excellent)
@@ -62,12 +76,40 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable {
     }
 
     public var displayTitle: String {
+        if let cName = customName, !cName.isEmpty {
+            return cName
+        }
         if !name.isEmpty && name != "Unknown" {
             return name
+        }
+        if let mac = macAddress, !mac.isEmpty {
+            return "\(family.rawValue) (\(mac))"
         }
         if family != .standardBLE {
             return family.rawValue
         }
         return "BLE Device (" + id.uuidString.prefix(6) + ")"
+    }
+
+    /// Converts into the HomeNode Server MobileBleScanItem format
+    public func toMobileBleScanItem(scoutName: String = "iPhone (mHomeNode)") -> MobileBleScanItem {
+        MobileBleScanItem(
+            id: macAddress ?? id.uuidString,
+            name: customName ?? (name == "Unknown" ? nil : name),
+            rssi: Int16(clamping: rssi),
+            manufacturerDataHex: manufacturerDataHex,
+            family: family.rawValue,
+            assignedRoom: assignedRoom,
+            scoutName: scoutName,
+            bthomeVersion: btHomeData != nil ? UInt8(btHomeData!.version) : nil,
+            battery: btHomeData?.battery,
+            temperatureC: btHomeData?.temperature.map { Float($0) },
+            humidityPct: btHomeData?.humidity.map { Float($0) },
+            illuminanceLux: btHomeData?.illuminance.map { Float($0) },
+            pressureHpa: btHomeData?.pressure.map { Float($0) },
+            contactOpen: btHomeData?.isDoorOpen,
+            motionDetected: btHomeData?.isMotionDetected,
+            buttonEvent: btHomeData?.buttonEvent?.rawValue
+        )
     }
 }

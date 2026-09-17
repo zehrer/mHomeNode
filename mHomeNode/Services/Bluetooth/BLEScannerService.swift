@@ -1,5 +1,5 @@
 import Foundation
-import CoreBluetooth
+@preconcurrency import CoreBluetooth
 import OSLog
 
 @Observable
@@ -7,13 +7,19 @@ import OSLog
 public final class BLEScannerService: NSObject, @preconcurrency CBCentralManagerDelegate {
     private let logger = Logger(subsystem: "net.zehrer.homenode.mHomeNode", category: "BLEScanner")
     private var centralManager: CBCentralManager?
+    private let ignoreService: IgnoreService
+    private let storageService: DeviceStorageService
 
     public var isScanning: Bool = false
     public var bluetoothState: CBManagerState = .unknown
     public var devices: [DiscoveredDevice] = []
     public var errorMessage: String?
 
-    public override init() {
+    public init(ignoreService: IgnoreService? = nil, storageService: DeviceStorageService? = nil) {
+        self.ignoreService = ignoreService ?? .shared
+        let storage = storageService ?? .shared
+        self.storageService = storage
+        self.devices = storage.loadDevices()
         super.init()
         self.centralManager = CBCentralManager(delegate: self, queue: .main)
     }
@@ -39,16 +45,33 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
     public func stopScan() {
         centralManager?.stopScan()
         isScanning = false
+        storageService.saveDevicesSync(devices)
         logger.info("Stopped BLE scan.")
     }
 
     public func clear() {
         devices.removeAll()
+        storageService.clear()
     }
 
     public func updateRoom(for deviceId: UUID, room: String?) {
         if let index = devices.firstIndex(where: { $0.id == deviceId }) {
             devices[index].assignedRoom = room
+            storageService.scheduleSave(devices)
+        }
+    }
+
+    public func updateDeviceName(id: UUID, customName: String?) {
+        if let index = devices.firstIndex(where: { $0.id == id }) {
+            devices[index].customName = customName
+            storageService.scheduleSave(devices)
+        }
+    }
+
+    public func setDeviceIgnored(id: UUID, isIgnored: Bool) {
+        if let index = devices.firstIndex(where: { $0.id == id }) {
+            devices[index].isIgnored = isIgnored
+            storageService.scheduleSave(devices)
         }
     }
 
@@ -70,7 +93,7 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
         rssi RSSI: NSNumber
     ) {
         let rssiVal = RSSI.intValue
-        // Ignore out-of-range outlier readings
+        // Ignore out-of-range outlier readings (127 means unavailable in CoreBluetooth)
         guard rssiVal != 127 else { return }
 
         let rawName = peripheral.name ?? (advertisementData[CBAdvertisementDataLocalNameKey] as? String) ?? ""
@@ -87,49 +110,78 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
         let mfgData = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data
         let mfgDataHex = mfgData?.map { String(format: "%02hhX", $0) }.joined()
 
-        let (family, btHomeData) = DeviceFingerprinter.identify(
+        let identification = DeviceFingerprinter.identifyDetails(
             advertisedName: rawName,
             serviceUUIDs: serviceUUIDs,
             serviceData: serviceData,
             manufacturerData: mfgData
         )
 
+        let resolvedName: String
+        if !rawName.isEmpty {
+            resolvedName = rawName
+        } else if let modelName = identification.resolvedName {
+            resolvedName = modelName
+        } else {
+            resolvedName = "Unknown"
+        }
+
+        let isIgnored = ignoreService.isIgnored(
+            id: identification.macAddress ?? peripheral.identifier.uuidString,
+            name: resolvedName
+        )
         let now = Date()
 
-        if let index = devices.firstIndex(where: { $0.id == peripheral.identifier }) {
-            // Update existing device
+        // Match existing device by peripheral UUID or MAC address
+        let existingIndex = devices.firstIndex { dev in
+            dev.id == peripheral.identifier ||
+            (identification.macAddress != nil && dev.macAddress == identification.macAddress)
+        }
+
+        if let index = existingIndex {
+            // Update existing device in-place without removing or flickering
             devices[index].rssi = rssiVal
             devices[index].rssiHistory.append(rssiVal)
             if devices[index].rssiHistory.count > 20 {
                 devices[index].rssiHistory.removeFirst()
             }
-            if !rawName.isEmpty && devices[index].name != rawName {
-                devices[index].name = rawName
+            if resolvedName != "Unknown" && (devices[index].name == "Unknown" || devices[index].name.isEmpty) {
+                devices[index].name = resolvedName
             }
-            if let btHomeData = btHomeData {
+            if let btHomeData = identification.btHomeData {
                 devices[index].btHomeData = btHomeData
             }
-            if family != .standardBLE {
-                devices[index].family = family
+            if identification.family != .standardBLE {
+                devices[index].family = identification.family
             }
+            if let mac = identification.macAddress {
+                devices[index].macAddress = mac
+            }
+            devices[index].isIgnored = isIgnored
             devices[index].lastSeen = now
         } else {
-            // New device found
+            // Permanently record newly seen device
             let newDevice = DiscoveredDevice(
                 id: peripheral.identifier,
-                name: rawName.isEmpty ? "Unknown" : rawName,
+                name: resolvedName,
                 rssi: rssiVal,
                 rssiHistory: [rssiVal],
                 serviceUUIDs: serviceUUIDStrings,
                 manufacturerDataHex: mfgDataHex,
-                btHomeData: btHomeData,
-                family: family,
+                btHomeData: identification.btHomeData,
+                family: identification.family,
                 isConnectable: isConnectable,
+                assignedRoom: nil,
+                isIgnored: isIgnored,
+                macAddress: identification.macAddress,
                 firstSeen: now,
                 lastSeen: now
             )
             devices.append(newDevice)
         }
+
+        // Persist updated device inventory
+        storageService.scheduleSave(devices)
     }
 }
 

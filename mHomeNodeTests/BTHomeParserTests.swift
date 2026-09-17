@@ -4,10 +4,6 @@ import XCTest
 final class BTHomeParserTests: XCTestCase {
 
     func testParseBTHomeV2TemperatureAndHumidity() {
-        // BTHome V2 header: 0x40 (version 2, unencrypted)
-        // 0x02: Temp (21.50 °C -> 2150 sint16 LE -> 0x66, 0x08)
-        // 0x03: Humidity (54.00 % -> 5400 uint16 LE -> 0x18, 0x15)
-        // 0x01: Battery 98% -> 0x62
         let bytes: [UInt8] = [
             0x40,               // Header (V2, Plaintext)
             0x02, 0x66, 0x08,   // Temp = 21.50 °C
@@ -36,9 +32,6 @@ final class BTHomeParserTests: XCTestCase {
     }
 
     func testParseBTHomeV2DoorAndButtonEvent() {
-        // Header: 0x40
-        // 0x1A: Door Open (1)
-        // 0x3A: Button Event (1 = press)
         let bytes: [UInt8] = [
             0x40,
             0x1A, 0x01,
@@ -53,7 +46,6 @@ final class BTHomeParserTests: XCTestCase {
     }
 
     func testParseBTHomeEncryptedFlag() {
-        // Header: 0x41 (encrypted bit set)
         let bytes: [UInt8] = [0x41, 0x00, 0x01, 0x02]
         let data = Data(bytes)
 
