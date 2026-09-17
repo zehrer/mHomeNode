@@ -20,6 +20,117 @@ public struct DeviceDetailView: View {
         Group {
             if let device = device {
                 List {
+                    // MARK: - Light Controls
+                    if device.isLightingDevice {
+                        Section {
+                            let isLightOn = scannerVM.lightController.isPowerOn(for: device.id)
+                            let isBusy = scannerVM.lightController.isDeviceBusy(device.id)
+
+                            // Power Toggle Row
+                            HStack {
+                                Label {
+                                    Text("Power")
+                                        .font(.body.weight(.medium))
+                                } icon: {
+                                    Image(systemName: isLightOn ? "lightbulb.fill" : "lightbulb")
+                                        .foregroundColor(isLightOn ? .yellow : .secondary)
+                                }
+
+                                Spacer()
+
+                                if isBusy {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                        .padding(.trailing, 6)
+                                }
+
+                                Toggle("", isOn: Binding(
+                                    get: { isLightOn },
+                                    set: { scannerVM.lightController.setPower(for: device.id, isOn: $0) }
+                                ))
+                                .labelsHidden()
+                                .disabled(isBusy)
+                            }
+
+                            // Brightness Slider
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Label("Brightness", systemImage: "sun.max.fill")
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                    Spacer()
+                                    Text("\(scannerVM.lightController.getBrightness(for: device.id))%")
+                                        .font(.subheadline.monospacedDigit().weight(.semibold))
+                                }
+
+                                Slider(
+                                    value: Binding(
+                                        get: { Double(scannerVM.lightController.getBrightness(for: device.id)) },
+                                        set: { scannerVM.lightController.setBrightness(for: device.id, percent: Int($0)) }
+                                    ),
+                                    in: 1...100,
+                                    step: 1
+                                )
+                                .tint(.yellow)
+                                .disabled(!isLightOn || isBusy)
+                            }
+                            .padding(.vertical, 4)
+
+                            // Colors & Scenes Presets
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Colors & Scenes")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 12) {
+                                        ForEach(lightPresetColors, id: \.name) { preset in
+                                            Button {
+                                                scannerVM.lightController.setColor(
+                                                    for: device.id,
+                                                    red: preset.r,
+                                                    green: preset.g,
+                                                    blue: preset.b
+                                                )
+                                            } label: {
+                                                VStack(spacing: 4) {
+                                                    Circle()
+                                                        .fill(preset.color)
+                                                        .frame(width: 34, height: 34)
+                                                        .overlay(
+                                                            Circle()
+                                                                .stroke(Color.primary.opacity(0.15), lineWidth: 1)
+                                                        )
+                                                    Text(preset.name)
+                                                        .font(.system(size: 10))
+                                                        .foregroundColor(.secondary)
+                                                }
+                                            }
+                                            .buttonStyle(.plain)
+                                            .disabled(!isLightOn || isBusy)
+                                        }
+                                    }
+                                    .padding(.vertical, 4)
+                                }
+                            }
+                            .padding(.vertical, 4)
+
+                            if let error = scannerVM.lightController.lastError[device.id] {
+                                HStack {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .foregroundColor(.red)
+                                    Text(error)
+                                        .font(.caption)
+                                        .foregroundColor(.red)
+                                }
+                            }
+                        } header: {
+                            Text("Light Controls")
+                        } footer: {
+                            Text("Direct Bluetooth Low Energy control. Commands are sent directly to the device without cloud dependency.")
+                        }
+                    }
+
                     // MARK: - 1. Name & Room Assignment Section
                     Section {
                         HStack {
@@ -238,3 +349,22 @@ public struct DeviceDetailView: View {
         }
     }
 }
+
+private struct LightPresetColor {
+    let name: String
+    let color: Color
+    let r: UInt8
+    let g: UInt8
+    let b: UInt8
+}
+
+private let lightPresetColors: [LightPresetColor] = [
+    LightPresetColor(name: "Warm", color: Color(red: 1.0, green: 0.85, blue: 0.6), r: 255, g: 216, b: 153),
+    LightPresetColor(name: "Daylight", color: Color(red: 1.0, green: 0.96, blue: 0.92), r: 255, g: 245, b: 235),
+    LightPresetColor(name: "Cool", color: Color(red: 0.85, green: 0.92, blue: 1.0), r: 216, g: 235, b: 255),
+    LightPresetColor(name: "Amber", color: .orange, r: 255, g: 140, b: 0),
+    LightPresetColor(name: "Red", color: .red, r: 255, g: 30, b: 30),
+    LightPresetColor(name: "Green", color: .green, r: 30, g: 220, b: 60),
+    LightPresetColor(name: "Blue", color: .blue, r: 30, g: 100, b: 255),
+    LightPresetColor(name: "Purple", color: .purple, r: 160, g: 32, b: 240)
+]

@@ -87,6 +87,7 @@ public struct LightsView: View {
                                         LightDeviceCard(
                                             device: device,
                                             serverRoom: group.serverRoom,
+                                            controller: viewModel.lightController,
                                             onSelect: {
                                                 selectedDevice = device
                                             }
@@ -124,16 +125,27 @@ public struct LightsView: View {
                 }
 
                 ToolbarItem(placement: .primaryAction) {
-                    HStack(spacing: 6) {
-                        if viewModel.isScanning {
-                            Circle()
-                                .fill(Color.green)
-                                .frame(width: 8, height: 8)
+                    Menu {
+                        Button {
+                            for dev in lightDevices {
+                                viewModel.setLightPower(for: dev, isOn: true)
+                            }
+                        } label: {
+                            Label("Turn All On", systemImage: "lightbulb.fill")
                         }
-                        Text("\(lightDevices.count) Lights")
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
+
+                        Button {
+                            for dev in lightDevices {
+                                viewModel.setLightPower(for: dev, isOn: false)
+                            }
+                        } label: {
+                            Label("Turn All Off", systemImage: "lightbulb.slash")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .font(.body)
                     }
+                    .disabled(lightDevices.isEmpty)
                 }
             }
             .sheet(isPresented: $showSettingsSheet) {

@@ -4,7 +4,7 @@ import OSLog
 
 @Observable
 @MainActor
-public final class BLEScannerService: NSObject, @preconcurrency CBCentralManagerDelegate {
+public final class BLEScannerService: NSObject, @preconcurrency CBCentralManagerDelegate, BLEConnectionManager {
     private let logger = Logger(subsystem: "net.zehrer.homenode.mHomeNode", category: "BLEScanner")
     private var centralManager: CBCentralManager?
     private let ignoreService: IgnoreService
@@ -15,12 +15,16 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
     public var devices: [DiscoveredDevice] = []
     public var errorMessage: String?
 
+    public private(set) var peripheralMap: [UUID: CBPeripheral] = [:]
+    public let goveeController = GoveeLightController()
+
     public init(ignoreService: IgnoreService? = nil, storageService: DeviceStorageService? = nil) {
         self.ignoreService = ignoreService ?? .shared
         let storage = storageService ?? .shared
         self.storageService = storage
         self.devices = storage.loadDevices()
         super.init()
+        self.goveeController.connectionManager = self
         self.centralManager = CBCentralManager(delegate: self, queue: .main)
     }
 
@@ -95,6 +99,8 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
         let rssiVal = RSSI.intValue
         // Ignore out-of-range outlier readings (127 means unavailable in CoreBluetooth)
         guard rssiVal != 127 else { return }
+
+        peripheralMap[peripheral.identifier] = peripheral
 
         let rawName = peripheral.name ?? (advertisementData[CBAdvertisementDataLocalNameKey] as? String) ?? ""
         let isConnectable = (advertisementData[CBAdvertisementDataIsConnectable] as? NSNumber)?.boolValue ?? false
@@ -182,6 +188,36 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
 
         // Persist updated device inventory
         storageService.scheduleSave(devices)
+    }
+
+    // MARK: - BLEConnectionManager
+
+    public func connect(peripheral: CBPeripheral) {
+        peripheralMap[peripheral.identifier] = peripheral
+        centralManager?.connect(peripheral, options: nil)
+    }
+
+    public func cancelConnection(peripheral: CBPeripheral) {
+        centralManager?.cancelPeripheralConnection(peripheral)
+    }
+
+    public func getPeripheral(id: UUID) -> CBPeripheral? {
+        if let p = peripheralMap[id] { return p }
+        return centralManager?.retrievePeripherals(withIdentifiers: [id]).first
+    }
+
+    // MARK: - CBCentralManager Connection Callbacks
+
+    public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        goveeController.didConnect(peripheral: peripheral)
+    }
+
+    public func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
+        goveeController.didFailToConnect(peripheral: peripheral, error: error)
+    }
+
+    public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+        goveeController.didDisconnect(peripheral: peripheral, error: error)
     }
 }
 

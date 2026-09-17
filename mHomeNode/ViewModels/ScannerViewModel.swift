@@ -225,4 +225,26 @@ public final class ScannerViewModel {
         }
         isSyncing = false
     }
+
+    // MARK: - Light Control
+
+    public var lightController: GoveeLightController {
+        bleService.goveeController
+    }
+
+    public func toggleLightPower(for device: DiscoveredDevice) {
+        lightController.togglePower(for: device.id)
+    }
+
+    public func setLightPower(for device: DiscoveredDevice, isOn: Bool) {
+        lightController.setPower(for: device.id, isOn: isOn)
+    }
+
+    public func setLightBrightness(for device: DiscoveredDevice, percent: Int) {
+        lightController.setBrightness(for: device.id, percent: percent)
+    }
+
+    public func setLightColor(for device: DiscoveredDevice, red: UInt8, green: UInt8, blue: UInt8) {
+        lightController.setColor(for: device.id, red: red, green: green, blue: blue)
+    }
 }
