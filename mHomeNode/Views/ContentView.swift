@@ -5,6 +5,11 @@ public struct ContentView: View {
 
     public var body: some View {
         TabView {
+            RoomsView()
+                .tabItem {
+                    Label("Rooms", systemImage: "house.fill")
+                }
+
             ClimateView()
                 .tabItem {
                     Label("Climate", systemImage: "thermometer.sun.fill")

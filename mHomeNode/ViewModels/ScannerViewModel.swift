@@ -247,4 +247,41 @@ public final class ScannerViewModel {
     public func setLightColor(for device: DiscoveredDevice, red: UInt8, green: UInt8, blue: UInt8) {
         lightController.setColor(for: device.id, red: red, green: green, blue: blue)
     }
+
+    // MARK: - Proximity-Based Room Detection
+
+    /// Detects the user's current room based on the strongest BLE signal of assigned devices
+    public func detectNearestRoom() -> (roomName: String, strongestDevice: DiscoveredDevice, rssi: Int)? {
+        let candidates = bleService.devices.filter { dev in
+            guard let room = dev.assignedRoom, !room.isEmpty, room != "Not Assigned", room != "Nicht zugeordnet" else {
+                return false
+            }
+            guard !dev.isIgnored, dev.isCurrentlyActive else {
+                return false
+            }
+            return dev.rssi > -95
+        }
+
+        guard !candidates.isEmpty else { return nil }
+
+        // Group by room
+        let byRoom = Dictionary(grouping: candidates) { $0.assignedRoom! }
+
+        var bestRoom: String?
+        var bestDevice: DiscoveredDevice?
+        var maxRssi: Int = -999
+
+        for (room, devs) in byRoom {
+            if let topDev = devs.max(by: { $0.rssi < $1.rssi }) {
+                if topDev.rssi > maxRssi {
+                    maxRssi = topDev.rssi
+                    bestRoom = room
+                    bestDevice = topDev
+                }
+            }
+        }
+
+        guard let room = bestRoom, let dev = bestDevice else { return nil }
+        return (roomName: room, strongestDevice: dev, rssi: maxRssi)
+    }
 }
