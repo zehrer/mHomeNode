@@ -34,14 +34,14 @@ public struct RoomClimateCard: View {
         VStack(alignment: .leading, spacing: 14) {
             // Room Header
             HStack(alignment: .center, spacing: 10) {
-                Text(serverRoom?.icon ?? (roomName == "Nicht zugeordnet" ? "❓" : "🏠"))
+                Text(serverRoom?.icon ?? (roomName == "Not Assigned" || roomName == "Nicht zugeordnet" ? "❓" : "🏠"))
                     .font(.title2)
                     .frame(width: 36, height: 36)
                     .background(Color(.secondarySystemFill))
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(roomName)
+                    Text(roomName == "Nicht zugeordnet" ? "Not Assigned" : roomName)
                         .font(.headline)
                         .foregroundColor(.primary)
 
@@ -49,8 +49,8 @@ public struct RoomClimateCard: View {
                         Text(floor)
                             .font(.caption)
                             .foregroundColor(.secondary)
-                    } else if roomName == "Nicht zugeordnet" {
-                        Text("Tippen um Raum zuzuweisen")
+                    } else if roomName == "Not Assigned" || roomName == "Nicht zugeordnet" {
+                        Text("Tap to assign room")
                             .font(.caption)
                             .foregroundColor(.orange)
                     }
@@ -59,7 +59,7 @@ public struct RoomClimateCard: View {
                 Spacer()
 
                 // Sensor count pill
-                Text("\(devices.count) Sensor\(devices.count == 1 ? "" : "en")")
+                Text("\(devices.count) Sensor\(devices.count == 1 ? "" : "s")")
                     .font(.caption2.bold())
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -78,7 +78,7 @@ public struct RoomClimateCard: View {
                             Text(String(format: "%.1f°C", temp))
                                 .font(.title3.bold().monospacedDigit())
                                 .foregroundColor(.primary)
-                            Text(devices.count > 1 ? "Durchschnitt" : "Temperatur")
+                            Text(devices.count > 1 ? "Average" : "Temperature")
                                 .font(.system(size: 10))
                                 .foregroundColor(.secondary)
                         }
@@ -98,7 +98,7 @@ public struct RoomClimateCard: View {
                             Text(String(format: "%.0f%%", hum))
                                 .font(.title3.bold().monospacedDigit())
                                 .foregroundColor(.primary)
-                            Text(devices.count > 1 ? "Durchschnitt" : "Feuchte")
+                            Text(devices.count > 1 ? "Average" : "Humidity")
                                 .font(.system(size: 10))
                                 .foregroundColor(.secondary)
                         }

@@ -12,16 +12,16 @@ public struct IgnoredDevicesListView: View {
         List {
             if records.isEmpty {
                 ContentUnavailableView(
-                    "Keine ignorierten Geräte",
+                    "No Ignored Devices",
                     systemImage: "checkmark.shield",
-                    description: Text("Fremde BLE-Sensoren vom Nachbarn können im Scanner als 'Ignorieren' markiert werden.")
+                    description: Text("Unwanted BLE accessories can be marked as 'Ignored' from their detail page or scout swipe actions.")
                 )
             } else {
                 Section {
                     ForEach(records) { item in
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
-                                Text(item.name ?? "Unbenanntes Gerät")
+                                Text(item.name ?? "Unnamed Device")
                                     .font(.headline)
                                 Spacer()
                                 Text(item.reason)
@@ -37,7 +37,7 @@ public struct IgnoredDevicesListView: View {
                                 .font(.system(.caption2, design: .monospaced))
                                 .foregroundStyle(.secondary)
 
-                            Text("Blockiert seit: \(item.ignoredAt)")
+                            Text("Ignored since: \(item.ignoredAt)")
                                 .font(.caption2)
                                 .foregroundStyle(.tertiary)
                         }
@@ -45,19 +45,19 @@ public struct IgnoredDevicesListView: View {
                             Button {
                                 unignore(item.id)
                             } label: {
-                                Label("Wiederherstellen", systemImage: "arrow.uturn.backward")
+                                Label("Restore", systemImage: "arrow.uturn.backward")
                             }
                             .tint(.green)
                         }
                     }
                 } header: {
-                    Text("Blockierte Nachbargeräte (\(records.count))")
+                    Text("Ignored Devices (\(records.count))")
                 } footer: {
-                    Text("Nach links wischen, um ein Gerät wieder in der Geräteliste freizugeben.")
+                    Text("Swipe left to restore a device back to active discovery.")
                 }
             }
         }
-        .navigationTitle("Ignorierte Geräte")
+        .navigationTitle("Ignore List")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -72,6 +72,7 @@ public struct IgnoredDevicesListView: View {
                     }
                 }
                 .disabled(isSyncing)
+                .help("Sync Ignore List with HomeNode Server")
             }
         }
     }

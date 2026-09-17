@@ -5,6 +5,11 @@ public enum DeviceFamily: String, Codable, Sendable {
     case shellyBlu = "Shelly BLU"
     case qingping = "QingPing"
     case btHomeGeneric = "BTHome Device"
+    case govee = "Govee"
+    case nuki = "Nuki"
+    case ecoflow = "EcoFlow"
+    case switchBot = "SwitchBot"
+    case apple = "Apple"
     case standardBLE = "Bluetooth LE Device"
 }
 
@@ -89,6 +94,13 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
             return family.rawValue
         }
         return "BLE Device (" + id.uuidString.prefix(6) + ")"
+    }
+
+    /// Whether this device represents a lighting accessory (Govee, LED strip, smart bulb, etc.)
+    public var isLightingDevice: Bool {
+        if family == .govee { return true }
+        let low = (displayTitle + " " + name).lowercased()
+        return low.contains("light") || low.contains("lamp") || low.contains("led") || low.contains("bulb") || low.contains("strip")
     }
 
     /// Converts into the HomeNode Server MobileBleScanItem format

@@ -30,8 +30,8 @@ public struct DeviceDetailView: View {
                                 .multilineTextAlignment(.trailing)
                         }
 
-                        Picker("Raum", selection: $selectedRoom) {
-                            Text("Nicht zugeordnet").tag("")
+                        Picker("Room", selection: $selectedRoom) {
+                            Text("Not Assigned").tag("")
                             ForEach(scannerVM.serverRooms) { room in
                                 Text("\(room.icon ?? "🏠") \(room.name)\(room.floor.map { " (\($0))" } ?? "")")
                                     .tag(room.name)
@@ -45,7 +45,7 @@ public struct DeviceDetailView: View {
                             saveAndSync(device: device)
                         } label: {
                             HStack {
-                                Label("Speichern & Server-Abgleich", systemImage: "arrow.triangle.2.circlepath")
+                                Label("Save & Sync to Server", systemImage: "arrow.triangle.2.circlepath")
                                     .fontWeight(.medium)
                                 Spacer()
                                 if isSaving {
@@ -59,18 +59,18 @@ public struct DeviceDetailView: View {
                         if let msg = syncStatusMessage {
                             Text(msg)
                                 .font(.caption)
-                                .foregroundStyle(msg.contains("Erfolgreich") ? Color.green : Color.secondary)
+                                .foregroundStyle(msg.contains("Successfully") ? Color.green : Color.secondary)
                         }
                     } header: {
-                        Text("Gerätename & Raumzuordnung")
+                        Text("Device Name & Room Assignment")
                     } footer: {
-                        Text("Vergib einen eigenen Gerätenamen und weise das Gerät einem Raum zu. Beim Speichern wird der Name auch direkt an den HomeNode Server übertragen.")
+                        Text("Assign a friendly name and link this device to a room. Changes are saved locally and synced directly to HomeNode Server.")
                     }
 
                     // MARK: - 2. Proximity & Signal Section
                     Section("Signal & Scout Proximity") {
                         HStack {
-                            Text("Signalstärke (RSSI)")
+                            Text("Signal Strength (RSSI)")
                             Spacer()
                             Text("\(device.rssi) dBm")
                                 .monospacedDigit()
@@ -79,7 +79,7 @@ public struct DeviceDetailView: View {
                         }
 
                         HStack {
-                            Text("Zuletzt gesehen")
+                            Text("Last Seen")
                             Spacer()
                             Text(device.lastSeen, style: .relative)
                                 .foregroundStyle(.secondary)
@@ -92,7 +92,7 @@ public struct DeviceDetailView: View {
                                 Circle()
                                     .fill(device.isCurrentlyActive ? Color.green : Color.gray)
                                     .frame(width: 8, height: 8)
-                                Text(device.isCurrentlyActive ? "Aktiv" : "Inaktiv")
+                                Text(device.isCurrentlyActive ? "Active" : "Idle")
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                             }
@@ -101,55 +101,55 @@ public struct DeviceDetailView: View {
 
                     // MARK: - 3. Decoded BTHome Telemetry
                     if let btHome = device.btHomeData {
-                        Section("Sensordaten (BTHome V\(btHome.version))") {
+                        Section("Sensor Telemetry (BTHome V\(btHome.version))") {
                             if let temp = btHome.temperature {
-                                LabeledContent("Temperatur", value: String(format: "%.2f °C", temp))
+                                LabeledContent("Temperature", value: String(format: "%.2f °C", temp))
                             }
                             if let hum = btHome.humidity {
-                                LabeledContent("Luftfeuchtigkeit", value: String(format: "%.1f %%", hum))
+                                LabeledContent("Humidity", value: String(format: "%.1f %%", hum))
                             }
                             if let press = btHome.pressure {
-                                LabeledContent("Luftdruck", value: String(format: "%.2f hPa", press))
+                                LabeledContent("Pressure", value: String(format: "%.2f hPa", press))
                             }
                             if let lux = btHome.illuminance {
-                                LabeledContent("Helligkeit", value: String(format: "%.1f lux", lux))
+                                LabeledContent("Illuminance", value: String(format: "%.1f lux", lux))
                             }
                             if let battery = btHome.battery {
-                                LabeledContent("Batterie", value: "\(battery) %")
+                                LabeledContent("Battery", value: "\(battery) %")
                             }
                             if let door = btHome.isDoorOpen {
-                                LabeledContent("Tür / Fenster", value: door ? "Geöffnet" : "Geschlossen")
+                                LabeledContent("Door / Window", value: door ? "Open" : "Closed")
                             }
                             if let motion = btHome.isMotionDetected {
-                                LabeledContent("Bewegung", value: motion ? "Erkannt" : "Keine")
+                                LabeledContent("Motion", value: motion ? "Detected" : "Clear")
                             }
                             if let button = btHome.buttonEvent {
-                                LabeledContent("Taster Event", value: button.rawValue)
+                                LabeledContent("Button Event", value: button.rawValue)
                             }
                             if let packetId = btHome.packetId {
-                                LabeledContent("Paketzähler", value: "\(packetId)")
+                                LabeledContent("Packet Counter", value: "\(packetId)")
                             }
-                            LabeledContent("Verschlüsselung", value: btHome.isEncrypted ? "Ja" : "Nein (Klartext)")
+                            LabeledContent("Encryption", value: btHome.isEncrypted ? "Yes" : "No (Plaintext)")
                         }
                     }
 
-                    // MARK: - 4. Device Management & Privacy (Block Neighbor Devices)
-                    Section("Geräteverwaltung & Filter (Nachbargeräte)") {
+                    // MARK: - 4. Device Management & Ignore List
+                    Section("Device Management & Ignore List") {
                         if device.isIgnored {
                             VStack(alignment: .leading, spacing: 6) {
-                                Label("Als Nachbargerät blockiert", systemImage: "hand.raised.fill")
+                                Label("Device Ignored", systemImage: "hand.raised.fill")
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
                                     .foregroundStyle(.red)
 
-                                Text("Signale dieses Geräts werden in der Hauptliste ausgeblendet und beim automatischen Server-Sync ignoriert.")
+                                Text("Signals from this device are hidden from scout lists and excluded from server sync.")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
 
                                 Button {
                                     scannerVM.unignoreDevice(device)
                                 } label: {
-                                    Label("Nicht mehr ignorieren (Wiederherstellen)", systemImage: "checkmark.circle")
+                                    Label("Restore Device", systemImage: "checkmark.circle")
                                 }
                                 .buttonStyle(.bordered)
                                 .padding(.top, 4)
@@ -159,19 +159,19 @@ public struct DeviceDetailView: View {
                             Button(role: .destructive) {
                                 showingIgnoreAlert = true
                             } label: {
-                                Label("🚫 Als Nachbargerät ignorieren", systemImage: "nosign")
+                                Label("🚫 Add to Ignore List", systemImage: "nosign")
                             }
                         }
                     }
 
                     // MARK: - 5. Technical Details
-                    Section("Hardware Metadaten") {
-                        LabeledContent("Gerätefamilie", value: device.family.rawValue)
+                    Section("Hardware Metadata") {
+                        LabeledContent("Device Family", value: device.family.rawValue)
                         if let mac = device.macAddress {
-                            LabeledContent("MAC-Adresse", value: mac)
+                            LabeledContent("MAC Address", value: mac)
                         }
                         LabeledContent("UUID", value: device.id.uuidString)
-                        LabeledContent("Verbindbar", value: device.isConnectable ? "Ja" : "Nein")
+                        LabeledContent("Connectable", value: device.isConnectable ? "Yes" : "No")
 
                         if let mfgHex = device.manufacturerDataHex {
                             VStack(alignment: .leading, spacing: 4) {
@@ -204,18 +204,18 @@ public struct DeviceDetailView: View {
                     selectedRoom = device.assignedRoom ?? ""
                 }
             } else {
-                ContentUnavailableView("Gerät nicht gefunden", systemImage: "antenna.radiowaves.left.and.right.slash")
+                ContentUnavailableView("Device Not Found", systemImage: "antenna.radiowaves.left.and.right.slash")
             }
         }
-        .alert("Nachbargerät ignorieren?", isPresented: $showingIgnoreAlert) {
-            Button("Ja, als Nachbargerät ignorieren", role: .destructive) {
+        .alert("Add to Ignore List?", isPresented: $showingIgnoreAlert) {
+            Button("Yes, Ignore Device", role: .destructive) {
                 if let dev = device {
-                    scannerVM.ignoreDevice(dev, reason: "Nachbargerät")
+                    scannerVM.ignoreDevice(dev, reason: "User Ignored")
                 }
             }
-            Button("Abbrechen", role: .cancel) {}
+            Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Dieses Gerät wird in der Hauptliste ausgeblendet und Signale werden nicht weiter verarbeitet.")
+            Text("This device will be hidden from discovery lists and its signals will be ignored.")
         }
     }
 
@@ -232,8 +232,8 @@ public struct DeviceDetailView: View {
             await MainActor.run {
                 self.isSaving = false
                 self.syncStatusMessage = success
-                    ? "Erfolgreich gespeichert und mit HomeNode Server synchronisiert."
-                    : "Lokal gespeichert (Server aktuell nicht erreichbar)."
+                    ? "Successfully saved and synced with HomeNode Server."
+                    : "Saved locally (Server currently unreachable)."
             }
         }
     }

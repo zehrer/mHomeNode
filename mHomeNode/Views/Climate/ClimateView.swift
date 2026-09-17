@@ -16,7 +16,7 @@ public struct ClimateView: View {
 
     private var groupedRooms: [(roomName: String, serverRoom: ServerRoom?, devices: [DiscoveredDevice])] {
         let grouped = Dictionary(grouping: climateDevices) { dev in
-            dev.assignedRoom ?? "Nicht zugeordnet"
+            dev.assignedRoom ?? "Not Assigned"
         }
 
         // Separate assigned rooms and unassigned
@@ -25,8 +25,8 @@ public struct ClimateView: View {
 
         for (name, devs) in grouped {
             let sRoom = viewModel.serverRooms.first(where: { $0.name.lowercased() == name.lowercased() })
-            if name == "Nicht zugeordnet" {
-                unassignedGroup = (roomName: name, serverRoom: nil, devices: devs)
+            if name == "Not Assigned" || name == "Nicht zugeordnet" {
+                unassignedGroup = (roomName: "Not Assigned", serverRoom: nil, devices: devs)
             } else {
                 assignedGroups.append((roomName: name, serverRoom: sRoom, devices: devs))
             }
@@ -85,9 +85,9 @@ public struct ClimateView: View {
                         .padding(.horizontal)
                     } else {
                         ContentUnavailableView(
-                            "Keine Klimasensoren gefunden",
+                            "No Climate Sensors Discovered",
                             systemImage: "thermometer.snowflake",
-                            description: Text("BTHome und QingPing Sensoren senden periodisch Temperatur & Luftfeuchte.\nDer BLE Scout scannt automatisch im Hintergrund.")
+                            description: Text("BTHome and Qingping sensors periodically broadcast temperature and humidity.\nBLE Scout scans continuously in the background.")
                         )
                         .padding(.top, 60)
                     }
@@ -95,7 +95,7 @@ public struct ClimateView: View {
                 .padding(.bottom, 24)
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("Klima")
+            .navigationTitle("Climate")
             .refreshable {
                 await viewModel.loadServerRooms()
             }
@@ -107,7 +107,7 @@ public struct ClimateView: View {
                         Image(systemName: "line.3.horizontal")
                             .font(.body.weight(.medium))
                     }
-                    .help("Server & Einstellungen")
+                    .help("Server & Settings")
                 }
 
                 ToolbarItem(placement: .primaryAction) {
@@ -117,7 +117,7 @@ public struct ClimateView: View {
                                 .fill(Color.green)
                                 .frame(width: 8, height: 8)
                         }
-                        Text("\(climateDevices.count) Sensoren")
+                        Text("\(climateDevices.count) Sensors")
                             .font(.footnote)
                             .foregroundColor(.secondary)
                     }
@@ -131,7 +131,7 @@ public struct ClimateView: View {
                     DeviceDetailView(scannerVM: viewModel, deviceId: dev.id)
                         .toolbar {
                             ToolbarItem(placement: .confirmationAction) {
-                                Button("Fertig") {
+                                Button("Done") {
                                     selectedDevice = nil
                                 }
                             }
@@ -150,7 +150,7 @@ public struct ClimateView: View {
                         .foregroundColor(.orange)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Ø Temp")
+                        Text("AVG TEMP")
                             .font(.caption2.bold())
                             .foregroundColor(.secondary)
                         Text(String(format: "%.1f°C", avgTemp))
@@ -171,7 +171,7 @@ public struct ClimateView: View {
                         .foregroundColor(.blue)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Ø Feuchte")
+                        Text("AVG HUM")
                             .font(.caption2.bold())
                             .foregroundColor(.secondary)
                         Text(String(format: "%.0f%%", avgHum))
@@ -186,14 +186,14 @@ public struct ClimateView: View {
             }
 
             VStack(alignment: .center, spacing: 2) {
-                Text("Räume")
+                Text("ROOMS")
                     .font(.caption2.bold())
                     .foregroundColor(.secondary)
-                Text("\(groupedRooms.filter { $0.roomName != "Nicht zugeordnet" }.count)")
+                Text("\(groupedRooms.filter { $0.roomName != "Not Assigned" && $0.roomName != "Nicht zugeordnet" }.count)")
                     .font(.title3.bold().monospacedDigit())
                     .foregroundColor(.primary)
             }
-            .frame(width: 60)
+            .frame(width: 65)
             .padding(12)
             .background(Color(.secondarySystemGroupedBackground))
             .cornerRadius(12)

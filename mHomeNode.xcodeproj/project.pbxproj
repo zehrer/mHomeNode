@@ -25,6 +25,8 @@
 		778581DDCB5B072E49DE8CD0 /* SensorMetricBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2375A4F98FD49F6FC6D1BB4 /* SensorMetricBadge.swift */; };
 		720CFB16ABBB92A1B49079C6 /* ClimateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F5AEE4C39CC04A2FBA7EDBB /* ClimateView.swift */; };
 		14EFB3CBD64A4B1E4EFFE25C /* RoomClimateCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8E401E74736F8B85EC3BE2 /* RoomClimateCard.swift */; };
+		E4C681EF9F836927FE0541B7 /* LightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5463559BC99E5E9C526D2557 /* LightsView.swift */; };
+		A7C2B1059B37CCB62BCBDB88 /* LightDeviceCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1367D8FD046A04612315421 /* LightDeviceCard.swift */; };
 		5D736AD4CF443BE15BB83FA7 /* DeviceRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA9286612E9DB42C2132B18 /* DeviceRowView.swift */; };
 		D945AB60A95C0AFE891E5A95 /* DeviceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85FBD0516FCDAC06E3F9A1B7 /* DeviceDetailView.swift */; };
 		08726D99F870145971A83E5F /* ScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B1343A9D7B47174973E386F /* ScannerView.swift */; };
@@ -73,6 +75,8 @@
 		B2375A4F98FD49F6FC6D1BB4 /* SensorMetricBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SensorMetricBadge.swift"; sourceTree = "<group>"; };
 		1F5AEE4C39CC04A2FBA7EDBB /* ClimateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ClimateView.swift"; sourceTree = "<group>"; };
 		7E8E401E74736F8B85EC3BE2 /* RoomClimateCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RoomClimateCard.swift"; sourceTree = "<group>"; };
+		5463559BC99E5E9C526D2557 /* LightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LightsView.swift"; sourceTree = "<group>"; };
+		B1367D8FD046A04612315421 /* LightDeviceCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LightDeviceCard.swift"; sourceTree = "<group>"; };
 		1AA9286612E9DB42C2132B18 /* DeviceRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DeviceRowView.swift"; sourceTree = "<group>"; };
 		85FBD0516FCDAC06E3F9A1B7 /* DeviceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DeviceDetailView.swift"; sourceTree = "<group>"; };
 		0B1343A9D7B47174973E386F /* ScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScannerView.swift"; sourceTree = "<group>"; };
@@ -210,6 +214,7 @@
 			children = (
 				EE71337FF9C0731AF128A4F4 /* ContentView.swift */,
 				552ABBC5B1EDB7A15864BDDD /* Climate */,
+				CD46A29447622132B6031AA1 /* Lights */,
 				ADEB32716AD1CE1BE264CB57 /* Scanner */,
 				B055D2E8C87F30F9F81D1BA4 /* Server */,
 				508B330CCDE923938D8FFB64 /* Components */,
@@ -224,6 +229,15 @@
 				7E8E401E74736F8B85EC3BE2 /* RoomClimateCard.swift */,
 			);
 			path = Climate;
+			sourceTree = "<group>";
+		};
+		CD46A29447622132B6031AA1 /* Lights */ = {
+			isa = PBXGroup;
+			children = (
+				5463559BC99E5E9C526D2557 /* LightsView.swift */,
+				B1367D8FD046A04612315421 /* LightDeviceCard.swift */,
+			);
+			path = Lights;
 			sourceTree = "<group>";
 		};
 		ADEB32716AD1CE1BE264CB57 /* Scanner */ = {
@@ -376,6 +390,8 @@
 				778581DDCB5B072E49DE8CD0 /* SensorMetricBadge.swift in Sources */,
 				720CFB16ABBB92A1B49079C6 /* ClimateView.swift in Sources */,
 				14EFB3CBD64A4B1E4EFFE25C /* RoomClimateCard.swift in Sources */,
+				E4C681EF9F836927FE0541B7 /* LightsView.swift in Sources */,
+				A7C2B1059B37CCB62BCBDB88 /* LightDeviceCard.swift in Sources */,
 				5D736AD4CF443BE15BB83FA7 /* DeviceRowView.swift in Sources */,
 				D945AB60A95C0AFE891E5A95 /* DeviceDetailView.swift in Sources */,
 				08726D99F870145971A83E5F /* ScannerView.swift in Sources */,

@@ -22,7 +22,7 @@ public struct ServerStatusView: View {
                         HStack(spacing: 12) {
                             ProgressView()
                                 .controlSize(.small)
-                            Text("Suche nach HomeNode Server im WLAN (Bonjour)...")
+                            Text("Searching for HomeNode Server on Wi-Fi (Bonjour)...")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
@@ -33,7 +33,7 @@ public struct ServerStatusView: View {
                         HStack {
                             Image(systemName: "wifi.exclamationmark")
                                 .foregroundStyle(.orange)
-                            Text("Kein HomeNode Server im WLAN gefunden.")
+                            Text("No HomeNode Server found on local Wi-Fi.")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
@@ -66,40 +66,40 @@ public struct ServerStatusView: View {
                     Button {
                         vm.discoveryService.startBrowsing()
                     } label: {
-                        Label("Im WLAN neu suchen", systemImage: "arrow.clockwise")
+                        Label("Scan Again on Wi-Fi", systemImage: "arrow.clockwise")
                     }
                     .disabled(vm.discoveryService.isSearching)
                 } header: {
-                    Text("Automatischer Server-Suchlauf (Bonjour)")
+                    Text("Automatic Server Discovery (Bonjour)")
                 } footer: {
-                    Text("HomeNode Server sendet Bonjour-Signale (_homenode._tcp). Das iPhone erkennt den Server vollautomatisch ohne manuelle IP-Eingabe.")
+                    Text("HomeNode Server broadcasts Bonjour signals (_homenode._tcp). The app connects automatically without manual IP configuration.")
                 }
 
                 // MARK: - 2. Server Status
-                Section("Verbindungsstatus") {
+                Section("Connection Status") {
                     HStack {
                         Text("Status")
                         Spacer()
                         statusBadge
                     }
 
-                    LabeledContent("Aktiver Host", value: "\(vm.serverConfig.host):\(vm.serverConfig.port)")
+                    LabeledContent("Active Host", value: "\(vm.serverConfig.host):\(vm.serverConfig.port)")
 
                     if let status = serverStatus {
                         LabeledContent("Server Version", value: status.version)
                         LabeledContent("Active Matter Nodes", value: "\(status.activeMatterNodes)")
                         LabeledContent("BLE Gateways", value: "\(status.activeBLEGateways)")
                         if let dev = status.activeDevices {
-                            LabeledContent("Aktive Geräte gesamt", value: "\(dev)")
+                            LabeledContent("Total Active Devices", value: "\(dev)")
                         }
-                        LabeledContent("Laufzeit", value: "\(status.uptimeSeconds / 60) min")
+                        LabeledContent("Uptime", value: "\(status.uptimeSeconds / 60) min")
                     }
 
                     Button {
                         checkConnection()
                     } label: {
                         HStack {
-                            Text("Verbindung jetzt testen")
+                            Text("Test Connection Now")
                             Spacer()
                             if isChecking {
                                 ProgressView()
@@ -113,12 +113,12 @@ public struct ServerStatusView: View {
                 }
 
                 // MARK: - 3. Scout Synchronization
-                Section("Geräte-Synchronisation (Mobile Scout)") {
+                Section("Device Synchronization (Mobile Scout)") {
                     Button {
                         syncAllToHomeNodeServer()
                     } label: {
                         HStack {
-                            Text("Alle aktiven BLE-Geräte übertragen")
+                            Text("Transfer All Active BLE Devices")
                             Spacer()
                             if isSyncingAll {
                                 ProgressView()
@@ -136,47 +136,51 @@ public struct ServerStatusView: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    Text("Überträgt alle erfassten BLE- und BTHome-Sensoren an den HomeNode Server (POST /api/v1/mobile/ble).")
+                    Text("Uploads all discovered BLE and BTHome sensors to HomeNode Server (POST /api/v1/mobile/ble).")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
 
                 // MARK: - 4. Persistent Storage
-                Section("Lokaler Gerätespeicher") {
-                    LabeledContent("Gespeicherte Geräte im Inventar", value: "\(vm.totalDevicesCount)")
+                Section("Local Device Storage") {
+                    LabeledContent("Persisted Devices in Inventory", value: "\(vm.totalDevicesCount)")
 
                     Button(role: .destructive) {
                         showClearConfirm = true
                     } label: {
-                        Label("Geräteinventar leeren (Cache löschen)", systemImage: "trash")
+                        Label("Clear Device Inventory (Reset Cache)", systemImage: "trash")
                     }
                     .disabled(vm.totalDevicesCount == 0)
                 }
 
-                // MARK: - 5. Neighbor Device Blocklist
-                Section("Nachbargeräte & Filter") {
+                // MARK: - 5. Ignore List
+                Section {
                     NavigationLink(destination: IgnoredDevicesListView()) {
                         HStack {
-                            Text("Ignorierte Nachbargeräte")
+                            Text("Ignored Devices")
                             Spacer()
                             Text("\(vm.ignoreService.ignoredRecords.count)")
                                 .foregroundStyle(.secondary)
                         }
                     }
+                } header: {
+                    Text("Ignore List")
+                } footer: {
+                    Text("Devices on the Ignore List will be excluded from automated server uploads and scout listings.")
                 }
 
                 // MARK: - 6. Manual Configuration (Advanced)
                 Section {
-                    DisclosureGroup("Manuelle Konfiguration (Erweitert)", isExpanded: $showManualConfig) {
+                    DisclosureGroup("Manual Configuration (Advanced)", isExpanded: $showManualConfig) {
                         VStack(spacing: 12) {
-                            TextField("Server Host (IP oder Hostname)", text: $vm.serverConfig.host)
+                            TextField("Server Host (IP or Hostname)", text: $vm.serverConfig.host)
                                 .autocorrectionDisabled()
                                 .textInputAutocapitalization(.never)
                                 .textFieldStyle(.roundedBorder)
 
                             Stepper("Port: \(vm.serverConfig.port)", value: $vm.serverConfig.port, in: 1...65535)
 
-                            Toggle("TLS verwenden (HTTPS)", isOn: $vm.serverConfig.useTLS)
+                            Toggle("Use TLS (HTTPS)", isOn: $vm.serverConfig.useTLS)
 
                             SecureField("API Key (Optional)", text: Binding(
                                 get: { vm.serverConfig.apiKey ?? "" },
@@ -187,13 +191,13 @@ public struct ServerStatusView: View {
                         .padding(.vertical, 4)
                     }
                 } footer: {
-                    Text("Nur nötig bei VPN-Verbindungen oder individuellen Portweiterleitungen außerhalb des heimischen WLANs.")
+                    Text("Only needed when using VPN tunnels or custom port forwardings outside your local Wi-Fi.")
                 }
             }
-            .navigationTitle("Server & Discovery")
+            .navigationTitle("Server & Settings")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Fertig") {
+                    Button("Done") {
                         dismiss()
                     }
                     .fontWeight(.semibold)
@@ -205,14 +209,14 @@ public struct ServerStatusView: View {
                 }
             }
             .confirmationDialog(
-                "Möchtest du das gesamte lokale Geräteinventar wirklich löschen?",
+                "Do you really want to clear the local device inventory?",
                 isPresented: $showClearConfirm,
                 titleVisibility: .visible
             ) {
-                Button("Inventar löschen", role: .destructive) {
+                Button("Clear Inventory", role: .destructive) {
                     vm.clear()
                 }
-                Button("Abbrechen", role: .cancel) {}
+                Button("Cancel", role: .cancel) {}
             }
         }
     }

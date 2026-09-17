@@ -175,7 +175,7 @@ public final class ScannerViewModel {
         }
     }
 
-    public func ignoreDevice(_ device: DiscoveredDevice, reason: String = "Nachbargerät") {
+    public func ignoreDevice(_ device: DiscoveredDevice, reason: String = "User Ignored") {
         let identifier = device.macAddress ?? device.id.uuidString
         ignoreService.ignore(id: identifier, name: device.name, reason: reason)
         bleService.setDeviceIgnored(id: device.id, isIgnored: true)
@@ -212,16 +212,16 @@ public final class ScannerViewModel {
             .map { $0.toMobileBleScanItem() }
 
         guard !activeItems.isEmpty else {
-            syncMessage = "Keine aktiven Geräte zum Übertragen."
+            syncMessage = "No active devices to transfer."
             isSyncing = false
             return
         }
 
         do {
             let res = try await serverClient.sendMobileBleScan(config: serverConfig, items: activeItems)
-            syncMessage = "\(res.ingested) Gerät(e) an HomeNode Server übertragen"
+            syncMessage = "\(res.ingested) device(s) synced to HomeNode Server"
         } catch {
-            syncMessage = "Sync-Fehler: \(error.localizedDescription)"
+            syncMessage = "Sync error: \(error.localizedDescription)"
         }
         isSyncing = false
     }

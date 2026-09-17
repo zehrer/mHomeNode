@@ -98,7 +98,78 @@ public enum DeviceFingerprinter {
             )
         }
 
-        // 6. Check Service UUIDs for hints
+        // 6. Identify SwitchBot via Service Data (0xFD3D) or Service UUIDs
+        let hasSwitchBotService = serviceUUIDs?.contains { $0.uuidString.uppercased().contains("FD3D") } ?? false
+        let hasSwitchBotData = serviceData?.keys.contains { $0.uuidString.uppercased().contains("FD3D") } ?? false
+        if hasSwitchBotService || hasSwitchBotData {
+            return DeviceIdentificationResult(
+                family: .switchBot,
+                btHomeData: parsedBTHome,
+                resolvedName: resolvedName ?? "SwitchBot Device",
+                macAddress: resolvedMac
+            )
+        }
+
+        // 7. Identify Nuki Smart Lock
+        if lowerName.starts(with: "nuki") {
+            return DeviceIdentificationResult(
+                family: .nuki,
+                btHomeData: nil,
+                resolvedName: "Nuki Smart Lock (\(name))",
+                macAddress: resolvedMac
+            )
+        }
+
+        // 8. Identify EcoFlow Power Systems
+        if lowerName.starts(with: "ef-") || lowerName.contains("ecoflow") {
+            return DeviceIdentificationResult(
+                family: .ecoflow,
+                btHomeData: nil,
+                resolvedName: "EcoFlow Device (\(name))",
+                macAddress: resolvedMac
+            )
+        }
+
+        // 9. Identify Govee Devices (Outdoor lights, thermometers)
+        if lowerName.starts(with: "govee") {
+            var goveeModel = "Govee Device (\(name))"
+            if lowerName.contains("h70b5") {
+                goveeModel = "Govee Outdoor Lights (H70B5)"
+            } else if lowerName.contains("h70b3") {
+                goveeModel = "Govee Outdoor String Lights (H70B3)"
+            } else if lowerName.contains("h5075") || lowerName.contains("h5074") {
+                goveeModel = "Govee Thermo-Hygrometer"
+            }
+            return DeviceIdentificationResult(
+                family: .govee,
+                btHomeData: parsedBTHome,
+                resolvedName: goveeModel,
+                macAddress: resolvedMac
+            )
+        }
+
+        // 10. Identify Apple Devices (HomePod, AirTags, Continuity)
+        if let mfg = manufacturerData, mfg.count >= 2 {
+            let mfgId = UInt16(mfg[0]) | (UInt16(mfg[1]) << 8)
+            if mfgId == 0x004C {
+                var appleName = resolvedName ?? (name.isEmpty ? "Apple Device" : name)
+                if mfg.count >= 3 && mfg[2] == 0x12 {
+                    appleName = name.isEmpty ? "Find My / AirTag" : name
+                } else if lowerName.contains("homepod") {
+                    appleName = name
+                } else if lowerName.contains("watch") {
+                    appleName = "Apple Watch (\(name))"
+                }
+                return DeviceIdentificationResult(
+                    family: .apple,
+                    btHomeData: nil,
+                    resolvedName: appleName,
+                    macAddress: resolvedMac
+                )
+            }
+        }
+
+        // 11. Check Service UUIDs for hints
         if let serviceUUIDs = serviceUUIDs {
             for uuid in serviceUUIDs {
                 let uuidStr = uuid.uuidString.uppercased()

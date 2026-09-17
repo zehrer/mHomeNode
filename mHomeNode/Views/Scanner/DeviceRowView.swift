@@ -27,7 +27,7 @@ public struct DeviceRowView: View {
                             .foregroundStyle(device.isIgnored ? .secondary : .primary)
 
                         if device.isIgnored {
-                            Text("🚫 Ignoriert")
+                            Text("🚫 Ignored")
                                 .font(.caption2)
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.red)
@@ -143,7 +143,7 @@ public struct DeviceRowView: View {
     private func relativeTimeString(for date: Date) -> String {
         let diff = Int(Date().timeIntervalSince(date))
         if diff < 10 {
-            return "jetzt"
+            return "now"
         } else if diff < 60 {
             return "\(diff)s"
         } else if diff < 3600 {
@@ -158,6 +158,11 @@ public struct DeviceRowView: View {
         case .shellyBlu: return "sensor.tag.radiowaves.forward"
         case .qingping: return "thermometer.sun"
         case .btHomeGeneric: return "dot.radiowaves.left.and.right"
+        case .govee: return "lightbulb.led.fill"
+        case .nuki: return "lock.shield.fill"
+        case .ecoflow: return "bolt.batteryblock.fill"
+        case .switchBot: return "switch.2"
+        case .apple: return "apple.logo"
         case .standardBLE: return "antenna.radiowaves.left.and.right"
         }
     }
@@ -167,6 +172,11 @@ public struct DeviceRowView: View {
         case .shellyBlu: return .cyan
         case .qingping: return .teal
         case .btHomeGeneric: return .blue
+        case .govee: return .purple
+        case .nuki: return .orange
+        case .ecoflow: return .green
+        case .switchBot: return .red
+        case .apple: return .primary
         case .standardBLE: return .secondary
         }
     }

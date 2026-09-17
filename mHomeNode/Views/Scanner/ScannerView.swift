@@ -42,14 +42,14 @@ public struct ScannerView: View {
                                 Button {
                                     vm.unignoreDevice(device)
                                 } label: {
-                                    Label("Wiederherstellen", systemImage: "arrow.uturn.backward")
+                                    Label("Restore", systemImage: "arrow.uturn.backward")
                                 }
                                 .tint(.green)
                             } else {
                                 Button(role: .destructive) {
-                                    vm.ignoreDevice(device, reason: "Nachbargerät")
+                                    vm.ignoreDevice(device, reason: "User Ignored")
                                 } label: {
-                                    Label("Ignorieren", systemImage: "nosign")
+                                    Label("Ignore", systemImage: "nosign")
                                 }
                                 .tint(.red)
                             }
@@ -57,7 +57,7 @@ public struct ScannerView: View {
                     }
                 } header: {
                     HStack {
-                        Text("Geräte (\(vm.filteredDevices.count) total • \(vm.activeDevicesCount) aktiv)")
+                        Text("Devices (\(vm.filteredDevices.count) total • \(vm.activeDevicesCount) active)")
                         Spacer()
                         if vm.isScanning {
                             ProgressView()
@@ -67,8 +67,8 @@ public struct ScannerView: View {
                 }
             }
             .listStyle(.insetGrouped)
-            .navigationTitle("HomeNode Scout")
-            .searchable(text: $vm.searchText, prompt: "Name, Raum, MAC oder UUID suchen")
+            .navigationTitle("BLE Scout")
+            .searchable(text: $vm.searchText, prompt: "Search by name, room, MAC, or UUID")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     HStack(spacing: 12) {
@@ -77,7 +77,7 @@ public struct ScannerView: View {
                         } label: {
                             Image(systemName: "line.3.horizontal")
                         }
-                        .help("Server & Einstellungen")
+                        .help("Server & Settings")
 
                         Button(role: .destructive) {
                             vm.clear()
@@ -99,18 +99,18 @@ public struct ScannerView: View {
                             }
                         }
                         .disabled(vm.isSyncing || vm.filteredDevices.isEmpty)
-                        .help("Aktive Geräte mit HomeNode Server synchronisieren")
+                        .help("Sync active devices to HomeNode Server")
                     }
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
-                        Toggle("Nur bekannte Sensoren", isOn: $vm.onlyKnownDevices)
-                        Toggle("Ignorierte Nachbarn anzeigen", isOn: $vm.showIgnoredDevices)
+                        Toggle("Known Sensors Only", isOn: $vm.onlyKnownDevices)
+                        Toggle("Show Ignored Devices", isOn: $vm.showIgnoredDevices)
 
                         Divider()
 
-                        Picker("Sortierung", selection: $vm.sortOrder) {
+                        Picker("Sort By", selection: $vm.sortOrder) {
                             ForEach(DeviceSortOrder.allCases) { order in
                                 Text(order.rawValue).tag(order)
                             }
@@ -138,9 +138,9 @@ public struct ScannerView: View {
             .overlay {
                 if vm.filteredDevices.isEmpty {
                     ContentUnavailableView(
-                        vm.isScanning ? "Suche nach BLE-Geräten..." : "BLE Scout Bereit",
+                        vm.isScanning ? "Searching for BLE devices..." : "BLE Scout Ready",
                         systemImage: "antenna.radiowaves.left.and.right",
-                        description: Text(vm.isScanning ? "Bewege dein Gerät in die Nähe von Sensoren, um BTHome und Qingping Geräte zu erfassen." : "Tippe auf Scan, um die Geräteaufzeichnung zu starten.")
+                        description: Text(vm.isScanning ? "Move your device close to accessories to discover them." : "Tap Scan to start discovering nearby Bluetooth devices.")
                     )
                 }
             }

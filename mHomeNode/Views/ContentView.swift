@@ -7,12 +7,17 @@ public struct ContentView: View {
         TabView {
             ClimateView()
                 .tabItem {
-                    Label("Klima", systemImage: "thermometer.sun.fill")
+                    Label("Climate", systemImage: "thermometer.sun.fill")
+                }
+
+            LightsView()
+                .tabItem {
+                    Label("Lights", systemImage: "lightbulb.fill")
                 }
 
             ScannerView()
                 .tabItem {
-                    Label("BLE Scout", systemImage: "antenna.radiowaves.left.and.right")
+                    Label("Scout", systemImage: "antenna.radiowaves.left.and.right")
                 }
         }
     }
