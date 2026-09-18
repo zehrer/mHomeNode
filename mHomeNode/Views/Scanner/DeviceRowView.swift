@@ -157,6 +157,7 @@ public struct DeviceRowView: View {
         switch device.family {
         case .shellyBlu: return "sensor.tag.radiowaves.forward"
         case .qingping: return "thermometer.sun"
+        case .xiaomi: return "thermometer.sun.fill"
         case .btHomeGeneric: return "dot.radiowaves.left.and.right"
         case .govee: return "lightbulb.led.fill"
         case .nuki: return "lock.shield.fill"
@@ -171,6 +172,7 @@ public struct DeviceRowView: View {
         switch device.family {
         case .shellyBlu: return .cyan
         case .qingping: return .teal
+        case .xiaomi: return .orange
         case .btHomeGeneric: return .blue
         case .govee: return .purple
         case .nuki: return .orange

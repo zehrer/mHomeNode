@@ -4,6 +4,7 @@ import CoreBluetooth
 public enum DeviceFamily: String, Codable, Sendable {
     case shellyBlu = "Shelly BLU"
     case qingping = "QingPing"
+    case xiaomi = "Xiaomi Mijia"
     case btHomeGeneric = "BTHome Device"
     case govee = "Govee"
     case nuki = "Nuki"

@@ -56,7 +56,26 @@ public enum DeviceFingerprinter {
                     }
                 }
 
-                // 2. Check for BTHome V2 in Service Data (0xFCD2)
+                // 2. Check for Xiaomi / MiBeacon in Service Data (0xFE95)
+                if uuidStr.contains("FE95") {
+                    if let mi = MiBeaconParser.parse(data: data) {
+                        return DeviceIdentificationResult(
+                            family: .xiaomi,
+                            btHomeData: mi.toBTHomeData(),
+                            resolvedName: mi.modelName,
+                            macAddress: mi.macAddress
+                        )
+                    } else {
+                        return DeviceIdentificationResult(
+                            family: .xiaomi,
+                            btHomeData: nil,
+                            resolvedName: "Xiaomi Mijia Sensor",
+                            macAddress: nil
+                        )
+                    }
+                }
+
+                // 3. Check for BTHome V2 in Service Data (0xFCD2)
                 if uuidStr.contains("FCD2") {
                     parsedBTHome = BTHomeParser.parseV2(data: data)
                     family = .btHomeGeneric
@@ -94,6 +113,19 @@ public enum DeviceFingerprinter {
                 family: .qingping,
                 btHomeData: parsedBTHome,
                 resolvedName: name.isEmpty ? "Qingping Sensor" : name,
+                macAddress: resolvedMac
+            )
+        }
+
+        // 6. Identify Xiaomi / Mijia / LYWSD sensors by name
+        if lowerName.contains("mj_ht") || lowerName.contains("lywsd") || lowerName.contains("mijia") {
+            let resolved = lowerName.contains("01zm") || lowerName.contains("mj_ht_v1") || lowerName.contains("lywsdcgq")
+                ? "Xiaomi Mijia Temp & RH (LYWSDCGQ)"
+                : (lowerName.contains("lywsd03") ? "Xiaomi Mijia Temp & RH (LYWSD03MMC)" : (name.isEmpty ? "Xiaomi Mijia Sensor" : name))
+            return DeviceIdentificationResult(
+                family: .xiaomi,
+                btHomeData: parsedBTHome,
+                resolvedName: resolved,
                 macAddress: resolvedMac
             )
         }

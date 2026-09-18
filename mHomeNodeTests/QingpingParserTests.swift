@@ -10,7 +10,7 @@ final class QingpingParserTests: XCTestCase {
         // Bytes 2..7: MAC address (reverse order: 12 34 56 78 9A BC) -> BC:9A:78:56:34:12
         // TLV 1: Tag 0x01 (Temp & Humidity), Len 4, Temp 215 (21.5 °C: 0xD7, 0x00), Humidity 482 (48.2 %: 0xE2, 0x01)
         // TLV 2: Tag 0x02 (Battery), Len 1, Value 85% (0x55)
-        var bytes: [UInt8] = [
+        let bytes: [UInt8] = [
             0x08, 0x01,
             0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC,
             0x01, 0x04, 0xD7, 0x00, 0xE2, 0x01,
@@ -43,7 +43,7 @@ final class QingpingParserTests: XCTestCase {
         // Bytes 12-13: Humidity 55.0 % (550 = 0x26, 0x02)
         // Bytes 14-15: 0x00, 0x00
         // Byte 16: Battery 92% (0x5C)
-        var bytes: [UInt8] = [
+        let bytes: [UInt8] = [
             0x04, 0x10,
             0x11, 0x22, 0x33, 0x44, 0x55, 0x66,
             0x00, 0x00,

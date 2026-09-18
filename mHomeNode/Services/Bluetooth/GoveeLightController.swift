@@ -3,6 +3,7 @@ import Foundation
 import OSLog
 import SwiftUI
 
+@MainActor
 public protocol BLEConnectionManager: AnyObject {
     func connect(peripheral: CBPeripheral)
     func cancelConnection(peripheral: CBPeripheral)

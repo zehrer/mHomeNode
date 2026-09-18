@@ -283,12 +283,85 @@ final class AdvancedCLIBleScanner: NSObject, CBCentralManagerDelegate {
                             off += 1
                         }
                     }
-                } else if uStr.contains("FE95") {
+                } else if uStr.contains("FE95") && data.count >= 5 {
                     // Xiaomi MiBeacon
                     family = "Xiaomi Mijia"
                     vendorName = "Xiaomi"
                     vendorCategory = "Smart Home Sensor"
-                    if rawName.isEmpty { resolvedName = "Xiaomi Sensor" }
+
+                    let frctrl = UInt16(data[0]) | (UInt16(data[1]) << 8)
+                    let isEncrypted = ((frctrl >> 3) & 1) != 0
+                    let macInclude = ((frctrl >> 4) & 1) != 0
+                    let capabilityInclude = ((frctrl >> 5) & 1) != 0
+                    let objectInclude = ((frctrl >> 6) & 1) != 0
+                    let prodId = UInt16(data[2]) | (UInt16(data[3]) << 8)
+
+                    switch prodId {
+                    case 0x01AA: resolvedName = "Xiaomi Mijia Temp & RH (LYWSDCGQ)"
+                    case 0x045B: resolvedName = "Xiaomi E-Ink Clock (LYWSD02)"
+                    case 0x055B: resolvedName = "Xiaomi Mijia Square Temp & RH (LYWSD03MMC)"
+                    case 0x0347: resolvedName = "Qingping Temp & RH (CGG1)"
+                    case 0x0576: resolvedName = "Qingping Alarm Clock (CGD1)"
+                    case 0x066F: resolvedName = "Qingping Temp & RH Lite (CGDK2)"
+                    case 0x0387: resolvedName = "Miaomiaoce E-Ink Temp & RH (MHO-C401)"
+                    case 0x0098: resolvedName = "Xiaomi Flower Care"
+                    default:
+                        if rawName.isEmpty {
+                            resolvedName = "Xiaomi Mijia (0x\(String(format: "%04X", prodId)))"
+                        }
+                    }
+
+                    var off = 5
+                    if macInclude && data.count >= off + 6 {
+                        let macSlice = Array(data[off..<(off + 6)].reversed())
+                        hardwareMac = macSlice.map { String(format: "%02X", $0) }.joined(separator: ":")
+                        off += 6
+                    }
+
+                    if capabilityInclude && data.count >= off + 1 {
+                        let cap = data[off]
+                        off += 1
+                        if (cap & 0x20) != 0 && data.count >= off + 1 {
+                            off += 1
+                        }
+                    }
+
+                    if objectInclude && !isEncrypted {
+                        while off + 3 <= data.count {
+                            let objType = UInt16(data[off]) | (UInt16(data[off + 1]) << 8)
+                            let objLen = Int(data[off + 2])
+                            off += 3
+                            guard off + objLen <= data.count else { break }
+                            let chunk = data.subdata(in: off..<(off + objLen))
+                            off += objLen
+
+                            switch objType {
+                            case 0x1004:
+                                if chunk.count >= 2 {
+                                    let raw = Int16(bitPattern: UInt16(chunk[0]) | (UInt16(chunk[1]) << 8))
+                                    temp = Double(raw) / 10.0
+                                }
+                            case 0x1006:
+                                if chunk.count >= 2 {
+                                    let raw = UInt16(chunk[0]) | (UInt16(chunk[1]) << 8)
+                                    hum = Double(raw) / 10.0
+                                }
+                            case 0x100A:
+                                if chunk.count >= 1 && chunk[0] <= 100 {
+                                    bat = chunk[0]
+                                }
+                            case 0x100D:
+                                if chunk.count >= 4 {
+                                    let rawTemp = Int16(bitPattern: UInt16(chunk[0]) | (UInt16(chunk[1]) << 8))
+                                    let rawHum = UInt16(chunk[2]) | (UInt16(chunk[3]) << 8)
+                                    temp = Double(rawTemp) / 10.0
+                                    hum = Double(rawHum) / 10.0
+                                }
+                            default:
+                                break
+                            }
+                        }
+                    }
                 } else if uStr.contains("FD3D") {
                     // SwitchBot
                     family = "SwitchBot"
@@ -331,7 +404,6 @@ final class AdvancedCLIBleScanner: NSObject, CBCentralManagerDelegate {
         }
 
         let deviceKey = hardwareMac ?? uuidStr
-        let isNewDevice = devices[deviceKey] == nil
 
         if var existing = devices[deviceKey] {
             existing.rssi = rssiVal
