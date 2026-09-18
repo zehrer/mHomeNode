@@ -47,14 +47,18 @@ public struct ClimateView: View {
         return assignedGroups
     }
 
+    private var activeClimateDevices: [DiscoveredDevice] {
+        climateDevices.filter { !$0.isSignalLost }
+    }
+
     private var overallAverageTemperature: Double? {
-        let temps = climateDevices.compactMap { $0.btHomeData?.temperature }
+        let temps = activeClimateDevices.compactMap { $0.btHomeData?.temperature }
         guard !temps.isEmpty else { return nil }
         return temps.reduce(0, +) / Double(temps.count)
     }
 
     private var overallAverageHumidity: Double? {
-        let hums = climateDevices.compactMap { $0.btHomeData?.humidity }
+        let hums = activeClimateDevices.compactMap { $0.btHomeData?.humidity }
         guard !hums.isEmpty else { return nil }
         return hums.reduce(0, +) / Double(hums.count)
     }

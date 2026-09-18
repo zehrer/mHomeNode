@@ -48,6 +48,25 @@ public struct BTHomeData: Codable, Equatable, Sendable {
         self.genericBoolean = genericBoolean
         self.rawMeasurements = rawMeasurements
     }
+
+    /// Merges incoming sensor measurements without discarding existing valid readings
+    public mutating func merge(with incoming: BTHomeData) {
+        if let t = incoming.temperature { self.temperature = t }
+        if let h = incoming.humidity { self.humidity = h }
+        if let p = incoming.pressure { self.pressure = p }
+        if let b = incoming.battery { self.battery = b }
+        if let l = incoming.illuminance { self.illuminance = l }
+        if let d = incoming.isDoorOpen { self.isDoorOpen = d }
+        if let m = incoming.isMotionDetected { self.isMotionDetected = m }
+        if let btn = incoming.buttonEvent { self.buttonEvent = btn }
+        if let rot = incoming.rotation { self.rotation = rot }
+        if let g = incoming.genericBoolean { self.genericBoolean = g }
+        if let pkt = incoming.packetId { self.packetId = pkt }
+        self.isEncrypted = incoming.isEncrypted
+        for (k, v) in incoming.rawMeasurements {
+            self.rawMeasurements[k] = v
+        }
+    }
 }
 
 public enum ButtonPressEvent: String, Codable, Sendable {

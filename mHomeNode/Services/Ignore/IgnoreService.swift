@@ -14,6 +14,11 @@ public final class IgnoreService {
         load()
     }
 
+    private static let genericNames: Set<String> = [
+        "unknown", "bluetooth le device", "ble device", "xiaomi sensor",
+        "xiaomi mijia", "qingping", "shelly blu", "bthome device", "govee"
+    ]
+
     public func isIgnored(id: String, name: String? = nil) -> Bool {
         let normId = normalize(id)
         if normId.isEmpty { return false }
@@ -21,13 +26,13 @@ public final class IgnoreService {
         for r in ignoredRecords {
             let rNorm = r.normalizedId
             if rNorm == normId { return true }
-            if rNorm.count >= 8 && (normId.contains(rNorm) || rNorm.contains(normId)) {
-                return true
-            }
+
+            // Name matching: only for distinct, non-generic custom names
             if let targetName = name?.lowercased().trimmingCharacters(in: .whitespacesAndNewlines),
                !targetName.isEmpty,
+               !Self.genericNames.contains(targetName),
                let ignoredName = r.name?.lowercased().trimmingCharacters(in: .whitespacesAndNewlines),
-               !ignoredName.isEmpty && targetName == ignoredName {
+               !ignoredName.isEmpty && !Self.genericNames.contains(ignoredName) && targetName == ignoredName {
                 return true
             }
         }

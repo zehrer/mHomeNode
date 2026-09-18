@@ -47,6 +47,7 @@
 		8ACCE02EC240D7854CA42ED6 /* DeviceStorageServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21E0583E340E6E31A23A38D0 /* DeviceStorageServiceTests.swift */; };
 		C5BC091BD84A219763141A3D /* GoveeCommandTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0766D052369DABF0EA0AAFE /* GoveeCommandTests.swift */; };
 		72DB9377C5E6350D48AAEF5A /* RoomProximityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AA53BD5C94ADF64609CE4F /* RoomProximityTests.swift */; };
+		0CF86CFAEB0FC98C173F3ACA /* SensorTelemetryAndDutyCycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8E7E074B6C40A842E111E4 /* SensorTelemetryAndDutyCycleTests.swift */; };
 		9D4E4EB3A9D52CA47965A154 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A4EBE9981B1D585B74C2C11E /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -105,6 +106,7 @@
 		21E0583E340E6E31A23A38D0 /* DeviceStorageServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DeviceStorageServiceTests.swift"; sourceTree = "<group>"; };
 		D0766D052369DABF0EA0AAFE /* GoveeCommandTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GoveeCommandTests.swift"; sourceTree = "<group>"; };
 		97AA53BD5C94ADF64609CE4F /* RoomProximityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RoomProximityTests.swift"; sourceTree = "<group>"; };
+		7E8E7E074B6C40A842E111E4 /* SensorTelemetryAndDutyCycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SensorTelemetryAndDutyCycleTests.swift"; sourceTree = "<group>"; };
 		A4EBE9981B1D585B74C2C11E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets.xcassets"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -309,6 +311,7 @@
 				D0766D052369DABF0EA0AAFE /* GoveeCommandTests.swift */,
 				97AA53BD5C94ADF64609CE4F /* RoomProximityTests.swift */,
 				2798A87DE38639B9F1151C82 /* MiBeaconParserTests.swift */,
+				7E8E7E074B6C40A842E111E4 /* SensorTelemetryAndDutyCycleTests.swift */,
 			);
 			path = mHomeNodeTests;
 			sourceTree = "<group>";
@@ -451,6 +454,7 @@
 				8ACCE02EC240D7854CA42ED6 /* DeviceStorageServiceTests.swift in Sources */,
 				C5BC091BD84A219763141A3D /* GoveeCommandTests.swift in Sources */,
 				72DB9377C5E6350D48AAEF5A /* RoomProximityTests.swift in Sources */,
+				0CF86CFAEB0FC98C173F3ACA /* SensorTelemetryAndDutyCycleTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

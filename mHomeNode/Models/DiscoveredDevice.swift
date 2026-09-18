@@ -30,6 +30,7 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
     public var macAddress: String?
     public var firstSeen: Date
     public var lastSeen: Date
+    public var lastMeasurementDate: Date?
 
     public init(
         id: UUID,
@@ -46,7 +47,8 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
         isIgnored: Bool = false,
         macAddress: String? = nil,
         firstSeen: Date = Date(),
-        lastSeen: Date = Date()
+        lastSeen: Date = Date(),
+        lastMeasurementDate: Date? = nil
     ) {
         self.id = id
         self.name = name
@@ -63,6 +65,36 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
         self.macAddress = macAddress
         self.firstSeen = firstSeen
         self.lastSeen = lastSeen
+        self.lastMeasurementDate = lastMeasurementDate ?? (btHomeData != nil ? lastSeen : nil)
+    }
+
+    /// Elapsed time in seconds since the last sensor measurement packet arrived
+    public var measurementAgeSeconds: TimeInterval? {
+        guard let date = lastMeasurementDate else { return nil }
+        return Date().timeIntervalSince(date)
+    }
+
+    /// Whether the sensor reading is stale / out of signal range (threshold: 30 minutes)
+    public var isSignalLost: Bool {
+        guard let age = measurementAgeSeconds else { return true }
+        return age >= 1800.0 // 30 minutes
+    }
+
+    /// Human-readable quantized measurement age level: "now", "1 min", "2 min" ... "1h"
+    public var measurementAgeText: String {
+        guard let age = measurementAgeSeconds else { return "No signal" }
+        if age >= 1800.0 {
+            return "No signal"
+        }
+        if age < 45.0 {
+            return "now"
+        }
+        let minutes = Int(age / 60.0)
+        if minutes < 60 {
+            return "\(minutes) min"
+        }
+        let hours = Int(age / 3600.0)
+        return "\(hours)h"
     }
 
     /// Whether this device has advertised recently (within the last 45 seconds)

@@ -52,8 +52,8 @@ public final class ScannerViewModel {
         }
         disc.startBrowsing()
 
-        // Auto-start scanning on launch to immediately discover and update nearby devices
-        ble.startScan()
+        // Auto-start duty-cycled burst scanning on launch to discover devices while preserving battery
+        ble.startBurstScan(activeDuration: 4.0, pauseDuration: 4.0)
 
         // Initial room load
         Task { [weak self] in
@@ -62,7 +62,15 @@ public final class ScannerViewModel {
     }
 
     public var isScanning: Bool {
-        bleService.isScanning
+        bleService.isScanning || bleService.isBurstScanning
+    }
+
+    public func pauseScanning() {
+        bleService.pauseScan()
+    }
+
+    public func resumeScanning() {
+        bleService.resumeScan()
     }
 
     public var bluetoothStateText: String {

@@ -18,14 +18,18 @@ public struct RoomClimateCard: View {
         self.onSelectDevice = onSelectDevice
     }
 
+    private var activeDevices: [DiscoveredDevice] {
+        devices.filter { !$0.isSignalLost }
+    }
+
     private var averageTemperature: Double? {
-        let temps = devices.compactMap { $0.btHomeData?.temperature }
+        let temps = activeDevices.compactMap { $0.btHomeData?.temperature }
         guard !temps.isEmpty else { return nil }
         return temps.reduce(0, +) / Double(temps.count)
     }
 
     private var averageHumidity: Double? {
-        let hums = devices.compactMap { $0.btHomeData?.humidity }
+        let hums = activeDevices.compactMap { $0.btHomeData?.humidity }
         guard !hums.isEmpty else { return nil }
         return hums.reduce(0, +) / Double(hums.count)
     }
@@ -78,7 +82,7 @@ public struct RoomClimateCard: View {
                             Text(String(format: "%.1f°C", temp))
                                 .font(.title3.bold().monospacedDigit())
                                 .foregroundColor(.primary)
-                            Text(devices.count > 1 ? "Average" : "Temperature")
+                            Text(activeDevices.count > 1 ? "Average" : "Temperature")
                                 .font(.system(size: 10))
                                 .foregroundColor(.secondary)
                         }
@@ -98,7 +102,7 @@ public struct RoomClimateCard: View {
                             Text(String(format: "%.0f%%", hum))
                                 .font(.title3.bold().monospacedDigit())
                                 .foregroundColor(.primary)
-                            Text(devices.count > 1 ? "Average" : "Humidity")
+                            Text(activeDevices.count > 1 ? "Average" : "Humidity")
                                 .font(.system(size: 10))
                                 .foregroundColor(.secondary)
                         }
@@ -106,6 +110,26 @@ public struct RoomClimateCard: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(10)
                     .background(Color.blue.opacity(0.12))
+                    .cornerRadius(10)
+                }
+
+                if averageTemperature == nil && averageHumidity == nil {
+                    HStack(spacing: 8) {
+                        Image(systemName: "wifi.slash")
+                            .font(.title3)
+                            .foregroundColor(.secondary)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("—")
+                                .font(.title3.bold().monospacedDigit())
+                                .foregroundColor(.secondary)
+                            Text("No Signal")
+                                .font(.system(size: 10))
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(10)
+                    .background(Color(.tertiarySystemFill))
                     .cornerRadius(10)
                 }
             }
@@ -118,19 +142,39 @@ public struct RoomClimateCard: View {
                     } label: {
                         HStack(spacing: 10) {
                             Circle()
-                                .fill(device.isCurrentlyActive ? Color.green : Color.gray.opacity(0.6))
+                                .fill(device.isSignalLost ? Color.gray.opacity(0.4) : (device.isCurrentlyActive ? Color.green : Color.orange))
                                 .frame(width: 8, height: 8)
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(device.displayTitle)
                                     .font(.subheadline.weight(.medium))
-                                    .foregroundColor(.primary)
+                                    .foregroundColor(device.isSignalLost ? .secondary : .primary)
                                     .lineLimit(1)
 
                                 HStack(spacing: 6) {
                                     Text(device.family.rawValue)
                                         .font(.caption2)
                                         .foregroundColor(.secondary)
+
+                                    Text("•")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+
+                                    if device.isSignalLost {
+                                        HStack(spacing: 2) {
+                                            Image(systemName: "wifi.slash")
+                                            Text("No signal")
+                                        }
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                    } else {
+                                        HStack(spacing: 2) {
+                                            Image(systemName: "clock")
+                                            Text(device.measurementAgeText)
+                                        }
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                    }
 
                                     if let battery = device.btHomeData?.battery {
                                         Text("•")
@@ -150,16 +194,22 @@ public struct RoomClimateCard: View {
 
                             // Individual metrics if multiple devices
                             if devices.count > 1 {
-                                HStack(spacing: 8) {
-                                    if let t = device.btHomeData?.temperature {
-                                        Text(String(format: "%.1f°C", t))
-                                            .font(.caption.bold().monospacedDigit())
-                                            .foregroundColor(.primary)
-                                    }
-                                    if let h = device.btHomeData?.humidity {
-                                        Text(String(format: "%.0f%%", h))
-                                            .font(.caption.monospacedDigit())
-                                            .foregroundColor(.blue)
+                                if device.isSignalLost {
+                                    Text("—")
+                                        .font(.caption.bold().monospacedDigit())
+                                        .foregroundColor(.secondary)
+                                } else {
+                                    HStack(spacing: 8) {
+                                        if let t = device.btHomeData?.temperature {
+                                            Text(String(format: "%.1f°C", t))
+                                                .font(.caption.bold().monospacedDigit())
+                                                .foregroundColor(.primary)
+                                        }
+                                        if let h = device.btHomeData?.humidity {
+                                            Text(String(format: "%.0f%%", h))
+                                                .font(.caption.monospacedDigit())
+                                                .foregroundColor(.blue)
+                                        }
                                     }
                                 }
                             }

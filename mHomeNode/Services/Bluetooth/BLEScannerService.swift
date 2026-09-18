@@ -28,6 +28,12 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
         self.centralManager = CBCentralManager(delegate: self, queue: .main)
     }
 
+    public private(set) var isBurstScanning: Bool = false
+    private var burstTimer: Timer?
+    private var isBurstActivePhase: Bool = false
+    private var burstActiveDuration: TimeInterval = 4.0
+    private var burstPauseDuration: TimeInterval = 4.0
+
     public func startScan() {
         guard let central = centralManager else { return }
         guard central.state == .poweredOn else {
@@ -46,7 +52,68 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
         )
     }
 
+    /// Starts a duty-cycled burst scan (e.g. 4s active, 4s pause) to continuously receive telemetry while conserving battery
+    public func startBurstScan(activeDuration: TimeInterval = 4.0, pauseDuration: TimeInterval = 4.0) {
+        self.burstActiveDuration = activeDuration
+        self.burstPauseDuration = pauseDuration
+        self.isBurstScanning = true
+        self.isBurstActivePhase = true
+        startScan()
+        scheduleBurstCycle()
+    }
+
+    private func scheduleBurstCycle() {
+        burstTimer?.invalidate()
+        guard isBurstScanning else { return }
+
+        let interval = isBurstActivePhase ? burstActiveDuration : burstPauseDuration
+        burstTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self = self, self.isBurstScanning else { return }
+                if self.isBurstActivePhase {
+                    // Switch to pause phase to save battery
+                    self.centralManager?.stopScan()
+                    self.isScanning = false
+                    self.isBurstActivePhase = false
+                    self.logger.debug("Burst scan cycle: paused (conserving battery)")
+                } else {
+                    // Switch to active scanning phase
+                    guard let central = self.centralManager, central.state == .poweredOn else { return }
+                    central.scanForPeripherals(
+                        withServices: nil,
+                        options: [CBCentralManagerScanOptionAllowDuplicatesKey: true]
+                    )
+                    self.isScanning = true
+                    self.isBurstActivePhase = true
+                    self.logger.debug("Burst scan cycle: active")
+                }
+                self.scheduleBurstCycle()
+            }
+        }
+    }
+
+    public func pauseScan() {
+        burstTimer?.invalidate()
+        burstTimer = nil
+        centralManager?.stopScan()
+        isScanning = false
+        logger.info("Paused BLE scan.")
+    }
+
+    public func resumeScan() {
+        if isBurstScanning {
+            isBurstActivePhase = true
+            startScan()
+            scheduleBurstCycle()
+        } else {
+            startScan()
+        }
+    }
+
     public func stopScan() {
+        isBurstScanning = false
+        burstTimer?.invalidate()
+        burstTimer = nil
         centralManager?.stopScan()
         isScanning = false
         storageService.saveDevicesSync(devices)
@@ -155,7 +222,12 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
                 devices[index].name = resolvedName
             }
             if let btHomeData = identification.btHomeData {
-                devices[index].btHomeData = btHomeData
+                if devices[index].btHomeData != nil {
+                    devices[index].btHomeData?.merge(with: btHomeData)
+                } else {
+                    devices[index].btHomeData = btHomeData
+                }
+                devices[index].lastMeasurementDate = now
             }
             if identification.family != .standardBLE {
                 devices[index].family = identification.family
@@ -181,7 +253,8 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
                 isIgnored: isIgnored,
                 macAddress: identification.macAddress,
                 firstSeen: now,
-                lastSeen: now
+                lastSeen: now,
+                lastMeasurementDate: identification.btHomeData != nil ? now : nil
             )
             devices.append(newDevice)
         }

@@ -38,14 +38,18 @@ public struct RoomDetailView: View {
         }
     }
 
+    private var activeClimateDevices: [DiscoveredDevice] {
+        climateDevices.filter { !$0.isSignalLost }
+    }
+
     private var avgTemp: Double? {
-        let temps = climateDevices.compactMap { $0.btHomeData?.temperature }
+        let temps = activeClimateDevices.compactMap { $0.btHomeData?.temperature }
         guard !temps.isEmpty else { return nil }
         return temps.reduce(0, +) / Double(temps.count)
     }
 
     private var avgHumidity: Double? {
-        let hums = climateDevices.compactMap { $0.btHomeData?.humidity }
+        let hums = activeClimateDevices.compactMap { $0.btHomeData?.humidity }
         guard !hums.isEmpty else { return nil }
         return hums.reduce(0, +) / Double(hums.count)
     }
@@ -214,24 +218,43 @@ public struct RoomDetailView: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(device.displayTitle)
                                         .font(.subheadline.bold())
-                                        .foregroundColor(.primary)
+                                        .foregroundColor(device.isSignalLost ? .secondary : .primary)
 
-                                    if let bth = device.btHomeData {
-                                        HStack(spacing: 8) {
-                                            if let t = bth.temperature {
-                                                Text(String(format: "%.1f°C", t))
-                                                    .font(.caption.bold())
-                                                    .foregroundColor(.primary)
+                                    HStack(spacing: 6) {
+                                        if device.isSignalLost {
+                                            HStack(spacing: 2) {
+                                                Image(systemName: "wifi.slash")
+                                                Text("No signal")
                                             }
-                                            if let h = bth.humidity {
-                                                Text(String(format: "%.0f%%", h))
-                                                    .font(.caption)
-                                                    .foregroundColor(.secondary)
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                        } else {
+                                            HStack(spacing: 2) {
+                                                Image(systemName: "clock")
+                                                Text(device.measurementAgeText)
                                             }
-                                            if let bat = bth.battery {
-                                                Text("🔋 \(bat)%")
-                                                    .font(.caption2)
-                                                    .foregroundColor(.secondary)
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+
+                                            if let bth = device.btHomeData {
+                                                if let t = bth.temperature {
+                                                    Text("•")
+                                                        .font(.caption2)
+                                                        .foregroundColor(.secondary)
+                                                    Text(String(format: "%.1f°C", t))
+                                                        .font(.caption.bold())
+                                                        .foregroundColor(.primary)
+                                                }
+                                                if let h = bth.humidity {
+                                                    Text(String(format: "%.0f%%", h))
+                                                        .font(.caption)
+                                                        .foregroundColor(.secondary)
+                                                }
+                                                if let bat = bth.battery {
+                                                    Text("🔋 \(bat)%")
+                                                        .font(.caption2)
+                                                        .foregroundColor(.secondary)
+                                                }
                                             }
                                         }
                                     }
