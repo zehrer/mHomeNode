@@ -14,6 +14,7 @@
 		6DE5A5B4419F4834EE15CB7E /* ServerRoom.swift in Sources */ = {isa = PBXBuildFile; fileRef = B020F07EC3681B7CEB518A4F /* ServerRoom.swift */; };
 		F77F915E2C1AD3103088A213 /* GoveeCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEB774EBDBA6FA9A1EF2D42F /* GoveeCommand.swift */; };
 		6F9F302A40935993C848D342 /* SavedScanSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7D676CA78252788923A2A65 /* SavedScanSession.swift */; };
+		D905E72278D57E11BE513E9C /* DeviceGrouping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DBD014035DF15A589B4777E /* DeviceGrouping.swift */; };
 		A4E5F23904C5E58859DE85FC /* BTHomeParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB4D82A9E68B915F8381D573 /* BTHomeParser.swift */; };
 		3EF20E822BA8CE3DB5B86206 /* DeviceFingerprinter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BB29E4AFBE36BD2F647E166 /* DeviceFingerprinter.swift */; };
 		B383CC8A06780BF95ECC12A3 /* QingpingParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD56A7BAF97FF101545E2267 /* QingpingParser.swift */; };
@@ -60,6 +61,7 @@
 		84CB017421AD3FF9D930F87D /* ScanExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87A31344B56BC23197338A37 /* ScanExportTests.swift */; };
 		7E42CE48D7C10D9521B5B9E7 /* AutoLocationScanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EEE96E7109687F5E059E1FF /* AutoLocationScanTests.swift */; };
 		B5BC91621BECA9A7A8113A5A /* BLEInspectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E36C363BB6FFDD935C0B16D /* BLEInspectorTests.swift */; };
+		9DD927B6A26F677EBD96EA44 /* DeviceGroupingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1203BD91149EC86BBB5A34 /* DeviceGroupingTests.swift */; };
 		9D4E4EB3A9D52CA47965A154 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A4EBE9981B1D585B74C2C11E /* Assets.xcassets */; };
 		C5E9035B5C1D0F1C014A8C2D /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 97D909D933AE031034FC7267 /* AppIcon.icon */; };
 /* End PBXBuildFile section */
@@ -86,6 +88,7 @@
 		B020F07EC3681B7CEB518A4F /* ServerRoom.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ServerRoom.swift"; sourceTree = "<group>"; };
 		DEB774EBDBA6FA9A1EF2D42F /* GoveeCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GoveeCommand.swift"; sourceTree = "<group>"; };
 		B7D676CA78252788923A2A65 /* SavedScanSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SavedScanSession.swift"; sourceTree = "<group>"; };
+		1DBD014035DF15A589B4777E /* DeviceGrouping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DeviceGrouping.swift"; sourceTree = "<group>"; };
 		AB4D82A9E68B915F8381D573 /* BTHomeParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BTHomeParser.swift"; sourceTree = "<group>"; };
 		2BB29E4AFBE36BD2F647E166 /* DeviceFingerprinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DeviceFingerprinter.swift"; sourceTree = "<group>"; };
 		BD56A7BAF97FF101545E2267 /* QingpingParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QingpingParser.swift"; sourceTree = "<group>"; };
@@ -132,6 +135,7 @@
 		87A31344B56BC23197338A37 /* ScanExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScanExportTests.swift"; sourceTree = "<group>"; };
 		6EEE96E7109687F5E059E1FF /* AutoLocationScanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AutoLocationScanTests.swift"; sourceTree = "<group>"; };
 		7E36C363BB6FFDD935C0B16D /* BLEInspectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BLEInspectorTests.swift"; sourceTree = "<group>"; };
+		4C1203BD91149EC86BBB5A34 /* DeviceGroupingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DeviceGroupingTests.swift"; sourceTree = "<group>"; };
 		A4EBE9981B1D585B74C2C11E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets.xcassets"; sourceTree = "<group>"; };
 		97D909D933AE031034FC7267 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = "AppIcon.icon"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -197,6 +201,7 @@
 				B020F07EC3681B7CEB518A4F /* ServerRoom.swift */,
 				DEB774EBDBA6FA9A1EF2D42F /* GoveeCommand.swift */,
 				B7D676CA78252788923A2A65 /* SavedScanSession.swift */,
+				1DBD014035DF15A589B4777E /* DeviceGrouping.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -367,6 +372,7 @@
 				87A31344B56BC23197338A37 /* ScanExportTests.swift */,
 				6EEE96E7109687F5E059E1FF /* AutoLocationScanTests.swift */,
 				7E36C363BB6FFDD935C0B16D /* BLEInspectorTests.swift */,
+				4C1203BD91149EC86BBB5A34 /* DeviceGroupingTests.swift */,
 			);
 			path = mHomeNodeTests;
 			sourceTree = "<group>";
@@ -470,6 +476,7 @@
 				6DE5A5B4419F4834EE15CB7E /* ServerRoom.swift in Sources */,
 				F77F915E2C1AD3103088A213 /* GoveeCommand.swift in Sources */,
 				6F9F302A40935993C848D342 /* SavedScanSession.swift in Sources */,
+				D905E72278D57E11BE513E9C /* DeviceGrouping.swift in Sources */,
 				A4E5F23904C5E58859DE85FC /* BTHomeParser.swift in Sources */,
 				3EF20E822BA8CE3DB5B86206 /* DeviceFingerprinter.swift in Sources */,
 				B383CC8A06780BF95ECC12A3 /* QingpingParser.swift in Sources */,
@@ -523,6 +530,7 @@
 				84CB017421AD3FF9D930F87D /* ScanExportTests.swift in Sources */,
 				7E42CE48D7C10D9521B5B9E7 /* AutoLocationScanTests.swift in Sources */,
 				B5BC91621BECA9A7A8113A5A /* BLEInspectorTests.swift in Sources */,
+				9DD927B6A26F677EBD96EA44 /* DeviceGroupingTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

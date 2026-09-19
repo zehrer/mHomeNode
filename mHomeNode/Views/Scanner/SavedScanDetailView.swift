@@ -7,6 +7,7 @@ public struct SavedScanDetailView: View {
 
     public let session: SavedScanSession
     @State private var searchText: String = ""
+    @State private var groupingMode: DeviceGroupingMode = .none
     @State private var showDeleteConfirmation: Bool = false
     @State private var isSyncingToServer: Bool = false
     @State private var syncResultBanner: String?
@@ -26,6 +27,10 @@ public struct SavedScanDetailView: View {
             (dev.macAddress?.lowercased().contains(q) ?? false) ||
             dev.family.rawValue.lowercased().contains(q)
         }
+    }
+
+    private var groupedSections: [DeviceGroupSection] {
+        DeviceGroupingHelper.group(devices: filteredDevices, mode: groupingMode)
     }
 
     public var body: some View {
@@ -119,14 +124,20 @@ public struct SavedScanDetailView: View {
             }
 
             // MARK: - Captured Devices
-            Section {
-                ForEach(filteredDevices) { device in
-                    DeviceRowView(device: device)
-                }
-            } header: {
-                HStack {
-                    Text("Captured Devices (\(filteredDevices.count))")
-                    Spacer()
+            ForEach(groupedSections) { section in
+                Section {
+                    ForEach(section.devices) { device in
+                        DeviceRowView(device: device)
+                    }
+                } header: {
+                    HStack {
+                        if groupingMode == .none {
+                            Text("Captured Devices (\(filteredDevices.count))")
+                        } else {
+                            Label("\(section.title) (\(section.devices.count))", systemImage: section.iconName)
+                        }
+                        Spacer()
+                    }
                 }
             }
         }
@@ -137,6 +148,14 @@ public struct SavedScanDetailView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
+                    Picker("Group By", selection: $groupingMode) {
+                        ForEach(DeviceGroupingMode.allCases) { mode in
+                            Label(mode.rawValue, systemImage: mode.systemImage).tag(mode)
+                        }
+                    }
+
+                    Divider()
+
                     ShareLink(
                         item: session.exportCSV(),
                         subject: Text("\(session.title).csv"),

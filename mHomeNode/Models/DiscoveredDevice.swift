@@ -16,6 +16,12 @@ public enum DeviceFamily: String, Codable, Sendable {
     case smartLight = "Smart Light"
     case tuya = "Tuya / Telink"
     case audio = "Audio Device"
+    case google = "Google"
+    case sony = "Sony"
+    case bose = "Bose"
+    case garmin = "Garmin"
+    case ruuvi = "Ruuvi"
+    case nordic = "Nordic Semiconductor"
     case standardBLE = "Bluetooth LE Device"
 }
 
@@ -106,6 +112,20 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
                 self.family = .xiaomi
             } else if mfg.contains("tuya") {
                 self.family = .tuya
+            } else if mfg.contains("google") {
+                self.family = .google
+            } else if mfg.contains("sony") {
+                self.family = .sony
+            } else if mfg.contains("bose") {
+                self.family = .bose
+            } else if mfg.contains("garmin") {
+                self.family = .garmin
+            } else if mfg.contains("ruuvi") {
+                self.family = .ruuvi
+            } else if mfg.contains("govee") {
+                self.family = .govee
+            } else if mfg.contains("nordic") {
+                self.family = .nordic
             }
         }
 

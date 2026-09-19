@@ -73,36 +73,42 @@ public struct ScannerView: View {
                     }
                 }
 
-                Section {
-                    ForEach(vm.filteredDevices) { device in
-                        NavigationLink(destination: DeviceDetailView(scannerVM: vm, deviceId: device.id)) {
-                            DeviceRowView(device: device)
-                        }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            if device.isIgnored {
-                                Button {
-                                    vm.unignoreDevice(device)
-                                } label: {
-                                    Label("Restore", systemImage: "arrow.uturn.backward")
+                ForEach(vm.groupedSections) { section in
+                    Section {
+                        ForEach(section.devices) { device in
+                            NavigationLink(destination: DeviceDetailView(scannerVM: vm, deviceId: device.id)) {
+                                DeviceRowView(device: device)
+                            }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                if device.isIgnored {
+                                    Button {
+                                        vm.unignoreDevice(device)
+                                    } label: {
+                                        Label("Restore", systemImage: "arrow.uturn.backward")
+                                    }
+                                    .tint(.green)
+                                } else {
+                                    Button(role: .destructive) {
+                                        vm.ignoreDevice(device, reason: "User Ignored")
+                                    } label: {
+                                        Label("Ignore", systemImage: "nosign")
+                                    }
+                                    .tint(.red)
                                 }
-                                .tint(.green)
-                            } else {
-                                Button(role: .destructive) {
-                                    vm.ignoreDevice(device, reason: "User Ignored")
-                                } label: {
-                                    Label("Ignore", systemImage: "nosign")
-                                }
-                                .tint(.red)
                             }
                         }
-                    }
-                } header: {
-                    HStack {
-                        Text("Devices (\(vm.filteredDevices.count) total • \(vm.activeDevicesCount) active)")
-                        Spacer()
-                        if vm.isScanning {
-                            ProgressView()
-                                .controlSize(.small)
+                    } header: {
+                        HStack {
+                            if vm.groupingMode == .none {
+                                Text("Devices (\(vm.filteredDevices.count) total • \(vm.activeDevicesCount) active)")
+                            } else {
+                                Label("\(section.title) (\(section.devices.count))", systemImage: section.iconName)
+                            }
+                            Spacer()
+                            if vm.isScanning && (vm.groupingMode == .none || section.id == vm.groupedSections.first?.id) {
+                                ProgressView()
+                                    .controlSize(.small)
+                            }
                         }
                     }
                 }
@@ -188,6 +194,12 @@ public struct ScannerView: View {
                             }
 
                             Divider()
+
+                            Picker("Group By", selection: $vm.groupingMode) {
+                                ForEach(DeviceGroupingMode.allCases) { mode in
+                                    Label(mode.rawValue, systemImage: mode.systemImage).tag(mode)
+                                }
+                            }
 
                             Picker("Sort By", selection: $vm.sortOrder) {
                                 ForEach(DeviceSortOrder.allCases) { order in

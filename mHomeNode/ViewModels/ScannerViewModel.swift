@@ -28,6 +28,11 @@ public final class ScannerViewModel {
     public var showIgnoredDevices: Bool = false
     public var minRSSI: Double = -120
     public var sortOrder: DeviceSortOrder = .rssi
+    public var groupingMode: DeviceGroupingMode = .none {
+        didSet {
+            UserDefaults.standard.set(groupingMode.rawValue, forKey: "deviceGroupingMode")
+        }
+    }
 
     public var isSyncing: Bool = false
     public var syncMessage: String?
@@ -82,6 +87,11 @@ public final class ScannerViewModel {
         let storedDist = UserDefaults.standard.double(forKey: "autoScanDistanceThreshold")
         self.isAutoLocationScanEnabled = storedAuto
         self.autoScanDistanceThreshold = storedDist > 0 ? storedDist : 100.0
+
+        if let storedGroup = UserDefaults.standard.string(forKey: "deviceGroupingMode"),
+           let mode = DeviceGroupingMode(rawValue: storedGroup) {
+            self.groupingMode = mode
+        }
 
         disc.onServerDiscovered = { [weak self] server in
             guard let self = self else { return }
@@ -206,6 +216,10 @@ public final class ScannerViewModel {
                 return $0.id.uuidString < $1.id.uuidString
             }
         }
+    }
+
+    public var groupedSections: [DeviceGroupSection] {
+        DeviceGroupingHelper.group(devices: filteredDevices, mode: groupingMode)
     }
 
     public func toggleScan() {

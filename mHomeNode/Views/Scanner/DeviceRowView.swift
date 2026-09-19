@@ -169,6 +169,12 @@ public struct DeviceRowView: View {
         case .smartLight: return "lightbulb.led"
         case .tuya: return "dot.radiowaves.up.forward"
         case .audio: return "headphones"
+        case .google: return "globe"
+        case .sony: return "headphones"
+        case .bose: return "headphones"
+        case .garmin: return "applewatch"
+        case .ruuvi: return "thermometer.sun.fill"
+        case .nordic: return "cpu"
         case .standardBLE: return "antenna.radiowaves.left.and.right"
         }
     }
@@ -189,6 +195,12 @@ public struct DeviceRowView: View {
         case .smartLight: return .orange
         case .tuya: return .teal
         case .audio: return .indigo
+        case .google: return .red
+        case .sony: return .indigo
+        case .bose: return .indigo
+        case .garmin: return .cyan
+        case .ruuvi: return .teal
+        case .nordic: return .mint
         case .standardBLE: return .secondary
         }
     }

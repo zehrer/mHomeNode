@@ -276,6 +276,116 @@ public enum DeviceFingerprinter {
                     macAddress: resolvedMac
                 )
             }
+
+            // 15. Identify RuuviTag Environmental Sensors (Company ID 0x0499)
+            if mfgId == 0x0499 {
+                var ruuviBTHome = parsedBTHome
+                var ruuviMac = resolvedMac
+                // Ruuvi Format 5 (RAWv2)
+                if mfg.count >= 16 && mfg[2] == 0x05 {
+                    let tempRaw = (Int16(mfg[3]) << 8) | Int16(mfg[4])
+                    let humRaw = (UInt16(mfg[5]) << 8) | UInt16(mfg[6])
+                    let pressRaw = (UInt16(mfg[7]) << 8) | UInt16(mfg[8])
+                    let powerRaw = (UInt16(mfg[15]) << 8) | UInt16(mfg[16])
+
+                    let tempC = Double(tempRaw) * 0.005
+                    let humPct = Double(humRaw) * 0.0025
+                    let pressHpa = (Double(pressRaw) + 50000.0) / 100.0
+                    let batteryMv = Int((powerRaw >> 5) + 1600)
+                    let batPct = UInt8(min(100, max(0, Int((Double(batteryMv) - 2200.0) / (3000.0 - 2200.0) * 100.0))))
+
+                    ruuviBTHome = BTHomeData(
+                        battery: batPct,
+                        temperature: (tempC >= -40.0 && tempC <= 85.0) ? tempC : nil,
+                        humidity: (humPct >= 0 && humPct <= 100) ? humPct : nil,
+                        pressure: (pressHpa >= 500 && pressHpa <= 1200) ? pressHpa : nil
+                    )
+
+                    if mfg.count >= 24 {
+                        let macBytes = Array(mfg[18...23])
+                        ruuviMac = macBytes.map { String(format: "%02X", $0) }.joined(separator: ":")
+                    }
+                }
+                return DeviceIdentificationResult(
+                    family: .ruuvi,
+                    btHomeData: ruuviBTHome,
+                    resolvedName: name.isEmpty ? "RuuviTag Sensor" : name,
+                    macAddress: ruuviMac
+                )
+            }
+
+            // 16. Identify Google (Company ID 0x00E0)
+            if mfgId == 0x00E0 {
+                let googleName = name.isEmpty ? "Google Device" : name
+                return DeviceIdentificationResult(
+                    family: .google,
+                    btHomeData: parsedBTHome,
+                    resolvedName: googleName,
+                    macAddress: resolvedMac
+                )
+            }
+
+            // 17. Identify Sony (Company ID 0x0046)
+            if mfgId == 0x0046 {
+                let isSonyAudio = lowerName.contains("wh-") || lowerName.contains("wf-") || lowerName.contains("srs-") || lowerName.contains("head")
+                let sonyName = isSonyAudio ? (name.isEmpty ? "Sony Audio Device" : name) : (name.isEmpty ? "Sony Device" : name)
+                return DeviceIdentificationResult(
+                    family: isSonyAudio ? .audio : .sony,
+                    btHomeData: parsedBTHome,
+                    resolvedName: sonyName,
+                    macAddress: resolvedMac
+                )
+            }
+
+            // 18. Identify Bose (Company ID 0x009E)
+            if mfgId == 0x009E {
+                return DeviceIdentificationResult(
+                    family: .audio,
+                    btHomeData: parsedBTHome,
+                    resolvedName: name.isEmpty ? "Bose Audio Device" : name,
+                    macAddress: resolvedMac
+                )
+            }
+
+            // 19. Identify Garmin (Company ID 0x0087)
+            if mfgId == 0x0087 {
+                return DeviceIdentificationResult(
+                    family: .garmin,
+                    btHomeData: parsedBTHome,
+                    resolvedName: name.isEmpty ? "Garmin Device" : name,
+                    macAddress: resolvedMac
+                )
+            }
+
+            // 20. Identify Xiaomi / Huami (Company ID 0x0157 or 0x038F)
+            if mfgId == 0x0157 || mfgId == 0x038F {
+                return DeviceIdentificationResult(
+                    family: .xiaomi,
+                    btHomeData: parsedBTHome,
+                    resolvedName: name.isEmpty ? "Xiaomi / Huami Device" : name,
+                    macAddress: resolvedMac
+                )
+            }
+
+            // 21. Identify Govee / Intellirocks (Company ID 0xEC88)
+            if mfgId == 0xEC88 {
+                return DeviceIdentificationResult(
+                    family: .govee,
+                    btHomeData: parsedBTHome,
+                    resolvedName: name.isEmpty ? "Govee Smart Device" : name,
+                    macAddress: resolvedMac
+                )
+            }
+
+            // 22. Identify Nordic Semiconductor (Company ID 0x0059)
+            if mfgId == 0x0059 {
+                return DeviceIdentificationResult(
+                    family: .nordic,
+                    btHomeData: parsedBTHome,
+                    resolvedName: name.isEmpty ? "Nordic nRF Device" : name,
+                    macAddress: resolvedMac
+                )
+            }
         }
 
         // 15. Identify Smart Light controllers by name
@@ -331,6 +441,14 @@ public enum DeviceFingerprinter {
                 }
                 if uuidStr.contains("FCD2") {
                     family = .btHomeGeneric
+                }
+                if uuidStr.contains("FE2C") {
+                    return DeviceIdentificationResult(
+                        family: .google,
+                        btHomeData: parsedBTHome,
+                        resolvedName: resolvedName ?? "Google Fast Pair Device",
+                        macAddress: resolvedMac
+                    )
                 }
             }
         }
