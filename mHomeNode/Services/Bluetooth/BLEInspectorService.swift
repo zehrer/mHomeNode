@@ -39,6 +39,7 @@ public enum KnownGATTService {
         if upper.contains("FDCD") { return "Qingping Service" }
         if upper.contains("FE95") { return "Xiaomi MiHome" }
         if upper.contains("FFF0") { return "Tuya / Telink Service" }
+        if upper.contains("ADE3D529") { return "Samsung Diagnostics & Setup" }
         return "Service (\(uuid.prefix(8)))"
     }
 }
@@ -55,6 +56,8 @@ public enum KnownGATTCharacteristic {
         if upper.contains("2A26") { return "Firmware Revision" }
         if upper.contains("2A27") { return "Hardware Revision" }
         if upper.contains("2A28") { return "Software Revision" }
+        if upper.contains("E9241982") { return "Samsung OS & Diagnostic JSON" }
+        if upper.contains("AD7B334F") { return "Samsung Device Command Port" }
         return "Char (\(uuid.prefix(8)))"
     }
 }
@@ -362,6 +365,14 @@ public final class BLEInspectorService: NSObject, @unchecked Sendable, CBPeriphe
                        !str.isEmpty,
                        str.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0.isPunctuation || $0.isWhitespace) }) {
                         pendingInfo.discoveredServices[sIdx].characteristics[cIdx].valueText = str
+                    } else {
+                        // Extract printable ASCII runs (e.g. JSON strings wrapped in binary framing)
+                        let asciiBytes = data.filter { ($0 >= 32 && $0 <= 126) || $0 == 9 || $0 == 10 || $0 == 13 }
+                        if asciiBytes.count >= 6,
+                           let extracted = String(bytes: asciiBytes, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+                           !extracted.isEmpty {
+                            pendingInfo.discoveredServices[sIdx].characteristics[cIdx].valueText = extracted
+                        }
                     }
                 }
             }
