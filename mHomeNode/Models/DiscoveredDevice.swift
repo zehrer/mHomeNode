@@ -37,6 +37,7 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
     public var firstSeen: Date
     public var lastSeen: Date
     public var lastMeasurementDate: Date?
+    public var inspectionInfo: DeviceInspectionInfo?
 
     public init(
         id: UUID,
@@ -46,6 +47,7 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
         serviceUUIDs: [String] = [],
         manufacturerDataHex: String? = nil,
         serviceDataHex: [String: String]? = nil,
+        inspectionInfo: DeviceInspectionInfo? = nil,
         btHomeData: BTHomeData? = nil,
         family: DeviceFamily = .standardBLE,
         isConnectable: Bool = false,
@@ -64,6 +66,7 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
         self.serviceUUIDs = serviceUUIDs
         self.manufacturerDataHex = manufacturerDataHex
         self.serviceDataHex = serviceDataHex
+        self.inspectionInfo = inspectionInfo
         self.btHomeData = btHomeData
         self.family = family
         self.isConnectable = isConnectable
@@ -74,6 +77,45 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
         self.firstSeen = firstSeen
         self.lastSeen = lastSeen
         self.lastMeasurementDate = lastMeasurementDate ?? (btHomeData != nil ? lastSeen : nil)
+    }
+
+    /// Merges retrieved GATT inspection info and updates name, family, and battery if unassigned
+    public mutating func applyInspectionInfo(_ info: DeviceInspectionInfo) {
+        self.inspectionInfo = info
+
+        if self.name == "Unknown" || self.name.isEmpty {
+            if let dname = info.deviceName, !dname.isEmpty {
+                self.name = dname
+            } else if let model = info.modelNumber, !model.isEmpty {
+                self.name = model
+            } else if let mfg = info.manufacturerName, !mfg.isEmpty {
+                self.name = "\(mfg) Device"
+            }
+        }
+
+        if self.family == .standardBLE, let mfg = info.manufacturerName?.lowercased() {
+            if mfg.contains("apple") {
+                self.family = .apple
+            } else if mfg.contains("samsung") {
+                self.family = .samsung
+            } else if mfg.contains("microsoft") {
+                self.family = .microsoft
+            } else if mfg.contains("shelly") || mfg.contains("alterco") {
+                self.family = .shellyBlu
+            } else if mfg.contains("xiaomi") {
+                self.family = .xiaomi
+            } else if mfg.contains("tuya") {
+                self.family = .tuya
+            }
+        }
+
+        if let bat = info.batteryLevel {
+            if self.btHomeData != nil {
+                self.btHomeData?.battery = bat
+            } else {
+                self.btHomeData = BTHomeData(battery: bat)
+            }
+        }
     }
 
     /// Elapsed time in seconds since the last sensor measurement packet arrived

@@ -440,5 +440,24 @@ public final class ScannerViewModel {
     public func exportAllSummary() -> String {
         ScanExportService.shared.exportAllSummary(sessions: savedScans)
     }
+
+    // MARK: - Active GATT Device Inspection
+
+    public var isInspecting: Bool = false
+    public var inspectionError: String?
+
+    public func inspectDevice(id: UUID) async -> Bool {
+        isInspecting = true
+        inspectionError = nil
+        do {
+            _ = try await bleService.inspectDevice(id: id)
+            isInspecting = false
+            return true
+        } catch {
+            isInspecting = false
+            inspectionError = error.localizedDescription
+            return false
+        }
+    }
 }
 

@@ -17,6 +17,7 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
 
     public private(set) var peripheralMap: [UUID: CBPeripheral] = [:]
     public let goveeController = GoveeLightController()
+    public let inspectorService = BLEInspectorService()
 
     public init(ignoreService: IgnoreService? = nil, storageService: DeviceStorageService? = nil) {
         self.ignoreService = ignoreService ?? .shared
@@ -25,7 +26,9 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
         self.devices = storage.loadDevices()
         super.init()
         self.goveeController.connectionManager = self
-        self.centralManager = CBCentralManager(delegate: self, queue: .main)
+        let cm = CBCentralManager(delegate: self, queue: .main)
+        self.centralManager = cm
+        self.inspectorService.setCentralManager(cm)
     }
 
     public private(set) var isBurstScanning: Bool = false
@@ -313,18 +316,38 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
         return centralManager?.retrievePeripherals(withIdentifiers: [id]).first
     }
 
+    // MARK: - Active GATT Inspection
+    public func inspectDevice(id: UUID) async throws -> DeviceInspectionInfo {
+        guard let peripheral = getPeripheral(id: id) else {
+            throw NSError(
+                domain: "BLEScannerService",
+                code: 404,
+                userInfo: [NSLocalizedDescriptionKey: "Peripheral not currently reachable or out of signal range."]
+            )
+        }
+        let info = try await inspectorService.inspect(peripheral: peripheral)
+        if let index = devices.firstIndex(where: { $0.id == id }) {
+            devices[index].applyInspectionInfo(info)
+            storageService.scheduleSave(devices)
+        }
+        return info
+    }
+
     // MARK: - CBCentralManager Connection Callbacks
 
     public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         goveeController.didConnect(peripheral: peripheral)
+        inspectorService.didConnect(peripheral: peripheral)
     }
 
     public func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
         goveeController.didFailToConnect(peripheral: peripheral, error: error)
+        inspectorService.didFailToConnect(peripheral: peripheral, error: error)
     }
 
     public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         goveeController.didDisconnect(peripheral: peripheral, error: error)
+        inspectorService.didDisconnect(peripheral: peripheral, error: error)
     }
 }
 

@@ -275,7 +275,73 @@ public struct DeviceDetailView: View {
                         }
                     }
 
-                    // MARK: - 5. Technical Details
+                    // MARK: - 5. Active GATT Deep Inspection
+                    if device.isConnectable {
+                        Section {
+                            if let info = device.inspectionInfo {
+                                if let mfg = info.manufacturerName {
+                                    LabeledContent("Manufacturer", value: mfg)
+                                }
+                                if let model = info.modelNumber {
+                                    LabeledContent("Model Number", value: model)
+                                }
+                                if let dname = info.deviceName {
+                                    LabeledContent("GATT Device Name", value: dname)
+                                }
+                                if let cat = info.appearanceCategory {
+                                    LabeledContent("Appearance Category", value: cat)
+                                }
+                                if let fw = info.firmwareRevision {
+                                    LabeledContent("Firmware Revision", value: fw)
+                                }
+                                if let hw = info.hardwareRevision {
+                                    LabeledContent("Hardware Revision", value: hw)
+                                }
+                                if let serial = info.serialNumber {
+                                    LabeledContent("Serial Number", value: serial)
+                                }
+                                if let bat = info.batteryLevel {
+                                    LabeledContent("GATT Battery Level", value: "\(bat)%")
+                                }
+                                LabeledContent("Inspected", value: info.inspectedAt, format: .dateTime)
+                            }
+
+                            if scannerVM.isInspecting {
+                                HStack(spacing: 8) {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                    Text("Connecting & reading GATT characteristics...")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(.vertical, 4)
+                            } else {
+                                Button {
+                                    Task {
+                                        _ = await scannerVM.inspectDevice(id: device.id)
+                                    }
+                                } label: {
+                                    Label(
+                                        device.inspectionInfo == nil ? "Inspect Device (Read GATT Info)" : "Re-inspect Device",
+                                        systemImage: "magnifyingglass.circle"
+                                    )
+                                }
+                                .buttonStyle(.borderless)
+                            }
+
+                            if let err = scannerVM.inspectionError {
+                                Text(err)
+                                    .font(.caption)
+                                    .foregroundStyle(.red)
+                            }
+                        } header: {
+                            Text("Active GATT Deep Inspection")
+                        } footer: {
+                            Text("Connects briefly to query standard Device Information and Generic Access characteristics.")
+                        }
+                    }
+
+                    // MARK: - 6. Technical Details
                     Section("Hardware Metadata") {
                         LabeledContent("Device Family", value: device.family.rawValue)
                         if let mac = device.macAddress {
