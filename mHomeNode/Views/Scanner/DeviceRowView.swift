@@ -164,6 +164,11 @@ public struct DeviceRowView: View {
         case .ecoflow: return "bolt.batteryblock.fill"
         case .switchBot: return "switch.2"
         case .apple: return "apple.logo"
+        case .samsung: return "tv.fill"
+        case .microsoft: return "laptopcomputer"
+        case .smartLight: return "lightbulb.led"
+        case .tuya: return "dot.radiowaves.up.forward"
+        case .audio: return "headphones"
         case .standardBLE: return "antenna.radiowaves.left.and.right"
         }
     }
@@ -179,6 +184,11 @@ public struct DeviceRowView: View {
         case .ecoflow: return .green
         case .switchBot: return .red
         case .apple: return .primary
+        case .samsung: return .blue
+        case .microsoft: return .cyan
+        case .smartLight: return .orange
+        case .tuya: return .teal
+        case .audio: return .indigo
         case .standardBLE: return .secondary
         }
     }

@@ -9,7 +9,7 @@ public final class ScanExportService: Sendable {
     // MARK: - CSV Export
 
     /// Standard CSV header row for scan sessions
-    public static let csvHeader: String = "Session_ID,Session_Title,Timestamp,Latitude,Longitude,Accuracy_m,Place_Name,Notes,Device_ID,Device_Name,Custom_Name,Family,MAC_Address,RSSI_dBm,Is_Active,Battery_pct,Temperature_C,Humidity_pct,Pressure_hPa,Illuminance_lux"
+    public static let csvHeader: String = "Session_ID,Session_Title,Timestamp,Latitude,Longitude,Accuracy_m,Place_Name,Notes,Device_ID,Device_Name,Custom_Name,Family,MAC_Address,RSSI_dBm,Is_Active,Battery_pct,Temperature_C,Humidity_pct,Pressure_hPa,Illuminance_lux,Manufacturer_Data_Hex,Service_UUIDs,Service_Data"
 
     /// Exports a single session's devices to CSV formatted string
     public func exportCSV(session: SavedScanSession) -> String {
@@ -55,10 +55,15 @@ public final class ScanExportService: Sendable {
         let press = device.btHomeData?.pressure.map { String(format: "%.1f", $0) } ?? ""
         let lux = device.btHomeData?.illuminance.map { String(format: "%.0f", $0) } ?? ""
 
+        let mfgHex = escapeCSV(device.manufacturerDataHex ?? "")
+        let svcs = escapeCSV(device.serviceUUIDs.joined(separator: ";"))
+        let sdataStr = escapeCSV(device.serviceDataHex?.map { "\($0.key)=\($0.value)" }.joined(separator: ";") ?? "")
+
         return [
             sessionId, sessionTitle, timestamp, lat, lon, acc, place, notes,
             devId, devName, customName, family, mac, rssi, isActive,
-            battery, temp, hum, press, lux
+            battery, temp, hum, press, lux,
+            mfgHex, svcs, sdataStr
         ].joined(separator: ",")
     }
 

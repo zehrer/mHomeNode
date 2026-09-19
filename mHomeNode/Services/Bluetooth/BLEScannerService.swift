@@ -178,6 +178,14 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
 
         // Extract Service Data
         let serviceData = advertisementData[CBAdvertisementDataServiceDataKey] as? [CBUUID: Data]
+        var serviceDataHexDict: [String: String]? = nil
+        if let serviceData = serviceData, !serviceData.isEmpty {
+            var dict: [String: String] = [:]
+            for (uuid, data) in serviceData {
+                dict[uuid.uuidString] = data.map { String(format: "%02hhX", $0) }.joined()
+            }
+            serviceDataHexDict = dict
+        }
 
         // Extract Manufacturer Data
         let mfgData = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data
@@ -235,6 +243,31 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
             if let mac = identification.macAddress {
                 devices[index].macAddress = mac
             }
+            if isConnectable {
+                devices[index].isConnectable = true
+            }
+
+            // Merge scan-response data (service UUIDs, manufacturer data, service data)
+            for suuid in serviceUUIDStrings {
+                if !devices[index].serviceUUIDs.contains(suuid) {
+                    devices[index].serviceUUIDs.append(suuid)
+                }
+            }
+            if let mfg = mfgDataHex, !mfg.isEmpty {
+                if devices[index].manufacturerDataHex == nil || devices[index].manufacturerDataHex?.isEmpty == true {
+                    devices[index].manufacturerDataHex = mfg
+                }
+            }
+            if let sdict = serviceDataHexDict {
+                if devices[index].serviceDataHex == nil {
+                    devices[index].serviceDataHex = sdict
+                } else {
+                    for (k, v) in sdict {
+                        devices[index].serviceDataHex?[k] = v
+                    }
+                }
+            }
+
             devices[index].isIgnored = isIgnored
             devices[index].lastSeen = now
         } else {
@@ -246,6 +279,7 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
                 rssiHistory: [rssiVal],
                 serviceUUIDs: serviceUUIDStrings,
                 manufacturerDataHex: mfgDataHex,
+                serviceDataHex: serviceDataHexDict,
                 btHomeData: identification.btHomeData,
                 family: identification.family,
                 isConnectable: isConnectable,

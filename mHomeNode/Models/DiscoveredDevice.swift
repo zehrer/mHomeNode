@@ -11,6 +11,11 @@ public enum DeviceFamily: String, Codable, Sendable {
     case ecoflow = "EcoFlow"
     case switchBot = "SwitchBot"
     case apple = "Apple"
+    case samsung = "Samsung"
+    case microsoft = "Microsoft Windows"
+    case smartLight = "Smart Light"
+    case tuya = "Tuya / Telink"
+    case audio = "Audio Device"
     case standardBLE = "Bluetooth LE Device"
 }
 
@@ -21,6 +26,7 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
     public var rssiHistory: [Int]
     public var serviceUUIDs: [String]
     public var manufacturerDataHex: String?
+    public var serviceDataHex: [String: String]?
     public var btHomeData: BTHomeData?
     public var family: DeviceFamily
     public var isConnectable: Bool
@@ -39,6 +45,7 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
         rssiHistory: [Int] = [],
         serviceUUIDs: [String] = [],
         manufacturerDataHex: String? = nil,
+        serviceDataHex: [String: String]? = nil,
         btHomeData: BTHomeData? = nil,
         family: DeviceFamily = .standardBLE,
         isConnectable: Bool = false,
@@ -56,6 +63,7 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
         self.rssiHistory = rssiHistory.isEmpty ? [rssi] : rssiHistory
         self.serviceUUIDs = serviceUUIDs
         self.manufacturerDataHex = manufacturerDataHex
+        self.serviceDataHex = serviceDataHex
         self.btHomeData = btHomeData
         self.family = family
         self.isConnectable = isConnectable

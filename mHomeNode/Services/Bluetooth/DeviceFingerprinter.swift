@@ -180,7 +180,24 @@ public enum DeviceFingerprinter {
             )
         }
 
-        // 10. Identify Apple Devices (HomePod, AirTags, Continuity)
+        // 10. Identify Apple Devices (Mac, iPad, iPhone, HomePod, AirTags, Continuity)
+        if lowerName.contains("macbook") || lowerName.contains("imac") || lowerName.contains("mac mini") || lowerName.contains("mac studio") || lowerName.contains("iphone") || lowerName.contains("ipad") || lowerName.contains("apple watch") || lowerName.contains("airpods") {
+            return DeviceIdentificationResult(
+                family: .apple,
+                btHomeData: nil,
+                resolvedName: name,
+                macAddress: resolvedMac
+            )
+        }
+        if lowerName.contains("find my") || lowerName.contains("airtag") {
+            return DeviceIdentificationResult(
+                family: .apple,
+                btHomeData: nil,
+                resolvedName: name.isEmpty ? "Find My Accessory" : name,
+                macAddress: resolvedMac
+            )
+        }
+
         if let mfg = manufacturerData, mfg.count >= 2 {
             let mfgId = UInt16(mfg[0]) | (UInt16(mfg[1]) << 8)
             if mfgId == 0x004C {
@@ -199,9 +216,108 @@ public enum DeviceFingerprinter {
                     macAddress: resolvedMac
                 )
             }
+
+            // 11. Identify Samsung / SmartThings (Company ID 0x0075)
+            if mfgId == 0x0075 {
+                var samsungName = "Samsung Smart Device"
+                if lowerName.contains("washer") {
+                    samsungName = "Samsung Smart Washer"
+                } else if lowerName.contains("fridge") {
+                    samsungName = "Samsung Smart Refrigerator"
+                } else if lowerName.contains("tv") || lowerName.contains("crystal") || lowerName.contains("qled") || lowerName.contains("uhd") {
+                    samsungName = name.isEmpty ? "Samsung Smart TV" : name
+                } else if !name.isEmpty && name != "Unknown" {
+                    samsungName = "Samsung (\(name))"
+                } else if mfg.count >= 4 && mfg[2] == 0x42 && mfg[3] == 0x04 {
+                    samsungName = "Samsung SmartThings Device"
+                }
+                return DeviceIdentificationResult(
+                    family: .samsung,
+                    btHomeData: parsedBTHome,
+                    resolvedName: samsungName,
+                    macAddress: resolvedMac
+                )
+            }
+
+            // 12. Identify Microsoft Windows PCs (Company ID 0x0006)
+            if mfgId == 0x0006 {
+                let msftName: String
+                if mfg.count >= 4 && mfg[2] == 0x01 && mfg[3] == 0x09 {
+                    msftName = "Windows PC (Swift Pair)"
+                } else if !name.isEmpty && name != "Unknown" {
+                    msftName = "Microsoft Device (\(name))"
+                } else {
+                    msftName = "Microsoft Windows Device"
+                }
+                return DeviceIdentificationResult(
+                    family: .microsoft,
+                    btHomeData: parsedBTHome,
+                    resolvedName: msftName,
+                    macAddress: resolvedMac
+                )
+            }
+
+            // 13. Identify ELK-BLEDDM / Elk Products (Company ID 0x0642)
+            if mfgId == 0x0642 {
+                return DeviceIdentificationResult(
+                    family: .smartLight,
+                    btHomeData: parsedBTHome,
+                    resolvedName: name.isEmpty ? "ELK-BLEDDM LED Controller" : name,
+                    macAddress: resolvedMac
+                )
+            }
+
+            // 14. Identify JBL / Harman Audio (Company ID 0x2982)
+            if mfgId == 0x2982 {
+                return DeviceIdentificationResult(
+                    family: .audio,
+                    btHomeData: parsedBTHome,
+                    resolvedName: name.isEmpty ? "JBL Audio Device" : name,
+                    macAddress: resolvedMac
+                )
+            }
         }
 
-        // 11. Check Service UUIDs for hints
+        // 15. Identify Smart Light controllers by name
+        if lowerName.contains("elk-ble") || lowerName.contains("bleddm") || lowerName.contains("triones") || lowerName.contains("lednet") || lowerName.contains("melpo") || lowerName.contains("rgb_light") {
+            return DeviceIdentificationResult(
+                family: .smartLight,
+                btHomeData: parsedBTHome,
+                resolvedName: name.isEmpty ? "RGB LED Controller" : name,
+                macAddress: resolvedMac
+            )
+        }
+
+        // 16. Identify Audio Devices by name or Airoha BLE service
+        let isAirohaService = serviceUUIDs?.contains { $0.uuidString.uppercased().contains("5052494D") } ?? false
+        if lowerName.starts(with: "jbl") || lowerName.contains("sony") || lowerName.contains("bose") || lowerName.contains("sennheiser") || lowerName.contains("beats") || isAirohaService {
+            return DeviceIdentificationResult(
+                family: .audio,
+                btHomeData: parsedBTHome,
+                resolvedName: name.isEmpty ? "Wireless Audio Device" : name,
+                macAddress: resolvedMac
+            )
+        }
+
+        // 17. Identify Tuya / Telink (OUI A4:C1:38 and/or Service 0xFFF0)
+        let hasTuyaService = serviceUUIDs?.contains { $0.uuidString.uppercased().contains("FFF0") } ?? false
+        let isTelinkMfg = manufacturerData.map { m in
+            m.count >= 6 && m[0] == 0xA4 && m[1] == 0xC1 && m[2] == 0x38
+        } ?? false
+
+        if isTelinkMfg || (hasTuyaService && lowerName.contains("tuya")) || (hasTuyaService && isTelinkMfg) {
+            let tuyaMac = (manufacturerData != nil && manufacturerData!.count >= 6)
+                ? manufacturerData![0..<6].map { String(format: "%02X", $0) }.joined(separator: ":")
+                : resolvedMac
+            return DeviceIdentificationResult(
+                family: .tuya,
+                btHomeData: parsedBTHome,
+                resolvedName: name.isEmpty || name == "Unknown" ? "Tuya / Telink Smart Device" : name,
+                macAddress: tuyaMac
+            )
+        }
+
+        // 18. Check Service UUIDs for hints
         if let serviceUUIDs = serviceUUIDs {
             for uuid in serviceUUIDs {
                 let uuidStr = uuid.uuidString.uppercased()

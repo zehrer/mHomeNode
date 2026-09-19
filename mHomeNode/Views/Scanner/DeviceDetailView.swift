@@ -306,6 +306,24 @@ public struct DeviceDetailView: View {
                                 }
                             }
                         }
+
+                        if let sdata = device.serviceDataHex, !sdata.isEmpty {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Service Data Payloads")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                ForEach(sdata.sorted(by: { $0.key < $1.key }), id: \.key) { key, val in
+                                    HStack {
+                                        Text(key)
+                                            .font(.system(.caption, design: .monospaced).bold())
+                                        Spacer()
+                                        Text(val)
+                                            .font(.system(.caption2, design: .monospaced))
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 .navigationTitle(device.displayTitle)
