@@ -26,6 +26,7 @@
 		5748CB36FAE3C2360C723527 /* IgnoreService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB9427B3E91D9B66CA962FA8 /* IgnoreService.swift */; };
 		A42CF434A2254B160A6C6EE8 /* DeviceStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 537977C0F10B43B259289AF5 /* DeviceStorageService.swift */; };
 		1448A5290713F922CC808E52 /* SavedScanStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 783D1084AC7C36D010CAD83B /* SavedScanStorageService.swift */; };
+		5A7AE268610A598A38416FA1 /* ScanExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40EB68770401B43619967E2A /* ScanExportService.swift */; };
 		E0481886BF702CFB6782CD90 /* ScannerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5749131E0183103C5FF1A55 /* ScannerViewModel.swift */; };
 		5E5E235530D2A23BF09AFC3A /* SignalStrengthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF4A32BFA3601546407FDDB4 /* SignalStrengthView.swift */; };
 		778581DDCB5B072E49DE8CD0 /* SensorMetricBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2375A4F98FD49F6FC6D1BB4 /* SensorMetricBadge.swift */; };
@@ -55,6 +56,8 @@
 		72DB9377C5E6350D48AAEF5A /* RoomProximityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AA53BD5C94ADF64609CE4F /* RoomProximityTests.swift */; };
 		0CF86CFAEB0FC98C173F3ACA /* SensorTelemetryAndDutyCycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8E7E074B6C40A842E111E4 /* SensorTelemetryAndDutyCycleTests.swift */; };
 		EF341971B1B640C6F2A4E11C /* SavedScanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5E47E9CB7F6A5E7FF27A58 /* SavedScanTests.swift */; };
+		84CB017421AD3FF9D930F87D /* ScanExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87A31344B56BC23197338A37 /* ScanExportTests.swift */; };
+		7E42CE48D7C10D9521B5B9E7 /* AutoLocationScanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EEE96E7109687F5E059E1FF /* AutoLocationScanTests.swift */; };
 		9D4E4EB3A9D52CA47965A154 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A4EBE9981B1D585B74C2C11E /* Assets.xcassets */; };
 		C5E9035B5C1D0F1C014A8C2D /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 97D909D933AE031034FC7267 /* AppIcon.icon */; };
 /* End PBXBuildFile section */
@@ -93,6 +96,7 @@
 		AB9427B3E91D9B66CA962FA8 /* IgnoreService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "IgnoreService.swift"; sourceTree = "<group>"; };
 		537977C0F10B43B259289AF5 /* DeviceStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DeviceStorageService.swift"; sourceTree = "<group>"; };
 		783D1084AC7C36D010CAD83B /* SavedScanStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SavedScanStorageService.swift"; sourceTree = "<group>"; };
+		40EB68770401B43619967E2A /* ScanExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScanExportService.swift"; sourceTree = "<group>"; };
 		D5749131E0183103C5FF1A55 /* ScannerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScannerViewModel.swift"; sourceTree = "<group>"; };
 		CF4A32BFA3601546407FDDB4 /* SignalStrengthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SignalStrengthView.swift"; sourceTree = "<group>"; };
 		B2375A4F98FD49F6FC6D1BB4 /* SensorMetricBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SensorMetricBadge.swift"; sourceTree = "<group>"; };
@@ -122,6 +126,8 @@
 		97AA53BD5C94ADF64609CE4F /* RoomProximityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RoomProximityTests.swift"; sourceTree = "<group>"; };
 		7E8E7E074B6C40A842E111E4 /* SensorTelemetryAndDutyCycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SensorTelemetryAndDutyCycleTests.swift"; sourceTree = "<group>"; };
 		AF5E47E9CB7F6A5E7FF27A58 /* SavedScanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SavedScanTests.swift"; sourceTree = "<group>"; };
+		87A31344B56BC23197338A37 /* ScanExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScanExportTests.swift"; sourceTree = "<group>"; };
+		6EEE96E7109687F5E059E1FF /* AutoLocationScanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AutoLocationScanTests.swift"; sourceTree = "<group>"; };
 		A4EBE9981B1D585B74C2C11E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets.xcassets"; sourceTree = "<group>"; };
 		97D909D933AE031034FC7267 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = "AppIcon.icon"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -199,6 +205,7 @@
 				3BFCBF1951B0CD083D886483 /* Ignore */,
 				688A9E7E6C600A4B86F0A873 /* Storage */,
 				105E5B008E78F40BB4325A0A /* Location */,
+				2224CDC0DFC998777F56180B /* Export */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -248,6 +255,14 @@
 				AB9427B3E91D9B66CA962FA8 /* IgnoreService.swift */,
 			);
 			path = Ignore;
+			sourceTree = "<group>";
+		};
+		2224CDC0DFC998777F56180B /* Export */ = {
+			isa = PBXGroup;
+			children = (
+				40EB68770401B43619967E2A /* ScanExportService.swift */,
+			);
+			path = Export;
 			sourceTree = "<group>";
 		};
 		E3EEF78AC67933824D83D3B4 /* ViewModels */ = {
@@ -344,6 +359,8 @@
 				2798A87DE38639B9F1151C82 /* MiBeaconParserTests.swift */,
 				7E8E7E074B6C40A842E111E4 /* SensorTelemetryAndDutyCycleTests.swift */,
 				AF5E47E9CB7F6A5E7FF27A58 /* SavedScanTests.swift */,
+				87A31344B56BC23197338A37 /* ScanExportTests.swift */,
+				6EEE96E7109687F5E059E1FF /* AutoLocationScanTests.swift */,
 			);
 			path = mHomeNodeTests;
 			sourceTree = "<group>";
@@ -459,6 +476,7 @@
 				5748CB36FAE3C2360C723527 /* IgnoreService.swift in Sources */,
 				A42CF434A2254B160A6C6EE8 /* DeviceStorageService.swift in Sources */,
 				1448A5290713F922CC808E52 /* SavedScanStorageService.swift in Sources */,
+				5A7AE268610A598A38416FA1 /* ScanExportService.swift in Sources */,
 				E0481886BF702CFB6782CD90 /* ScannerViewModel.swift in Sources */,
 				5E5E235530D2A23BF09AFC3A /* SignalStrengthView.swift in Sources */,
 				778581DDCB5B072E49DE8CD0 /* SensorMetricBadge.swift in Sources */,
@@ -495,6 +513,8 @@
 				72DB9377C5E6350D48AAEF5A /* RoomProximityTests.swift in Sources */,
 				0CF86CFAEB0FC98C173F3ACA /* SensorTelemetryAndDutyCycleTests.swift in Sources */,
 				EF341971B1B640C6F2A4E11C /* SavedScanTests.swift in Sources */,
+				84CB017421AD3FF9D930F87D /* ScanExportTests.swift in Sources */,
+				7E42CE48D7C10D9521B5B9E7 /* AutoLocationScanTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

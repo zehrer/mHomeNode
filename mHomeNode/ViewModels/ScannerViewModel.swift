@@ -32,6 +32,30 @@ public final class ScannerViewModel {
     public var isSyncing: Bool = false
     public var syncMessage: String?
 
+    // MARK: - Auto-Location Scan Settings & State
+    public var isAutoLocationScanEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(isAutoLocationScanEnabled, forKey: "isAutoLocationScanEnabled")
+            if isAutoLocationScanEnabled {
+                locationService.startAutoTracking(distanceThreshold: autoScanDistanceThreshold)
+            } else {
+                locationService.stopAutoTracking()
+            }
+        }
+    }
+
+    public var autoScanDistanceThreshold: Double {
+        didSet {
+            UserDefaults.standard.set(autoScanDistanceThreshold, forKey: "autoScanDistanceThreshold")
+            if isAutoLocationScanEnabled {
+                locationService.startAutoTracking(distanceThreshold: autoScanDistanceThreshold)
+            }
+        }
+    }
+
+    public var autoScanBanner: String?
+    public var lastAutoScanLocation: ScanLocation?
+
     public init(
         bleService: BLEScannerService? = nil,
         ignoreService: IgnoreService? = nil,
@@ -47,10 +71,17 @@ public final class ScannerViewModel {
         let disc = discoveryService ?? .shared
         self.discoveryService = disc
         self.serverClient = serverClient
-        self.locationService = locationService ?? LocationService()
+        let loc = locationService ?? LocationService()
+        self.locationService = loc
         let storage = savedScanStorage ?? .shared
         self.savedScanStorage = storage
         self.savedScans = storage.loadSessions()
+
+        // Load persisted auto-scan settings
+        let storedAuto = UserDefaults.standard.bool(forKey: "isAutoLocationScanEnabled")
+        let storedDist = UserDefaults.standard.double(forKey: "autoScanDistanceThreshold")
+        self.isAutoLocationScanEnabled = storedAuto
+        self.autoScanDistanceThreshold = storedDist > 0 ? storedDist : 100.0
 
         disc.onServerDiscovered = { [weak self] server in
             guard let self = self else { return }
@@ -62,6 +93,17 @@ public final class ScannerViewModel {
         }
         disc.startBrowsing()
 
+        // Setup auto-location scan callback
+        loc.onSignificantLocationChange = { [weak self] newLocation, distance in
+            Task { @MainActor in
+                self?.handleAutoLocationChange(newLocation: newLocation, distance: distance)
+            }
+        }
+
+        if storedAuto {
+            loc.startAutoTracking(distanceThreshold: self.autoScanDistanceThreshold)
+        }
+
         // Auto-start duty-cycled burst scanning on launch to discover devices while preserving battery
         ble.startBurstScan(activeDuration: 4.0, pauseDuration: 4.0)
 
@@ -69,6 +111,28 @@ public final class ScannerViewModel {
         Task { [weak self] in
             await self?.loadServerRooms()
         }
+    }
+
+    private func handleAutoLocationChange(newLocation: ScanLocation, distance: CLLocationDistance) {
+        guard isAutoLocationScanEnabled else { return }
+
+        // If there are discovered devices from previous location, snapshot them
+        let activeCount = bleService.devices.filter { !$0.isIgnored }.count
+        if activeCount > 0 {
+            let prevLoc = lastAutoScanLocation ?? newLocation
+            let title = "Auto: \(prevLoc.displayTitle)"
+            let note = "Automatically saved upon moving \(Int(distance))m"
+            _ = saveCurrentScan(title: title, note: note, location: prevLoc)
+            // Clear device buffer for new location
+            bleService.clear()
+        }
+
+        lastAutoScanLocation = newLocation
+        if !isScanning {
+            bleService.resumeScan()
+        }
+
+        autoScanBanner = "📍 New location: \(newLocation.displayTitle). Started fresh scan."
     }
 
     public var isScanning: Bool {
@@ -361,4 +425,20 @@ public final class ScannerViewModel {
             return nil
         }
     }
+
+    // MARK: - Bulk Export
+
+    public func exportAllCSV() -> String {
+        ScanExportService.shared.exportAllCSV(sessions: savedScans)
+    }
+
+    public func exportAllJSON() -> String? {
+        guard let data = ScanExportService.shared.exportAllJSONData(sessions: savedScans) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    public func exportAllSummary() -> String {
+        ScanExportService.shared.exportAllSummary(sessions: savedScans)
+    }
 }
+

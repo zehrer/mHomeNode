@@ -94,6 +94,40 @@ public struct SavedScansListView: View {
             .navigationTitle("Saved Scans")
             .searchable(text: $searchText, prompt: "Search saved scans by title or location")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    if !viewModel.savedScans.isEmpty {
+                        Menu {
+                            ShareLink(
+                                item: viewModel.exportAllCSV(),
+                                subject: Text("mHomeNode_all_scans.csv"),
+                                message: Text("mHomeNode BLE Scans (CSV)")
+                            ) {
+                                Label("Export All as CSV (Excel)", systemImage: "tablecells")
+                            }
+
+                            if let json = viewModel.exportAllJSON() {
+                                ShareLink(
+                                    item: json,
+                                    subject: Text("mHomeNode_all_scans.json"),
+                                    message: Text("mHomeNode BLE Scans (JSON)")
+                                ) {
+                                    Label("Export All as JSON (Backup)", systemImage: "curlybraces")
+                                }
+                            }
+
+                            ShareLink(
+                                item: viewModel.exportAllSummary(),
+                                subject: Text("mHomeNode_scans_summary.txt"),
+                                message: Text("mHomeNode BLE Scans Summary")
+                            ) {
+                                Label("Export All as Summary Text", systemImage: "doc.text")
+                            }
+                        } label: {
+                            Label("Export", systemImage: "square.and.arrow.up")
+                        }
+                    }
+                }
+
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
                         dismiss()

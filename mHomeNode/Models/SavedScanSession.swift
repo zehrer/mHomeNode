@@ -126,4 +126,10 @@ public struct SavedScanSession: Identifiable, Codable, Equatable, Sendable {
         encoder.dateEncodingStrategy = .iso8601
         return try? encoder.encode(self)
     }
+
+    /// Exports session devices to CSV formatted string
+    public func exportCSV() -> String {
+        ScanExportService.shared.exportCSV(session: self)
+    }
 }
+

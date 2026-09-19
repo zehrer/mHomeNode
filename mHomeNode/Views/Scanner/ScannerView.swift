@@ -20,6 +20,21 @@ public struct ScannerView: View {
                     }
                 }
 
+                if let autoMsg = vm.autoScanBanner {
+                    Section {
+                        HStack {
+                            Label(autoMsg, systemImage: "sparkles")
+                                .font(.footnote)
+                                .foregroundColor(.accentColor)
+                            Spacer()
+                            Button("OK") {
+                                vm.autoScanBanner = nil
+                            }
+                            .buttonStyle(.borderless)
+                        }
+                    }
+                }
+
                 if let syncMsg = vm.syncMessage {
                     Section {
                         HStack {
@@ -31,6 +46,30 @@ public struct ScannerView: View {
                             }
                             .buttonStyle(.borderless)
                         }
+                    }
+                }
+
+                if vm.isAutoLocationScanEnabled {
+                    Section {
+                        HStack(spacing: 10) {
+                            Image(systemName: "location.fill")
+                                .foregroundColor(.green)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Auto-Scan on Move Active")
+                                    .font(.subheadline.bold())
+                                Text("Archives & restarts scan after moving \(Int(vm.autoScanDistanceThreshold))m")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
+                            Spacer()
+                            if let lastPlace = vm.lastAutoScanLocation?.displayTitle {
+                                Text(lastPlace)
+                                    .font(.caption2)
+                                    .foregroundColor(.blue)
+                                    .lineLimit(1)
+                            }
+                        }
+                        .padding(.vertical, 2)
                     }
                 }
 
@@ -131,8 +170,22 @@ public struct ScannerView: View {
                         .help("View saved scan archive")
 
                         Menu {
-                            Toggle("Known Sensors Only", isOn: $vm.onlyKnownDevices)
-                            Toggle("Show Ignored Devices", isOn: $vm.showIgnoredDevices)
+                            Section("Location Auto-Scan") {
+                                Toggle("Auto-Scan on Move", isOn: $vm.isAutoLocationScanEnabled)
+                                if vm.isAutoLocationScanEnabled {
+                                    Picker("Distance Trigger", selection: $vm.autoScanDistanceThreshold) {
+                                        Text("50 m").tag(50.0)
+                                        Text("100 m").tag(100.0)
+                                        Text("250 m").tag(250.0)
+                                        Text("500 m").tag(500.0)
+                                    }
+                                }
+                            }
+
+                            Section("Filters") {
+                                Toggle("Known Sensors Only", isOn: $vm.onlyKnownDevices)
+                                Toggle("Show Ignored Devices", isOn: $vm.showIgnoredDevices)
+                            }
 
                             Divider()
 
@@ -142,7 +195,7 @@ public struct ScannerView: View {
                                 }
                             }
                         } label: {
-                            Image(systemName: "line.3.horizontal.decrease.circle")
+                            Image(systemName: vm.isAutoLocationScanEnabled ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
                         }
                     }
                 }

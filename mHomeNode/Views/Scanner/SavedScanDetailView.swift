@@ -138,6 +138,14 @@ public struct SavedScanDetailView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     ShareLink(
+                        item: session.exportCSV(),
+                        subject: Text("\(session.title).csv"),
+                        message: Text("mHomeNode Scan CSV")
+                    ) {
+                        Label("Share CSV (Excel)", systemImage: "tablecells")
+                    }
+
+                    ShareLink(
                         item: session.exportSummary(),
                         subject: Text(session.title),
                         message: Text("mHomeNode BLE Scan Report")
