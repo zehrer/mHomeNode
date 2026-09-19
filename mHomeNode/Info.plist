@@ -29,6 +29,8 @@
 	<string>mHomeNode uses Bluetooth to discover and monitor HomeNode smart home sensors, Shelly BLU, and BLE devices.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>mHomeNode uses Bluetooth to discover and monitor HomeNode smart home sensors, Shelly BLU, and BLE devices.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>mHomeNode uses your location to tag saved BLE scan snapshots with your geographic position.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_homenode._tcp</string>

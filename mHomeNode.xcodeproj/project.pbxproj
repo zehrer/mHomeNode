@@ -13,6 +13,7 @@
 		2BE1E63F8C63E7D45C907481 /* IgnoredDeviceRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D8C0F01EA7417EA1CC1291 /* IgnoredDeviceRecord.swift */; };
 		6DE5A5B4419F4834EE15CB7E /* ServerRoom.swift in Sources */ = {isa = PBXBuildFile; fileRef = B020F07EC3681B7CEB518A4F /* ServerRoom.swift */; };
 		F77F915E2C1AD3103088A213 /* GoveeCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEB774EBDBA6FA9A1EF2D42F /* GoveeCommand.swift */; };
+		6F9F302A40935993C848D342 /* SavedScanSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7D676CA78252788923A2A65 /* SavedScanSession.swift */; };
 		A4E5F23904C5E58859DE85FC /* BTHomeParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB4D82A9E68B915F8381D573 /* BTHomeParser.swift */; };
 		3EF20E822BA8CE3DB5B86206 /* DeviceFingerprinter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BB29E4AFBE36BD2F647E166 /* DeviceFingerprinter.swift */; };
 		B383CC8A06780BF95ECC12A3 /* QingpingParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD56A7BAF97FF101545E2267 /* QingpingParser.swift */; };
@@ -21,8 +22,10 @@
 		A7023E74AED37270E4C78D80 /* GoveeLightController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF43DD70BC9F7234F1998133 /* GoveeLightController.swift */; };
 		7464E070EF41934D799DCD12 /* HomeNodeServerClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04281739B594DC9B66EB58BC /* HomeNodeServerClient.swift */; };
 		DB469F45DC2F747419E948E1 /* HomeNodeDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 159D83C9ABEC83B8E886315C /* HomeNodeDiscoveryService.swift */; };
+		47657C370771C1387AF25C86 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1F835F417C31916A6DEB41 /* LocationService.swift */; };
 		5748CB36FAE3C2360C723527 /* IgnoreService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB9427B3E91D9B66CA962FA8 /* IgnoreService.swift */; };
 		A42CF434A2254B160A6C6EE8 /* DeviceStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 537977C0F10B43B259289AF5 /* DeviceStorageService.swift */; };
+		1448A5290713F922CC808E52 /* SavedScanStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 783D1084AC7C36D010CAD83B /* SavedScanStorageService.swift */; };
 		E0481886BF702CFB6782CD90 /* ScannerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5749131E0183103C5FF1A55 /* ScannerViewModel.swift */; };
 		5E5E235530D2A23BF09AFC3A /* SignalStrengthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF4A32BFA3601546407FDDB4 /* SignalStrengthView.swift */; };
 		778581DDCB5B072E49DE8CD0 /* SensorMetricBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2375A4F98FD49F6FC6D1BB4 /* SensorMetricBadge.swift */; };
@@ -35,6 +38,9 @@
 		5D736AD4CF443BE15BB83FA7 /* DeviceRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA9286612E9DB42C2132B18 /* DeviceRowView.swift */; };
 		D945AB60A95C0AFE891E5A95 /* DeviceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85FBD0516FCDAC06E3F9A1B7 /* DeviceDetailView.swift */; };
 		08726D99F870145971A83E5F /* ScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B1343A9D7B47174973E386F /* ScannerView.swift */; };
+		CABF22E687D1280E0CD6A699 /* SaveScanSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9995201F4DA405349D3D22 /* SaveScanSheet.swift */; };
+		7B2B266588CD0653E69A3553 /* SavedScansListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4D3FC9F362C72CDFD284493 /* SavedScansListView.swift */; };
+		C63D34486DA6CFBF0874F0DD /* SavedScanDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9EBA07CDC512BF77FA70287 /* SavedScanDetailView.swift */; };
 		D080D3096ACDC5D57FD1E936 /* IgnoredDevicesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474076F013242B5594ADAA40 /* IgnoredDevicesListView.swift */; };
 		AB96CC22CB7D323E7976E174 /* ServerStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55364BCEC06FCE7D7043087C /* ServerStatusView.swift */; };
 		B0D02913C35EF51883F29A14 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE71337FF9C0731AF128A4F4 /* ContentView.swift */; };
@@ -48,6 +54,7 @@
 		C5BC091BD84A219763141A3D /* GoveeCommandTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0766D052369DABF0EA0AAFE /* GoveeCommandTests.swift */; };
 		72DB9377C5E6350D48AAEF5A /* RoomProximityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AA53BD5C94ADF64609CE4F /* RoomProximityTests.swift */; };
 		0CF86CFAEB0FC98C173F3ACA /* SensorTelemetryAndDutyCycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8E7E074B6C40A842E111E4 /* SensorTelemetryAndDutyCycleTests.swift */; };
+		EF341971B1B640C6F2A4E11C /* SavedScanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5E47E9CB7F6A5E7FF27A58 /* SavedScanTests.swift */; };
 		9D4E4EB3A9D52CA47965A154 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A4EBE9981B1D585B74C2C11E /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -72,6 +79,7 @@
 		B5D8C0F01EA7417EA1CC1291 /* IgnoredDeviceRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "IgnoredDeviceRecord.swift"; sourceTree = "<group>"; };
 		B020F07EC3681B7CEB518A4F /* ServerRoom.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ServerRoom.swift"; sourceTree = "<group>"; };
 		DEB774EBDBA6FA9A1EF2D42F /* GoveeCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GoveeCommand.swift"; sourceTree = "<group>"; };
+		B7D676CA78252788923A2A65 /* SavedScanSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SavedScanSession.swift"; sourceTree = "<group>"; };
 		AB4D82A9E68B915F8381D573 /* BTHomeParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BTHomeParser.swift"; sourceTree = "<group>"; };
 		2BB29E4AFBE36BD2F647E166 /* DeviceFingerprinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DeviceFingerprinter.swift"; sourceTree = "<group>"; };
 		BD56A7BAF97FF101545E2267 /* QingpingParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QingpingParser.swift"; sourceTree = "<group>"; };
@@ -80,8 +88,10 @@
 		AF43DD70BC9F7234F1998133 /* GoveeLightController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GoveeLightController.swift"; sourceTree = "<group>"; };
 		04281739B594DC9B66EB58BC /* HomeNodeServerClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HomeNodeServerClient.swift"; sourceTree = "<group>"; };
 		159D83C9ABEC83B8E886315C /* HomeNodeDiscoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HomeNodeDiscoveryService.swift"; sourceTree = "<group>"; };
+		AA1F835F417C31916A6DEB41 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocationService.swift"; sourceTree = "<group>"; };
 		AB9427B3E91D9B66CA962FA8 /* IgnoreService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "IgnoreService.swift"; sourceTree = "<group>"; };
 		537977C0F10B43B259289AF5 /* DeviceStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DeviceStorageService.swift"; sourceTree = "<group>"; };
+		783D1084AC7C36D010CAD83B /* SavedScanStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SavedScanStorageService.swift"; sourceTree = "<group>"; };
 		D5749131E0183103C5FF1A55 /* ScannerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScannerViewModel.swift"; sourceTree = "<group>"; };
 		CF4A32BFA3601546407FDDB4 /* SignalStrengthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SignalStrengthView.swift"; sourceTree = "<group>"; };
 		B2375A4F98FD49F6FC6D1BB4 /* SensorMetricBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SensorMetricBadge.swift"; sourceTree = "<group>"; };
@@ -94,6 +104,9 @@
 		1AA9286612E9DB42C2132B18 /* DeviceRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DeviceRowView.swift"; sourceTree = "<group>"; };
 		85FBD0516FCDAC06E3F9A1B7 /* DeviceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DeviceDetailView.swift"; sourceTree = "<group>"; };
 		0B1343A9D7B47174973E386F /* ScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScannerView.swift"; sourceTree = "<group>"; };
+		FC9995201F4DA405349D3D22 /* SaveScanSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SaveScanSheet.swift"; sourceTree = "<group>"; };
+		D4D3FC9F362C72CDFD284493 /* SavedScansListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SavedScansListView.swift"; sourceTree = "<group>"; };
+		B9EBA07CDC512BF77FA70287 /* SavedScanDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SavedScanDetailView.swift"; sourceTree = "<group>"; };
 		474076F013242B5594ADAA40 /* IgnoredDevicesListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "IgnoredDevicesListView.swift"; sourceTree = "<group>"; };
 		55364BCEC06FCE7D7043087C /* ServerStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ServerStatusView.swift"; sourceTree = "<group>"; };
 		EE71337FF9C0731AF128A4F4 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContentView.swift"; sourceTree = "<group>"; };
@@ -107,6 +120,7 @@
 		D0766D052369DABF0EA0AAFE /* GoveeCommandTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GoveeCommandTests.swift"; sourceTree = "<group>"; };
 		97AA53BD5C94ADF64609CE4F /* RoomProximityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RoomProximityTests.swift"; sourceTree = "<group>"; };
 		7E8E7E074B6C40A842E111E4 /* SensorTelemetryAndDutyCycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SensorTelemetryAndDutyCycleTests.swift"; sourceTree = "<group>"; };
+		AF5E47E9CB7F6A5E7FF27A58 /* SavedScanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SavedScanTests.swift"; sourceTree = "<group>"; };
 		A4EBE9981B1D585B74C2C11E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets.xcassets"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -169,6 +183,7 @@
 				B5D8C0F01EA7417EA1CC1291 /* IgnoredDeviceRecord.swift */,
 				B020F07EC3681B7CEB518A4F /* ServerRoom.swift */,
 				DEB774EBDBA6FA9A1EF2D42F /* GoveeCommand.swift */,
+				B7D676CA78252788923A2A65 /* SavedScanSession.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -180,6 +195,7 @@
 				377B79A7B896A8C75889DB7E /* Server */,
 				3BFCBF1951B0CD083D886483 /* Ignore */,
 				688A9E7E6C600A4B86F0A873 /* Storage */,
+				105E5B008E78F40BB4325A0A /* Location */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -210,8 +226,17 @@
 			isa = PBXGroup;
 			children = (
 				537977C0F10B43B259289AF5 /* DeviceStorageService.swift */,
+				783D1084AC7C36D010CAD83B /* SavedScanStorageService.swift */,
 			);
 			path = Storage;
+			sourceTree = "<group>";
+		};
+		105E5B008E78F40BB4325A0A /* Location */ = {
+			isa = PBXGroup;
+			children = (
+				AA1F835F417C31916A6DEB41 /* LocationService.swift */,
+			);
+			path = Location;
 			sourceTree = "<group>";
 		};
 		3BFCBF1951B0CD083D886483 /* Ignore */ = {
@@ -277,6 +302,9 @@
 				0B1343A9D7B47174973E386F /* ScannerView.swift */,
 				1AA9286612E9DB42C2132B18 /* DeviceRowView.swift */,
 				85FBD0516FCDAC06E3F9A1B7 /* DeviceDetailView.swift */,
+				FC9995201F4DA405349D3D22 /* SaveScanSheet.swift */,
+				D4D3FC9F362C72CDFD284493 /* SavedScansListView.swift */,
+				B9EBA07CDC512BF77FA70287 /* SavedScanDetailView.swift */,
 			);
 			path = Scanner;
 			sourceTree = "<group>";
@@ -312,6 +340,7 @@
 				97AA53BD5C94ADF64609CE4F /* RoomProximityTests.swift */,
 				2798A87DE38639B9F1151C82 /* MiBeaconParserTests.swift */,
 				7E8E7E074B6C40A842E111E4 /* SensorTelemetryAndDutyCycleTests.swift */,
+				AF5E47E9CB7F6A5E7FF27A58 /* SavedScanTests.swift */,
 			);
 			path = mHomeNodeTests;
 			sourceTree = "<group>";
@@ -413,6 +442,7 @@
 				2BE1E63F8C63E7D45C907481 /* IgnoredDeviceRecord.swift in Sources */,
 				6DE5A5B4419F4834EE15CB7E /* ServerRoom.swift in Sources */,
 				F77F915E2C1AD3103088A213 /* GoveeCommand.swift in Sources */,
+				6F9F302A40935993C848D342 /* SavedScanSession.swift in Sources */,
 				A4E5F23904C5E58859DE85FC /* BTHomeParser.swift in Sources */,
 				3EF20E822BA8CE3DB5B86206 /* DeviceFingerprinter.swift in Sources */,
 				B383CC8A06780BF95ECC12A3 /* QingpingParser.swift in Sources */,
@@ -421,8 +451,10 @@
 				A7023E74AED37270E4C78D80 /* GoveeLightController.swift in Sources */,
 				7464E070EF41934D799DCD12 /* HomeNodeServerClient.swift in Sources */,
 				DB469F45DC2F747419E948E1 /* HomeNodeDiscoveryService.swift in Sources */,
+				47657C370771C1387AF25C86 /* LocationService.swift in Sources */,
 				5748CB36FAE3C2360C723527 /* IgnoreService.swift in Sources */,
 				A42CF434A2254B160A6C6EE8 /* DeviceStorageService.swift in Sources */,
+				1448A5290713F922CC808E52 /* SavedScanStorageService.swift in Sources */,
 				E0481886BF702CFB6782CD90 /* ScannerViewModel.swift in Sources */,
 				5E5E235530D2A23BF09AFC3A /* SignalStrengthView.swift in Sources */,
 				778581DDCB5B072E49DE8CD0 /* SensorMetricBadge.swift in Sources */,
@@ -435,6 +467,9 @@
 				5D736AD4CF443BE15BB83FA7 /* DeviceRowView.swift in Sources */,
 				D945AB60A95C0AFE891E5A95 /* DeviceDetailView.swift in Sources */,
 				08726D99F870145971A83E5F /* ScannerView.swift in Sources */,
+				CABF22E687D1280E0CD6A699 /* SaveScanSheet.swift in Sources */,
+				7B2B266588CD0653E69A3553 /* SavedScansListView.swift in Sources */,
+				C63D34486DA6CFBF0874F0DD /* SavedScanDetailView.swift in Sources */,
 				D080D3096ACDC5D57FD1E936 /* IgnoredDevicesListView.swift in Sources */,
 				AB96CC22CB7D323E7976E174 /* ServerStatusView.swift in Sources */,
 				B0D02913C35EF51883F29A14 /* ContentView.swift in Sources */,
@@ -455,6 +490,7 @@
 				C5BC091BD84A219763141A3D /* GoveeCommandTests.swift in Sources */,
 				72DB9377C5E6350D48AAEF5A /* RoomProximityTests.swift in Sources */,
 				0CF86CFAEB0FC98C173F3ACA /* SensorTelemetryAndDutyCycleTests.swift in Sources */,
+				EF341971B1B640C6F2A4E11C /* SavedScanTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

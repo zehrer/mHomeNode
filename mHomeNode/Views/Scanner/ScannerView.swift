@@ -3,6 +3,8 @@ import SwiftUI
 public struct ScannerView: View {
     @Environment(ScannerViewModel.self) private var viewModel
     @State private var showSettingsSheet = false
+    @State private var showSaveScanSheet = false
+    @State private var showSavedScansList = false
 
     public init() {}
 
@@ -104,19 +106,44 @@ public struct ScannerView: View {
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Toggle("Known Sensors Only", isOn: $vm.onlyKnownDevices)
-                        Toggle("Show Ignored Devices", isOn: $vm.showIgnoredDevices)
+                    HStack(spacing: 12) {
+                        Button {
+                            showSaveScanSheet = true
+                        } label: {
+                            Image(systemName: "camera.viewfinder")
+                        }
+                        .disabled(vm.filteredDevices.isEmpty && vm.bleService.devices.isEmpty)
+                        .help("Save current scan snapshot")
 
-                        Divider()
-
-                        Picker("Sort By", selection: $vm.sortOrder) {
-                            ForEach(DeviceSortOrder.allCases) { order in
-                                Text(order.rawValue).tag(order)
+                        Button {
+                            showSavedScansList = true
+                        } label: {
+                            ZStack(alignment: .topTrailing) {
+                                Image(systemName: "archivebox")
+                                if !vm.savedScans.isEmpty {
+                                    Circle()
+                                        .fill(Color.blue)
+                                        .frame(width: 7, height: 7)
+                                        .offset(x: 2, y: -2)
+                                }
                             }
                         }
-                    } label: {
-                        Image(systemName: "line.3.horizontal.decrease.circle")
+                        .help("View saved scan archive")
+
+                        Menu {
+                            Toggle("Known Sensors Only", isOn: $vm.onlyKnownDevices)
+                            Toggle("Show Ignored Devices", isOn: $vm.showIgnoredDevices)
+
+                            Divider()
+
+                            Picker("Sort By", selection: $vm.sortOrder) {
+                                ForEach(DeviceSortOrder.allCases) { order in
+                                    Text(order.rawValue).tag(order)
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "line.3.horizontal.decrease.circle")
+                        }
                     }
                 }
 
@@ -134,6 +161,12 @@ public struct ScannerView: View {
             }
             .sheet(isPresented: $showSettingsSheet) {
                 ServerStatusView()
+            }
+            .sheet(isPresented: $showSaveScanSheet) {
+                SaveScanSheet()
+            }
+            .sheet(isPresented: $showSavedScansList) {
+                SavedScansListView()
             }
             .overlay {
                 if vm.filteredDevices.isEmpty {

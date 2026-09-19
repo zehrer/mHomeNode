@@ -16,8 +16,12 @@ public final class ScannerViewModel {
     public let ignoreService: IgnoreService
     public let discoveryService: HomeNodeDiscoveryService
     public let serverClient: HomeNodeServerClientProtocol
+    public let locationService: LocationService
+    public let savedScanStorage: SavedScanStorageService
+
     public var serverConfig: ServerConfig = ServerConfig()
     public var serverRooms: [ServerRoom] = []
+    public var savedScans: [SavedScanSession] = []
 
     public var searchText: String = ""
     public var onlyKnownDevices: Bool = false
@@ -32,7 +36,9 @@ public final class ScannerViewModel {
         bleService: BLEScannerService? = nil,
         ignoreService: IgnoreService? = nil,
         discoveryService: HomeNodeDiscoveryService? = nil,
-        serverClient: HomeNodeServerClientProtocol = LiveHomeNodeServerClient()
+        serverClient: HomeNodeServerClientProtocol = LiveHomeNodeServerClient(),
+        locationService: LocationService? = nil,
+        savedScanStorage: SavedScanStorageService? = nil
     ) {
         let ign = ignoreService ?? .shared
         self.ignoreService = ign
@@ -41,6 +47,10 @@ public final class ScannerViewModel {
         let disc = discoveryService ?? .shared
         self.discoveryService = disc
         self.serverClient = serverClient
+        self.locationService = locationService ?? LocationService()
+        let storage = savedScanStorage ?? .shared
+        self.savedScanStorage = storage
+        self.savedScans = storage.loadSessions()
 
         disc.onServerDiscovered = { [weak self] server in
             guard let self = self else { return }
@@ -291,5 +301,64 @@ public final class ScannerViewModel {
 
         guard let room = bestRoom, let dev = bestDevice else { return nil }
         return (roomName: room, strongestDevice: dev, rssi: maxRssi)
+    }
+
+    // MARK: - Saved Scan Sessions
+
+    @discardableResult
+    public func saveCurrentScan(title: String, note: String? = nil, location: ScanLocation? = nil) -> SavedScanSession {
+        let snapshotDevices = filteredDevices.isEmpty ? bleService.devices.filter { !$0.isIgnored } : filteredDevices
+        let session = SavedScanSession(
+            title: title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ? "Scan (\(Date().formatted(date: .abbreviated, time: .shortened)))"
+                : title.trimmingCharacters(in: .whitespacesAndNewlines),
+            timestamp: Date(),
+            location: location,
+            note: note?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? note : nil,
+            devices: snapshotDevices
+        )
+
+        savedScanStorage.saveSession(session)
+        savedScans.insert(session, at: 0)
+        return session
+    }
+
+    public func deleteSavedScan(id: UUID) {
+        savedScans.removeAll { $0.id == id }
+        savedScanStorage.deleteSession(id: id)
+    }
+
+    public func reloadSavedScans() {
+        savedScans = savedScanStorage.loadSessions()
+    }
+
+    public func syncSavedScanToServer(_ session: SavedScanSession) async -> (ingested: Int, ignored: Int)? {
+        isSyncing = true
+        syncMessage = nil
+
+        let scoutTag: String
+        if let place = session.location?.placeName, !place.isEmpty {
+            scoutTag = "iPhone (mHomeNode - \(place))"
+        } else {
+            scoutTag = "iPhone (mHomeNode - \(session.title))"
+        }
+
+        let items = session.devices.map { $0.toMobileBleScanItem(scoutName: scoutTag) }
+        guard !items.isEmpty else {
+            syncMessage = "No devices in this snapshot to transfer."
+            isSyncing = false
+            return nil
+        }
+
+        do {
+            let res = try await serverClient.sendMobileBleScan(config: serverConfig, items: items)
+            syncMessage = "\(res.ingested) device(s) from snapshot synced to Server"
+            isSyncing = false
+            return (ingested: res.ingested, ignored: res.ignored)
+        } catch {
+            syncMessage = "Sync error: \(error.localizedDescription)"
+            isSyncing = false
+            return nil
+        }
     }
 }
