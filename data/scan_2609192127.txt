@@ -1,0 +1,1718 @@
+{
+  "devices" : [
+    {
+      "family" : "Samsung",
+      "firstSeen" : "2026-09-19T19:25:19Z",
+      "id" : "4D6DE245-7AF7-6357-FABB-07B2D05D24A0",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:25:19Z",
+      "manufacturerDataHex" : "75004204012076250F00020137010100010C93F151060000000C",
+      "name" : "[TV] 55\" Crystal UHD",
+      "rssi" : -103,
+      "rssiHistory" : [
+        -103
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Samsung",
+      "firstSeen" : "2026-09-19T19:24:32Z",
+      "id" : "36F7526A-6A84-760E-DCD8-0286C0B9C7A4",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:25:16Z",
+      "manufacturerDataHex" : "7500420401207E18050002010000000000000000000000000000",
+      "name" : "[TV] Samsung Q7 Series (55)",
+      "rssi" : -103,
+      "rssiHistory" : [
+        -101,
+        -102,
+        -101,
+        -102,
+        -102,
+        -102,
+        -103,
+        -102,
+        -102,
+        -103,
+        -105,
+        -103,
+        -102,
+        -102,
+        -103,
+        -103
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Samsung",
+      "firstSeen" : "2026-09-19T19:22:27Z",
+      "id" : "3C5C5C0E-1100-38AC-0086-92E3BF11C800",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:25:40Z",
+      "manufacturerDataHex" : "7500021844A112DAEAAD70FC021C2806D552860A1457A96D800E2336",
+      "name" : "65\" Crystal UHD",
+      "rssi" : -99,
+      "rssiHistory" : [
+        -96,
+        -97,
+        -96,
+        -98,
+        -99,
+        -96,
+        -96,
+        -96,
+        -96,
+        -96,
+        -100,
+        -100,
+        -100,
+        -99,
+        -98,
+        -97,
+        -99,
+        -97,
+        -98,
+        -99
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Samsung",
+      "firstSeen" : "2026-09-19T19:22:22Z",
+      "id" : "9FA9D610-9DC5-A334-BC7A-E3C1ED728EED",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:28Z",
+      "manufacturerDataHex" : "7500021844A14227EF795DBA534AD7A3EFEC92890028F3DDAC0F",
+      "name" : "75\" Crystal UHD",
+      "rssi" : -98,
+      "rssiHistory" : [
+        -99,
+        -99,
+        -98,
+        -98,
+        -98,
+        -98,
+        -98,
+        -97,
+        -101,
+        -99,
+        -99,
+        -98,
+        -98,
+        -99,
+        -100,
+        -98,
+        -97,
+        -98,
+        -98,
+        -98
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:25:09Z",
+      "id" : "03D245A5-51D9-1DA4-B037-7D6BEF272B6C",
+      "isConnectable" : false,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:25:21Z",
+      "name" : "Unknown",
+      "rssi" : -99,
+      "rssiHistory" : [
+        -102,
+        -99,
+        -99
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:24:37Z",
+      "id" : "0E2360D5-A225-35F3-8F42-AA72DCEC7115",
+      "inspectionInfo" : {
+        "inspectedAt" : "2026-09-19T19:25:20Z"
+      },
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:29Z",
+      "name" : "Unknown",
+      "rssi" : -82,
+      "rssiHistory" : [
+        -75,
+        -74,
+        -74,
+        -74,
+        -72,
+        -72,
+        -75,
+        -75,
+        -75,
+        -73,
+        -74,
+        -73,
+        -73,
+        -75,
+        -77,
+        -77,
+        -78,
+        -78,
+        -82,
+        -82
+      ],
+      "serviceDataHex" : {
+        "FCF1" : "04A356DA2E8DCAB070662664DAF6B813748A0887"
+      },
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:24Z",
+      "id" : "0E7249C7-1060-F3BD-275F-71C947E54F49",
+      "isConnectable" : false,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:30Z",
+      "name" : "Unknown",
+      "rssi" : -49,
+      "rssiHistory" : [
+        -54,
+        -55,
+        -53,
+        -54,
+        -53,
+        -53,
+        -49,
+        -52,
+        -55,
+        -51,
+        -54,
+        -54,
+        -53,
+        -53,
+        -49,
+        -58,
+        -56,
+        -47,
+        -54,
+        -49
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:24Z",
+      "id" : "11916B29-509E-050F-DFAA-F76D1AA2D417",
+      "isConnectable" : false,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:30Z",
+      "name" : "Unknown",
+      "rssi" : -93,
+      "rssiHistory" : [
+        -86,
+        -90,
+        -95,
+        -97,
+        -89,
+        -87,
+        -103,
+        -97,
+        -101,
+        -97,
+        -99,
+        -88,
+        -86,
+        -92,
+        -93,
+        -85,
+        -92,
+        -88,
+        -86,
+        -93
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:24:28Z",
+      "id" : "184CC224-1B24-4C20-930D-55E331A25A1C",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:24:28Z",
+      "name" : "Unknown",
+      "rssi" : -102,
+      "rssiHistory" : [
+        -102
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:30Z",
+      "id" : "1B26FA94-F94C-3533-D879-232DE7417F92",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:24:49Z",
+      "name" : "Unknown",
+      "rssi" : -102,
+      "rssiHistory" : [
+        -103,
+        -102
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:23:46Z",
+      "id" : "1CE83FBD-F280-A781-503E-A3CC59905FF3",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:23:49Z",
+      "name" : "Unknown",
+      "rssi" : -105,
+      "rssiHistory" : [
+        -101,
+        -105
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:25:01Z",
+      "id" : "1D50EB6E-15C6-D8AE-8DE0-0CCBD0509470",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:25:24Z",
+      "name" : "Unknown",
+      "rssi" : -100,
+      "rssiHistory" : [
+        -99,
+        -99,
+        -102,
+        -100
+      ],
+      "serviceDataHex" : {
+        "FE2C" : "1042000A29152139491A4F3CCA7A",
+        "FEAA" : "40703CD074F826278B560BBDA4EF6CD61A903E9CB9D3"
+      },
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:22Z",
+      "id" : "30599491-DCB0-38C0-673F-E616A1C50774",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:29Z",
+      "name" : "Unknown",
+      "rssi" : -96,
+      "rssiHistory" : [
+        -88,
+        -94,
+        -94,
+        -94,
+        -91,
+        -93,
+        -90,
+        -90,
+        -90,
+        -90,
+        -93,
+        -93,
+        -92,
+        -94,
+        -88,
+        -88,
+        -90,
+        -90,
+        -96,
+        -96
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:34Z",
+      "id" : "3A1FA9F4-EC77-4E8C-D084-25C3A4B019B2",
+      "isConnectable" : false,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:25:40Z",
+      "name" : "Unknown",
+      "rssi" : -100,
+      "rssiHistory" : [
+        -98,
+        -98,
+        -100,
+        -98,
+        -96,
+        -96,
+        -100
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:40Z",
+      "id" : "3D46A95D-1FBE-D782-BFEC-51CD01965839",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:25:32Z",
+      "name" : "Unknown",
+      "rssi" : -98,
+      "rssiHistory" : [
+        -101,
+        -102,
+        -97,
+        -98,
+        -98,
+        -97,
+        -98,
+        -98,
+        -97,
+        -97,
+        -101,
+        -97,
+        -102,
+        -103,
+        -97,
+        -98,
+        -97,
+        -97,
+        -98,
+        -98
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:24Z",
+      "id" : "4124615B-2DA3-9936-0CBF-74F6FB54CD36",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:25:13Z",
+      "name" : "Unknown",
+      "rssi" : -99,
+      "rssiHistory" : [
+        -100,
+        -98,
+        -99,
+        -99,
+        -101,
+        -99,
+        -99,
+        -100,
+        -102,
+        -101,
+        -98,
+        -99,
+        -99,
+        -103,
+        -102,
+        -103,
+        -103,
+        -101,
+        -102,
+        -99
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:25:19Z",
+      "id" : "4567AB3A-73B6-96E2-8A91-0585A462D78F",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:25:32Z",
+      "name" : "Unknown",
+      "rssi" : -100,
+      "rssiHistory" : [
+        -101,
+        -103,
+        -99,
+        -100,
+        -100,
+        -101,
+        -102,
+        -102,
+        -97,
+        -96,
+        -95,
+        -102,
+        -101,
+        -100
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:32Z",
+      "id" : "4FCBDF3C-B440-E21B-0666-C606C18D2C63",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:11Z",
+      "name" : "Unknown",
+      "rssi" : -98,
+      "rssiHistory" : [
+        -92,
+        -94,
+        -94,
+        -92,
+        -94,
+        -94,
+        -93,
+        -93,
+        -93,
+        -97,
+        -100,
+        -93,
+        -94,
+        -94,
+        -95,
+        -94,
+        -94,
+        -94,
+        -94,
+        -98
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:24Z",
+      "id" : "50C0FAA5-8ACF-63DC-1C77-484A4A23FDD4",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:25Z",
+      "name" : "Unknown",
+      "rssi" : -77,
+      "rssiHistory" : [
+        -70,
+        -70,
+        -76,
+        -76,
+        -70,
+        -70,
+        -77,
+        -77,
+        -70,
+        -70,
+        -70,
+        -70,
+        -63,
+        -73,
+        -70,
+        -70,
+        -68,
+        -68,
+        -77,
+        -77
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:24:07Z",
+      "id" : "57D8A5CB-CA5C-31DB-98A3-0625BDC9FAFA",
+      "isConnectable" : false,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:24:07Z",
+      "name" : "Unknown",
+      "rssi" : -104,
+      "rssiHistory" : [
+        -104
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:22Z",
+      "id" : "57E850AE-F301-A3D3-10B8-88559D2FF14F",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:24:23Z",
+      "name" : "Unknown",
+      "rssi" : -85,
+      "rssiHistory" : [
+        -90,
+        -85,
+        -85,
+        -85,
+        -85,
+        -85,
+        -84,
+        -86,
+        -85,
+        -85,
+        -84,
+        -84,
+        -85,
+        -85,
+        -89,
+        -89,
+        -84,
+        -84,
+        -85,
+        -85
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:24:23Z",
+      "id" : "5823F6C6-29FC-EE96-80B2-9F49B3045D2A",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:30Z",
+      "name" : "Unknown",
+      "rssi" : -85,
+      "rssiHistory" : [
+        -93,
+        -95,
+        -95,
+        -85,
+        -85,
+        -87,
+        -87,
+        -85,
+        -85,
+        -87,
+        -87,
+        -93,
+        -93,
+        -87,
+        -87,
+        -86,
+        -86,
+        -87,
+        -87,
+        -85
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:24Z",
+      "id" : "5DEC153F-10AD-577B-C6FD-1FBCBAA82958",
+      "isConnectable" : false,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:28Z",
+      "name" : "Unknown",
+      "rssi" : -96,
+      "rssiHistory" : [
+        -93,
+        -98,
+        -93,
+        -99,
+        -99,
+        -95,
+        -100,
+        -102,
+        -93,
+        -93,
+        -92,
+        -95,
+        -100,
+        -94,
+        -93,
+        -95,
+        -101,
+        -101,
+        -99,
+        -96
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:22Z",
+      "id" : "5F7CA442-0311-A04F-3DDC-6410F5867920",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:22:39Z",
+      "name" : "Unknown",
+      "rssi" : -102,
+      "rssiHistory" : [
+        -101,
+        -102
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:21Z",
+      "id" : "6102202B-E9E8-2AC6-EE32-1694497130CD",
+      "isConnectable" : false,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:28Z",
+      "name" : "Unknown",
+      "rssi" : -55,
+      "rssiHistory" : [
+        -52,
+        -54,
+        -56,
+        -53,
+        -51,
+        -57,
+        -50,
+        -49,
+        -51,
+        -51,
+        -54,
+        -50,
+        -51,
+        -53,
+        -53,
+        -54,
+        -50,
+        -50,
+        -48,
+        -55
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:21Z",
+      "id" : "6611585D-EA51-6117-9B53-F92DF6488691",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:28Z",
+      "name" : "Unknown",
+      "rssi" : -90,
+      "rssiHistory" : [
+        -90,
+        -93,
+        -93,
+        -91,
+        -92,
+        -89,
+        -89,
+        -93,
+        -94,
+        -95,
+        -95,
+        -89,
+        -89,
+        -87,
+        -87,
+        -99,
+        -91,
+        -92,
+        -90,
+        -90
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:24:53Z",
+      "id" : "685A2238-6D66-D023-5C1D-2D3E70B5F887",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:24:53Z",
+      "name" : "Unknown",
+      "rssi" : -100,
+      "rssiHistory" : [
+        -100
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:25:02Z",
+      "id" : "7160B982-025D-1F81-FE79-CDD3255A4E4A",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:17Z",
+      "name" : "Unknown",
+      "rssi" : -101,
+      "rssiHistory" : [
+        -97,
+        -97,
+        -96,
+        -97,
+        -97,
+        -96,
+        -96,
+        -96,
+        -96,
+        -96,
+        -97,
+        -97,
+        -97,
+        -97,
+        -98,
+        -102,
+        -101,
+        -102,
+        -102,
+        -101
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:22Z",
+      "id" : "71BBB8F6-A418-F513-B92D-687BEBB4BCA3",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:24:52Z",
+      "name" : "Unknown",
+      "rssi" : -92,
+      "rssiHistory" : [
+        -89,
+        -88,
+        -88,
+        -94,
+        -94,
+        -96,
+        -88,
+        -88,
+        -94,
+        -95,
+        -88,
+        -89,
+        -94,
+        -94,
+        -90,
+        -96,
+        -89,
+        -89,
+        -91,
+        -92
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:24Z",
+      "id" : "7AA8A130-611B-52F6-BF43-323A68E382EA",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:10Z",
+      "name" : "Unknown",
+      "rssi" : -99,
+      "rssiHistory" : [
+        -96,
+        -96,
+        -100,
+        -101,
+        -99,
+        -98,
+        -98,
+        -103,
+        -97,
+        -101,
+        -97,
+        -97,
+        -91,
+        -91,
+        -101,
+        -101,
+        -97,
+        -98,
+        -99,
+        -99
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:25:17Z",
+      "id" : "7B4277C6-DE5E-6A1A-BD80-8EBF3EFBDBC6",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:25:38Z",
+      "name" : "Unknown",
+      "rssi" : -102,
+      "rssiHistory" : [
+        -107,
+        -102
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:30Z",
+      "id" : "7D24B1D1-3989-C99A-C9A8-008CA8561698",
+      "isConnectable" : false,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:25:23Z",
+      "name" : "Unknown",
+      "rssi" : -103,
+      "rssiHistory" : [
+        -100,
+        -98,
+        -102,
+        -102,
+        -99,
+        -103
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:22Z",
+      "id" : "89915499-7E4D-A8DB-30AD-1EA8728D9ED4",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:27Z",
+      "name" : "Unknown",
+      "rssi" : -92,
+      "rssiHistory" : [
+        -94,
+        -89,
+        -89,
+        -85,
+        -85,
+        -87,
+        -98,
+        -98,
+        -88,
+        -89,
+        -96,
+        -96,
+        -88,
+        -88,
+        -88,
+        -88,
+        -92,
+        -92,
+        -92,
+        -92
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:23Z",
+      "id" : "8D68110D-CB63-84E1-8006-BD1DB3AC0E0A",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:19Z",
+      "name" : "Unknown",
+      "rssi" : -104,
+      "rssiHistory" : [
+        -100,
+        -97,
+        -97,
+        -97,
+        -97,
+        -101,
+        -104,
+        -96,
+        -102,
+        -96,
+        -106,
+        -104,
+        -96,
+        -96,
+        -96,
+        -97,
+        -102,
+        -102,
+        -101,
+        -104
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:23Z",
+      "id" : "9A8B7CF6-C968-F342-1EA9-E9915A5902C5",
+      "isConnectable" : false,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:22:23Z",
+      "name" : "Unknown",
+      "rssi" : -105,
+      "rssiHistory" : [
+        -105
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:35Z",
+      "id" : "9E03EC54-D426-C350-71DD-8D989FF78270",
+      "isConnectable" : false,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:25:25Z",
+      "name" : "Unknown",
+      "rssi" : -96,
+      "rssiHistory" : [
+        -100,
+        -100,
+        -101,
+        -101,
+        -101,
+        -102,
+        -99,
+        -99,
+        -97,
+        -100,
+        -95,
+        -104,
+        -101,
+        -96,
+        -100,
+        -97,
+        -100,
+        -100,
+        -101,
+        -96
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:28Z",
+      "id" : "A7CCF9AF-30BC-C2F6-BBA5-A5542548F191",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:21Z",
+      "name" : "Unknown",
+      "rssi" : -85,
+      "rssiHistory" : [
+        -81,
+        -81,
+        -89,
+        -83,
+        -94,
+        -95,
+        -87,
+        -87,
+        -86,
+        -86,
+        -84,
+        -84,
+        -73,
+        -73,
+        -77,
+        -77,
+        -77,
+        -77,
+        -85,
+        -85
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:40Z",
+      "id" : "BCACCE4D-8717-CB00-730D-6AC344C2F871",
+      "isConnectable" : false,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:25:25Z",
+      "name" : "Unknown",
+      "rssi" : -98,
+      "rssiHistory" : [
+        -102,
+        -101,
+        -100,
+        -102,
+        -102,
+        -101,
+        -100,
+        -101,
+        -101,
+        -98
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:24:43Z",
+      "id" : "BD5D67FC-64D2-BB23-B3D3-09FF57E7F8FC",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:25:11Z",
+      "name" : "Unknown",
+      "rssi" : -101,
+      "rssiHistory" : [
+        -102,
+        -101,
+        -101
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:30Z",
+      "id" : "C1AF497A-2C63-B007-DC2F-42195F63F9FA",
+      "isConnectable" : false,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:01Z",
+      "name" : "Unknown",
+      "rssi" : -94,
+      "rssiHistory" : [
+        -77,
+        -87,
+        -87,
+        -82,
+        -91,
+        -86,
+        -79,
+        -91,
+        -91,
+        -79,
+        -80,
+        -81,
+        -81,
+        -89,
+        -89,
+        -83,
+        -85,
+        -90,
+        -92,
+        -94
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:24:34Z",
+      "id" : "C3CF5A35-AE73-9B6B-C7F7-C7A7F6B7FA51",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:25:38Z",
+      "name" : "Unknown",
+      "rssi" : -101,
+      "rssiHistory" : [
+        -101,
+        -101,
+        -102,
+        -102,
+        -101,
+        -102,
+        -101,
+        -101,
+        -100,
+        -101,
+        -102,
+        -101,
+        -102,
+        -101,
+        -101,
+        -102,
+        -102,
+        -101,
+        -101,
+        -101
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:22Z",
+      "id" : "C438B534-90F5-2948-80B7-1BD0E2E9E13A",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:06Z",
+      "name" : "Unknown",
+      "rssi" : -56,
+      "rssiHistory" : [
+        -56,
+        -54,
+        -55,
+        -54,
+        -57,
+        -57,
+        -56,
+        -56,
+        -53,
+        -53,
+        -57,
+        -57,
+        -55,
+        -55,
+        -52,
+        -52,
+        -51,
+        -51,
+        -56,
+        -56
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:21Z",
+      "id" : "C4A3FBA6-A45A-E23D-B4B0-1722BB09EB24",
+      "isConnectable" : false,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:06Z",
+      "name" : "Unknown",
+      "rssi" : -95,
+      "rssiHistory" : [
+        -92,
+        -90,
+        -90,
+        -88,
+        -92,
+        -90,
+        -91,
+        -92,
+        -95,
+        -88,
+        -95,
+        -91,
+        -88,
+        -103,
+        -86,
+        -101,
+        -90,
+        -89,
+        -97,
+        -95
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:24:48Z",
+      "id" : "C5D015C0-195E-94BB-342D-4B69280246D0",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:24:48Z",
+      "name" : "Unknown",
+      "rssi" : -103,
+      "rssiHistory" : [
+        -103
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:24:54Z",
+      "id" : "C710FF30-B868-4FCA-4F28-45543A724DBE",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:28Z",
+      "name" : "Unknown",
+      "rssi" : -95,
+      "rssiHistory" : [
+        -94,
+        -94,
+        -95,
+        -95,
+        -95,
+        -95,
+        -93,
+        -94,
+        -89,
+        -88,
+        -87,
+        -87,
+        -87,
+        -87,
+        -96,
+        -96,
+        -86,
+        -86,
+        -94,
+        -95
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:23Z",
+      "id" : "CE7486B0-B177-A5D3-5C0C-81C2027D9239",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:18Z",
+      "name" : "Unknown",
+      "rssi" : -73,
+      "rssiHistory" : [
+        -77,
+        -77,
+        -62,
+        -62,
+        -63,
+        -63,
+        -77,
+        -77,
+        -62,
+        -62,
+        -62,
+        -62,
+        -61,
+        -61,
+        -65,
+        -65,
+        -72,
+        -72,
+        -73,
+        -73
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:23Z",
+      "id" : "D44200FF-37BC-AF19-063D-38FF4D948F50",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:24:46Z",
+      "name" : "Unknown",
+      "rssi" : -101,
+      "rssiHistory" : [
+        -97,
+        -101,
+        -97,
+        -99,
+        -99,
+        -101,
+        -100,
+        -99,
+        -99,
+        -97,
+        -97,
+        -97,
+        -98,
+        -101,
+        -99,
+        -101,
+        -100,
+        -102,
+        -100,
+        -101
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:24:34Z",
+      "id" : "D58AC1E8-97FD-11C3-82E9-AEB3F951E79D",
+      "isConnectable" : false,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:25:16Z",
+      "name" : "Unknown",
+      "rssi" : -101,
+      "rssiHistory" : [
+        -101,
+        -101
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:23:37Z",
+      "id" : "DD0C6525-7CEB-76D4-2B20-F4D9111EE45A",
+      "isConnectable" : false,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:25:26Z",
+      "name" : "Unknown",
+      "rssi" : -101,
+      "rssiHistory" : [
+        -100,
+        -103,
+        -101,
+        -98,
+        -99,
+        -98,
+        -97,
+        -99,
+        -97,
+        -101
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:25Z",
+      "id" : "DE93CB89-0206-112D-B9D0-068A52651FB9",
+      "isConnectable" : false,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:28Z",
+      "name" : "Unknown",
+      "rssi" : -96,
+      "rssiHistory" : [
+        -91,
+        -93,
+        -96,
+        -93,
+        -89,
+        -92,
+        -96,
+        -94,
+        -92,
+        -100,
+        -93,
+        -92,
+        -92,
+        -93,
+        -99,
+        -92,
+        -87,
+        -98,
+        -94,
+        -96
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:24:05Z",
+      "id" : "E3AF9BDC-5B93-16BA-8AA0-7382FA16554C",
+      "isConnectable" : false,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:24:42Z",
+      "name" : "Unknown",
+      "rssi" : -103,
+      "rssiHistory" : [
+        -101,
+        -100,
+        -104,
+        -99,
+        -100,
+        -101,
+        -99,
+        -98,
+        -96,
+        -100,
+        -100,
+        -98,
+        -99,
+        -99,
+        -101,
+        -100,
+        -103
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Bluetooth LE Device",
+      "firstSeen" : "2026-09-19T19:22:21Z",
+      "id" : "EF387E07-193A-E078-ECB8-3A33BD3FC62F",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:24:37Z",
+      "name" : "Unknown",
+      "rssi" : -84,
+      "rssiHistory" : [
+        -99,
+        -84,
+        -84,
+        -92,
+        -92,
+        -85,
+        -85,
+        -83,
+        -83,
+        -83,
+        -83,
+        -83,
+        -83,
+        -94,
+        -94,
+        -83,
+        -94,
+        -94,
+        -84,
+        -84
+      ],
+      "serviceDataHex" : {
+        "FCF1" : "04A356DA2E8DCAB070662664DAF6B813748A0887"
+      },
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Smart Light",
+      "firstSeen" : "2026-09-19T19:23:35Z",
+      "id" : "764AF285-B7C6-A9C8-AA02-FA0FAE73D251",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:25:37Z",
+      "manufacturerDataHex" : "4206",
+      "name" : "ELK-BLEDDM",
+      "rssi" : -103,
+      "rssiHistory" : [
+        -101,
+        -101,
+        -101,
+        -102,
+        -101,
+        -104,
+        -101,
+        -102,
+        -103,
+        -101,
+        -101,
+        -101,
+        -101,
+        -101,
+        -101,
+        -101,
+        -101,
+        -102,
+        -101,
+        -103
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Apple",
+      "firstSeen" : "2026-09-19T19:22:25Z",
+      "id" : "9C7F8D03-40A8-E8F9-BDD9-1354F6F9ADB6",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:24Z",
+      "name" : "Find My Accessory",
+      "rssi" : -70,
+      "rssiHistory" : [
+        -48,
+        -48,
+        -49,
+        -49,
+        -52,
+        -52,
+        -53,
+        -52,
+        -52,
+        -60,
+        -60,
+        -60,
+        -60,
+        -60,
+        -59,
+        -59,
+        -65,
+        -65,
+        -70,
+        -70
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Samsung",
+      "firstSeen" : "2026-09-19T19:22:36Z",
+      "id" : "2DE1E9F6-E83F-6A2C-7934-EE70007AE1AD",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:25:35Z",
+      "manufacturerDataHex" : "7500420C83075D30414A5452423006040134FC995A3FD80A02043237344604020808",
+      "name" : "Fridge",
+      "rssi" : -100,
+      "rssiHistory" : [
+        -100,
+        -100,
+        -100,
+        -100,
+        -100,
+        -100,
+        -100,
+        -99,
+        -99,
+        -101,
+        -100,
+        -100,
+        -100,
+        -100,
+        -101,
+        -100,
+        -100,
+        -100,
+        -100,
+        -100
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Samsung",
+      "firstSeen" : "2026-09-19T19:22:21Z",
+      "id" : "0C22CAEC-E984-C68C-6A1B-69C1C3DE1889",
+      "isConnectable" : true,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:26:30Z",
+      "manufacturerDataHex" : "7500420C83055D30414A545746310004011CE89EB487D30A02043635375904020808",
+      "name" : "Washer",
+      "rssi" : -81,
+      "rssiHistory" : [
+        -89,
+        -88,
+        -89,
+        -89,
+        -79,
+        -95,
+        -95,
+        -91,
+        -100,
+        -97,
+        -90,
+        -88,
+        -88,
+        -88,
+        -87,
+        -94,
+        -93,
+        -85,
+        -81,
+        -81
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    },
+    {
+      "family" : "Microsoft Windows",
+      "firstSeen" : "2026-09-19T19:22:51Z",
+      "id" : "B7B3BABC-9E0C-CDBC-AA87-D39B590431BD",
+      "isConnectable" : false,
+      "isIgnored" : false,
+      "lastSeen" : "2026-09-19T19:25:38Z",
+      "manufacturerDataHex" : "06000109202213D995A30FE2CE065714DF6BC75BA5F369E3D26137761F",
+      "name" : "Windows PC (Swift Pair)",
+      "rssi" : -100,
+      "rssiHistory" : [
+        -100,
+        -101,
+        -100,
+        -99,
+        -100,
+        -99,
+        -99,
+        -99,
+        -99,
+        -99,
+        -99,
+        -99,
+        -102,
+        -99,
+        -99,
+        -100,
+        -98,
+        -98,
+        -99,
+        -100
+      ],
+      "serviceUUIDs" : [
+
+      ]
+    }
+  ],
+  "id" : "5FA57787-37AE-4AB9-9F2D-DE36C15AB2E8",
+  "location" : {
+    "altitude" : 374.9164278789508,
+    "horizontalAccuracy" : 11.35629778454999,
+    "id" : "6067D4D4-C791-4628-891C-860C316CD846",
+    "latitude" : 48.707505362235025,
+    "longitude" : 9.673570044553419,
+    "placeName" : "Stadtgebiet, Göppingen"
+  },
+  "scoutName" : "iPhone (mHomeNode)",
+  "timestamp" : "2026-09-19T19:26:30Z",
+  "title" : "Scan at Stadtgebiet, Göppingen"
+}

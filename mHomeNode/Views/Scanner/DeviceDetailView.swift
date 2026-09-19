@@ -279,6 +279,21 @@ public struct DeviceDetailView: View {
                     if device.isConnectable {
                         Section {
                             if let info = device.inspectionInfo {
+                                // Status banner
+                                HStack(spacing: 8) {
+                                    Image(systemName: info.isProtected ? "lock.shield.fill" : (info.modelNumber != nil ? "checkmark.circle.fill" : "info.circle.fill"))
+                                        .foregroundColor(info.isProtected ? .orange : (info.modelNumber != nil ? .green : .blue))
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(info.statusSummary ?? "Inspection Completed")
+                                            .font(.subheadline.weight(.semibold))
+                                        Text(info.inspectedAt.formatted(date: .abbreviated, time: .standard))
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                                .padding(.vertical, 2)
+
+                                // Standard Device Information rows
                                 if let mfg = info.manufacturerName {
                                     LabeledContent("Manufacturer", value: mfg)
                                 }
@@ -303,14 +318,65 @@ public struct DeviceDetailView: View {
                                 if let bat = info.batteryLevel {
                                     LabeledContent("GATT Battery Level", value: "\(bat)%")
                                 }
-                                LabeledContent("Inspected", value: info.inspectedAt, format: .dateTime)
+
+                                // Discovered GATT Services Explorer
+                                if !info.discoveredServices.isEmpty {
+                                    DisclosureGroup("Discovered GATT Services (\(info.discoveredServices.count))") {
+                                        ForEach(info.discoveredServices) { s in
+                                            VStack(alignment: .leading, spacing: 6) {
+                                                HStack {
+                                                    Text(s.name ?? "Service")
+                                                        .font(.subheadline.bold())
+                                                    Spacer()
+                                                    Text(s.uuid)
+                                                        .font(.system(.caption2, design: .monospaced))
+                                                        .foregroundColor(.secondary)
+                                                }
+                                                if s.characteristics.isEmpty {
+                                                    Text("No characteristics found")
+                                                        .font(.caption2)
+                                                        .foregroundColor(.secondary)
+                                                } else {
+                                                    ForEach(s.characteristics) { c in
+                                                        VStack(alignment: .leading, spacing: 2) {
+                                                            HStack {
+                                                                Text(c.name ?? c.uuid)
+                                                                    .font(.caption.weight(.medium))
+                                                                Spacer()
+                                                                Text(c.properties.joined(separator: ", "))
+                                                                    .font(.caption2)
+                                                                    .foregroundColor(.secondary)
+                                                            }
+                                                            if let val = c.valueText {
+                                                                Text(val)
+                                                                    .font(.system(.caption, design: .monospaced))
+                                                                    .foregroundColor(.blue)
+                                                            } else if let hex = c.valueHex {
+                                                                Text("0x\(hex)")
+                                                                    .font(.system(.caption2, design: .monospaced))
+                                                                    .foregroundColor(.secondary)
+                                                            }
+                                                            if let err = c.error {
+                                                                Text(err)
+                                                                    .font(.caption2)
+                                                                    .foregroundColor(.orange)
+                                                            }
+                                                        }
+                                                        .padding(.leading, 8)
+                                                    }
+                                                }
+                                            }
+                                            .padding(.vertical, 4)
+                                        }
+                                    }
+                                }
                             }
 
                             if scannerVM.isInspecting {
                                 HStack(spacing: 8) {
                                     ProgressView()
                                         .controlSize(.small)
-                                    Text("Connecting & reading GATT characteristics...")
+                                    Text("Connecting & exploring GATT services...")
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
@@ -322,7 +388,7 @@ public struct DeviceDetailView: View {
                                     }
                                 } label: {
                                     Label(
-                                        device.inspectionInfo == nil ? "Inspect Device (Read GATT Info)" : "Re-inspect Device",
+                                        device.inspectionInfo == nil ? "Inspect Device (Read GATT Services)" : "Re-inspect Device",
                                         systemImage: "magnifyingglass.circle"
                                     )
                                 }
@@ -334,10 +400,16 @@ public struct DeviceDetailView: View {
                                     .font(.caption)
                                     .foregroundStyle(.red)
                             }
+
+                            if device.rssi < -75 {
+                                Label("Signal is weak (\(device.rssi) dBm). Move within 1–2 meters of the device for a stable connection.", systemImage: "antenna.radiowaves.left.and.right.slash")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
                         } header: {
                             Text("Active GATT Deep Inspection")
                         } footer: {
-                            Text("Connects briefly to query standard Device Information and Generic Access characteristics.")
+                            Text("Establishes a temporary connection to inspect standard and proprietary GATT services, models, and capabilities.")
                         }
                     }
 

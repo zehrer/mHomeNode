@@ -23,6 +23,85 @@ public enum StandardGATTUUID {
     public static let batteryLevel = CBUUID(string: "2A19")
 }
 
+public enum KnownGATTService {
+    public static func name(for uuid: String) -> String {
+        let upper = uuid.uppercased()
+        if upper.contains("180A") { return "Device Information" }
+        if upper.contains("1800") { return "Generic Access" }
+        if upper.contains("1801") { return "Generic Attribute" }
+        if upper.contains("180F") { return "Battery Service" }
+        if upper.contains("180D") { return "Heart Rate" }
+        if upper.contains("1809") { return "Health Thermometer" }
+        if upper.contains("FD5A") { return "Samsung SmartThings (Easy Setup)" }
+        if upper.contains("FD6F") { return "Samsung Find My Mobile" }
+        if upper.contains("FE2C") { return "Google Fast Pair" }
+        if upper.contains("FCD2") { return "BTHome V2" }
+        if upper.contains("FDCD") { return "Qingping Service" }
+        if upper.contains("FE95") { return "Xiaomi MiHome" }
+        if upper.contains("FFF0") { return "Tuya / Telink Service" }
+        return "Service (\(uuid.prefix(8)))"
+    }
+}
+
+public enum KnownGATTCharacteristic {
+    public static func name(for uuid: String) -> String {
+        let upper = uuid.uppercased()
+        if upper.contains("2A00") { return "Device Name" }
+        if upper.contains("2A01") { return "Appearance" }
+        if upper.contains("2A19") { return "Battery Level" }
+        if upper.contains("2A29") { return "Manufacturer Name" }
+        if upper.contains("2A24") { return "Model Number" }
+        if upper.contains("2A25") { return "Serial Number" }
+        if upper.contains("2A26") { return "Firmware Revision" }
+        if upper.contains("2A27") { return "Hardware Revision" }
+        if upper.contains("2A28") { return "Software Revision" }
+        return "Char (\(uuid.prefix(8)))"
+    }
+}
+
+public struct DiscoveredCharacteristicInfo: Sendable, Codable, Equatable, Identifiable {
+    public var id: String { uuid }
+    public let uuid: String
+    public var name: String?
+    public var properties: [String]
+    public var valueHex: String?
+    public var valueText: String?
+    public var error: String?
+
+    public init(
+        uuid: String,
+        name: String? = nil,
+        properties: [String] = [],
+        valueHex: String? = nil,
+        valueText: String? = nil,
+        error: String? = nil
+    ) {
+        self.uuid = uuid
+        self.name = name
+        self.properties = properties
+        self.valueHex = valueHex
+        self.valueText = valueText
+        self.error = error
+    }
+}
+
+public struct DiscoveredServiceInfo: Sendable, Codable, Equatable, Identifiable {
+    public var id: String { uuid }
+    public let uuid: String
+    public var name: String?
+    public var characteristics: [DiscoveredCharacteristicInfo]
+
+    public init(
+        uuid: String,
+        name: String? = nil,
+        characteristics: [DiscoveredCharacteristicInfo] = []
+    ) {
+        self.uuid = uuid
+        self.name = name
+        self.characteristics = characteristics
+    }
+}
+
 /// Information retrieved from active GATT characteristics of a connectable peripheral
 public struct DeviceInspectionInfo: Sendable, Codable, Equatable {
     public var deviceName: String?
@@ -35,6 +114,9 @@ public struct DeviceInspectionInfo: Sendable, Codable, Equatable {
     public var appearanceCategory: String?
     public var batteryLevel: UInt8?
     public var inspectedAt: Date
+    public var discoveredServices: [DiscoveredServiceInfo]
+    public var statusSummary: String?
+    public var isProtected: Bool
 
     public init(
         deviceName: String? = nil,
@@ -46,7 +128,10 @@ public struct DeviceInspectionInfo: Sendable, Codable, Equatable {
         appearance: UInt16? = nil,
         appearanceCategory: String? = nil,
         batteryLevel: UInt8? = nil,
-        inspectedAt: Date = Date()
+        inspectedAt: Date = Date(),
+        discoveredServices: [DiscoveredServiceInfo] = [],
+        statusSummary: String? = nil,
+        isProtected: Bool = false
     ) {
         self.deviceName = deviceName
         self.manufacturerName = manufacturerName
@@ -58,6 +143,9 @@ public struct DeviceInspectionInfo: Sendable, Codable, Equatable {
         self.appearanceCategory = appearanceCategory
         self.batteryLevel = batteryLevel
         self.inspectedAt = inspectedAt
+        self.discoveredServices = discoveredServices
+        self.statusSummary = statusSummary
+        self.isProtected = isProtected
     }
 
     /// Maps a 16-bit Bluetooth SIG Appearance value to a human-readable category
@@ -170,27 +258,22 @@ public final class BLEInspectorService: NSObject, @unchecked Sendable, CBPeriphe
 
     public func didConnect(peripheral: CBPeripheral) {
         guard peripheral == activePeripheral else { return }
-        logger.info("Connected to \(peripheral.identifier). Discovering standard services...")
-
-        let servicesToDiscover = [
-            StandardGATTUUID.deviceInformationService,
-            StandardGATTUUID.genericAccessService,
-            StandardGATTUUID.batteryService
-        ]
-        peripheral.discoverServices(servicesToDiscover)
+        logger.info("Connected to \(peripheral.identifier). Discovering all services...")
+        // Discover ALL services (standard and vendor proprietary like Samsung 0xFD5A)
+        peripheral.discoverServices(nil)
     }
 
     public func didFailToConnect(peripheral: CBPeripheral, error: Error?) {
         guard peripheral == activePeripheral else { return }
         logger.warning("Failed to connect to \(peripheral.identifier): \(error?.localizedDescription ?? "unknown error")")
-        finish(with: .failure(error ?? NSError(domain: "BLEInspectorService", code: 2, userInfo: [NSLocalizedDescriptionKey: "Connection failed"])))
+        finish(with: .failure(error ?? NSError(domain: "BLEInspectorService", code: 2, userInfo: [NSLocalizedDescriptionKey: "Connection failed. Please move closer to the device."])))
     }
 
     public func didDisconnect(peripheral: CBPeripheral, error: Error?) {
         guard peripheral == activePeripheral else { return }
         logger.info("Disconnected from \(peripheral.identifier).")
-        // If we haven't finished yet, conclude with whatever info was gathered
-        finish(with: .success(pendingInfo))
+        // Conclude with whatever info was gathered
+        disconnectAndFinish()
     }
 
     // MARK: - CBPeripheralDelegate
@@ -199,42 +282,28 @@ public final class BLEInspectorService: NSObject, @unchecked Sendable, CBPeriphe
         guard peripheral == activePeripheral else { return }
         if let err = error {
             logger.warning("Service discovery failed: \(err.localizedDescription)")
+            pendingInfo.statusSummary = "Service discovery failed: \(err.localizedDescription)"
             disconnectAndFinish()
             return
         }
 
         guard let services = peripheral.services, !services.isEmpty else {
-            logger.info("No standard services found on \(peripheral.identifier).")
+            logger.info("No services found on \(peripheral.identifier).")
+            pendingInfo.statusSummary = "Connected, but peripheral exposed no GATT services."
             disconnectAndFinish()
             return
         }
 
+        pendingInfo.discoveredServices = services.map { s in
+            DiscoveredServiceInfo(
+                uuid: s.uuid.uuidString,
+                name: KnownGATTService.name(for: s.uuid.uuidString),
+                characteristics: []
+            )
+        }
+
         for service in services {
-            switch service.uuid {
-            case StandardGATTUUID.deviceInformationService:
-                peripheral.discoverCharacteristics([
-                    StandardGATTUUID.manufacturerNameString,
-                    StandardGATTUUID.modelNumberString,
-                    StandardGATTUUID.serialNumberString,
-                    StandardGATTUUID.firmwareRevisionString,
-                    StandardGATTUUID.hardwareRevisionString,
-                    StandardGATTUUID.softwareRevisionString
-                ], for: service)
-
-            case StandardGATTUUID.genericAccessService:
-                peripheral.discoverCharacteristics([
-                    StandardGATTUUID.deviceName,
-                    StandardGATTUUID.appearance
-                ], for: service)
-
-            case StandardGATTUUID.batteryService:
-                peripheral.discoverCharacteristics([
-                    StandardGATTUUID.batteryLevel
-                ], for: service)
-
-            default:
-                peripheral.discoverCharacteristics(nil, for: service)
-            }
+            peripheral.discoverCharacteristics(nil, for: service)
         }
     }
 
@@ -246,15 +315,58 @@ public final class BLEInspectorService: NSObject, @unchecked Sendable, CBPeriphe
         }
 
         guard let characteristics = service.characteristics, !characteristics.isEmpty else { return }
-        for char in characteristics {
-            if char.properties.contains(.read) {
-                peripheral.readValue(for: char)
+        if let sIndex = pendingInfo.discoveredServices.firstIndex(where: { $0.uuid == service.uuid.uuidString }) {
+            for char in characteristics {
+                var props: [String] = []
+                if char.properties.contains(.read) { props.append("Read") }
+                if char.properties.contains(.write) { props.append("Write") }
+                if char.properties.contains(.writeWithoutResponse) { props.append("WriteNoResp") }
+                if char.properties.contains(.notify) { props.append("Notify") }
+                if char.properties.contains(.indicate) { props.append("Indicate") }
+
+                let cInfo = DiscoveredCharacteristicInfo(
+                    uuid: char.uuid.uuidString,
+                    name: KnownGATTCharacteristic.name(for: char.uuid.uuidString),
+                    properties: props
+                )
+                pendingInfo.discoveredServices[sIndex].characteristics.append(cInfo)
+
+                if char.properties.contains(.read) {
+                    peripheral.readValue(for: char)
+                }
             }
         }
     }
 
     public func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         guard peripheral == activePeripheral else { return }
+
+        // Find characteristic in pendingInfo to record value or error
+        for sIdx in 0..<pendingInfo.discoveredServices.count {
+            if let cIdx = pendingInfo.discoveredServices[sIdx].characteristics.firstIndex(where: { $0.uuid == characteristic.uuid.uuidString }) {
+                if let err = error {
+                    let errStr = err.localizedDescription
+                    pendingInfo.discoveredServices[sIdx].characteristics[cIdx].error = errStr
+                    let low = errStr.lowercased()
+                    if low.contains("auth") || low.contains("encrypt") || low.contains("pair") {
+                        pendingInfo.isProtected = true
+                        pendingInfo.statusSummary = "Protected: Device requires Bluetooth authentication / SmartThings pairing"
+                    }
+                    return
+                }
+
+                if let data = characteristic.value, !data.isEmpty {
+                    let hex = data.map { String(format: "%02X", $0) }.joined()
+                    pendingInfo.discoveredServices[sIdx].characteristics[cIdx].valueHex = hex
+                    if let str = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+                       !str.isEmpty,
+                       str.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0.isPunctuation || $0.isWhitespace) }) {
+                        pendingInfo.discoveredServices[sIdx].characteristics[cIdx].valueText = str
+                    }
+                }
+            }
+        }
+
         guard error == nil, let data = characteristic.value, !data.isEmpty else { return }
 
         switch characteristic.uuid {
@@ -318,6 +430,17 @@ public final class BLEInspectorService: NSObject, @unchecked Sendable, CBPeriphe
     }
 
     private func disconnectAndFinish() {
+        if pendingInfo.statusSummary == nil {
+            if pendingInfo.isProtected {
+                pendingInfo.statusSummary = "Protected: Device requires Bluetooth authentication / SmartThings pairing"
+            } else if pendingInfo.modelNumber != nil || pendingInfo.manufacturerName != nil {
+                pendingInfo.statusSummary = "Device information retrieved successfully"
+            } else if !pendingInfo.discoveredServices.isEmpty {
+                pendingInfo.statusSummary = "Discovered \(pendingInfo.discoveredServices.count) service(s)"
+            } else {
+                pendingInfo.statusSummary = "No GATT response received from device"
+            }
+        }
         if let p = activePeripheral, let central = centralManager {
             central.cancelPeripheralConnection(p)
         }
