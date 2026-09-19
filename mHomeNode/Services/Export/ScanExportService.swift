@@ -85,12 +85,48 @@ public final class ScanExportService: Sendable {
         return try? encoder.encode(session)
     }
 
+    /// Writes session JSON to a temporary file URL for reliable iOS file sharing (Save to Files, AirDrop, etc.)
+    public func exportJSONFile(session: SavedScanSession) -> URL? {
+        guard let data = exportJSONData(session: session) else { return nil }
+        let safeTitle = session.title.components(separatedBy: CharacterSet.alphanumerics.inverted).joined(separator: "_")
+        let filename = safeTitle.isEmpty ? "scan_\(session.id.uuidString.prefix(8)).json" : "\(safeTitle).json"
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+        try? data.write(to: tempURL)
+        return tempURL
+    }
+
+    /// Writes session CSV to a temporary file URL
+    public func exportCSVFile(session: SavedScanSession) -> URL? {
+        let csv = exportCSV(session: session)
+        let safeTitle = session.title.components(separatedBy: CharacterSet.alphanumerics.inverted).joined(separator: "_")
+        let filename = safeTitle.isEmpty ? "scan_\(session.id.uuidString.prefix(8)).csv" : "\(safeTitle).csv"
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+        try? csv.write(to: tempURL, atomically: true, encoding: .utf8)
+        return tempURL
+    }
+
     /// Exports all sessions to formatted JSON Data
     public func exportAllJSONData(sessions: [SavedScanSession]) -> Data? {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
         return try? encoder.encode(sessions)
+    }
+
+    /// Writes all sessions JSON to a temporary file URL for robust file sharing
+    public func exportAllJSONFile(sessions: [SavedScanSession]) -> URL? {
+        guard let data = exportAllJSONData(sessions: sessions) else { return nil }
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("mHomeNode_all_scans.json")
+        try? data.write(to: tempURL)
+        return tempURL
+    }
+
+    /// Writes all sessions CSV to a temporary file URL for robust file sharing
+    public func exportAllCSVFile(sessions: [SavedScanSession]) -> URL? {
+        let csv = exportAllCSV(sessions: sessions)
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("mHomeNode_all_scans.csv")
+        try? csv.write(to: tempURL, atomically: true, encoding: .utf8)
+        return tempURL
     }
 
     // MARK: - Text Summary Export

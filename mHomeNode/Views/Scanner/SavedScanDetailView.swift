@@ -156,30 +156,28 @@ public struct SavedScanDetailView: View {
 
                     Divider()
 
-                    ShareLink(
-                        item: session.exportCSV(),
-                        subject: Text("\(session.title).csv"),
-                        message: Text("mHomeNode Scan CSV")
-                    ) {
-                        Label("Share CSV (Excel)", systemImage: "tablecells")
-                    }
-
-                    ShareLink(
-                        item: session.exportSummary(),
-                        subject: Text(session.title),
-                        message: Text("mHomeNode BLE Scan Report")
-                    ) {
-                        Label("Share Text Report", systemImage: "square.and.arrow.up")
-                    }
-
-                    if let jsonData = session.exportJSONData(), let jsonString = String(data: jsonData, encoding: .utf8) {
-                        ShareLink(
-                            item: jsonString,
-                            subject: Text("\(session.title).json"),
-                            message: Text("mHomeNode Scan JSON")
-                        ) {
+                    if let fileURL = session.exportJSONFileURL() {
+                        ShareLink(item: fileURL) {
+                            Label("Share JSON File", systemImage: "curlybraces")
+                        }
+                    } else if let jsonData = session.exportJSONData(), let jsonString = String(data: jsonData, encoding: .utf8) {
+                        ShareLink(item: jsonString, subject: Text("\(session.title).json")) {
                             Label("Share JSON", systemImage: "curlybraces")
                         }
+                    }
+
+                    if let csvURL = session.exportCSVFileURL() {
+                        ShareLink(item: csvURL) {
+                            Label("Share CSV File (Excel)", systemImage: "tablecells")
+                        }
+                    } else {
+                        ShareLink(item: session.exportCSV(), subject: Text("\(session.title).csv")) {
+                            Label("Share CSV (Excel)", systemImage: "tablecells")
+                        }
+                    }
+
+                    ShareLink(item: session.exportSummary(), subject: Text(session.title)) {
+                        Label("Share Text Report", systemImage: "square.and.arrow.up")
                     }
 
                     Button {

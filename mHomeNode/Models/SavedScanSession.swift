@@ -127,9 +127,19 @@ public struct SavedScanSession: Identifiable, Codable, Equatable, Sendable {
         return try? encoder.encode(self)
     }
 
+    /// Writes session JSON to a temporary file URL for robust iOS share/saving
+    public func exportJSONFileURL() -> URL? {
+        ScanExportService.shared.exportJSONFile(session: self)
+    }
+
     /// Exports session devices to CSV formatted string
     public func exportCSV() -> String {
         ScanExportService.shared.exportCSV(session: self)
+    }
+
+    /// Writes session CSV to a temporary file URL for robust iOS share/saving
+    public func exportCSVFileURL() -> URL? {
+        ScanExportService.shared.exportCSVFile(session: self)
     }
 }
 

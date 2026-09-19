@@ -97,29 +97,27 @@ public struct SavedScansListView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     if !viewModel.savedScans.isEmpty {
                         Menu {
-                            ShareLink(
-                                item: viewModel.exportAllCSV(),
-                                subject: Text("mHomeNode_all_scans.csv"),
-                                message: Text("mHomeNode BLE Scans (CSV)")
-                            ) {
-                                Label("Export All as CSV (Excel)", systemImage: "tablecells")
-                            }
-
-                            if let json = viewModel.exportAllJSON() {
-                                ShareLink(
-                                    item: json,
-                                    subject: Text("mHomeNode_all_scans.json"),
-                                    message: Text("mHomeNode BLE Scans (JSON)")
-                                ) {
+                            if let jsonURL = viewModel.exportAllJSONFileURL() {
+                                ShareLink(item: jsonURL) {
+                                    Label("Export All as JSON File", systemImage: "curlybraces")
+                                }
+                            } else if let json = viewModel.exportAllJSON() {
+                                ShareLink(item: json, subject: Text("mHomeNode_all_scans.json")) {
                                     Label("Export All as JSON (Backup)", systemImage: "curlybraces")
                                 }
                             }
 
-                            ShareLink(
-                                item: viewModel.exportAllSummary(),
-                                subject: Text("mHomeNode_scans_summary.txt"),
-                                message: Text("mHomeNode BLE Scans Summary")
-                            ) {
+                            if let csvURL = viewModel.exportAllCSVFileURL() {
+                                ShareLink(item: csvURL) {
+                                    Label("Export All as CSV File (Excel)", systemImage: "tablecells")
+                                }
+                            } else {
+                                ShareLink(item: viewModel.exportAllCSV(), subject: Text("mHomeNode_all_scans.csv")) {
+                                    Label("Export All as CSV (Excel)", systemImage: "tablecells")
+                                }
+                            }
+
+                            ShareLink(item: viewModel.exportAllSummary(), subject: Text("mHomeNode_scans_summary.txt")) {
                                 Label("Export All as Summary Text", systemImage: "doc.text")
                             }
                         } label: {

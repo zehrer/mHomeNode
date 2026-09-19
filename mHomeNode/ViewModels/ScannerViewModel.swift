@@ -446,9 +446,17 @@ public final class ScannerViewModel {
         ScanExportService.shared.exportAllCSV(sessions: savedScans)
     }
 
+    public func exportAllCSVFileURL() -> URL? {
+        ScanExportService.shared.exportAllCSVFile(sessions: savedScans)
+    }
+
     public func exportAllJSON() -> String? {
         guard let data = ScanExportService.shared.exportAllJSONData(sessions: savedScans) else { return nil }
         return String(data: data, encoding: .utf8)
+    }
+
+    public func exportAllJSONFileURL() -> URL? {
+        ScanExportService.shared.exportAllJSONFile(sessions: savedScans)
     }
 
     public func exportAllSummary() -> String {
