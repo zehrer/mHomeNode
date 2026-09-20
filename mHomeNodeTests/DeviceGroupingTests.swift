@@ -36,6 +36,19 @@ final class DeviceGroupingTests: XCTestCase {
 
         let tv = DiscoveredDevice(id: UUID(), name: "Samsung 7 Series", rssi: -80, family: .samsung)
         XCTAssertEqual(DeviceGroupingHelper.category(for: tv), .appliancesAndTV)
+        XCTAssertFalse(tv.isLightingDevice)
+
+        let qledTV = DiscoveredDevice(id: UUID(), name: "[TV] Samsung Q7 Series (55)", rssi: -80, family: .samsung)
+        XCTAssertEqual(DeviceGroupingHelper.category(for: qledTV), .appliancesAndTV)
+        XCTAssertFalse(qledTV.isLightingDevice)
+
+        let crystalTV = DiscoveredDevice(id: UUID(), name: "65\" Crystal UHD", rssi: -82, family: .samsung)
+        XCTAssertEqual(DeviceGroupingHelper.category(for: crystalTV), .appliancesAndTV)
+        XCTAssertFalse(crystalTV.isLightingDevice)
+
+        let oledTV = DiscoveredDevice(id: UUID(), name: "LG OLED 55", rssi: -85, family: .standardBLE)
+        XCTAssertEqual(DeviceGroupingHelper.category(for: oledTV), .appliancesAndTV)
+        XCTAssertFalse(oledTV.isLightingDevice)
 
         let macbook = DiscoveredDevice(id: UUID(), name: "MacBook Pro M2", rssi: -50, family: .apple)
         XCTAssertEqual(DeviceGroupingHelper.category(for: macbook), .computersAndPhones)

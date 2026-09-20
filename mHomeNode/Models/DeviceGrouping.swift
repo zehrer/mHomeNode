@@ -103,17 +103,19 @@ public enum DeviceGroupingHelper {
             return .climateAndSensors
         }
 
-        // Lighting & switches
-        if device.family == .smartLight || device.family == .switchBot || device.isLightingDevice ||
-            lowName.contains("strip") || lowName.contains("lamp") || lowName.contains("bulb") || lowName.contains("light") {
-            return .lighting
-        }
-
-        // Home Appliances, TVs, Locks & Power
+        // Home Appliances, TVs, Locks & Power (evaluated before lighting to avoid TVs being labeled as lights)
         if device.family == .samsung || device.family == .nuki || device.family == .ecoflow ||
-            lowName.contains("tv") || lowName.contains("washer") || lowName.contains("dryer") ||
+            lowName.contains("tv") || lowName.contains("television") || lowName.contains("crystal uhd") ||
+            lowName.contains("washer") || lowName.contains("dryer") ||
             lowName.contains("refrigerator") || lowName.contains("fridge") || lowName.contains("lock") {
             return .appliancesAndTV
+        }
+
+        // Lighting & switches
+        if device.family == .smartLight || device.family == .switchBot || device.isLightingDevice ||
+            lowName.contains("strip") || lowName.contains("lamp") || lowName.contains("bulb") ||
+            (lowName.contains("light") && !lowName.contains("lite")) {
+            return .lighting
         }
 
         // Computers, Tablets, Phones, Smartwatches

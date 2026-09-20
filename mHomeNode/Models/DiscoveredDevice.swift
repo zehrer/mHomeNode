@@ -199,11 +199,36 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
         return "BLE Device (" + id.uuidString.prefix(6) + ")"
     }
 
-    /// Whether this device represents a lighting accessory (Govee, LED strip, smart bulb, etc.)
+    /// Whether this device represents a lighting accessory (Govee lights, LED strip, smart bulb, etc.)
     public var isLightingDevice: Bool {
-        if family == .govee { return true }
         let low = (displayTitle + " " + name).lowercased()
-        return low.contains("light") || low.contains("lamp") || low.contains("led") || low.contains("bulb") || low.contains("strip")
+
+        // 1. Explicitly exclude TVs, monitors, screens, and appliances
+        if low.contains("tv") || low.contains("television") || low.contains("screen") || low.contains("display") ||
+            low.contains("washer") || low.contains("dryer") || low.contains("fridge") || low.contains("refrigerator") {
+            return false
+        }
+
+        // 2. Samsung devices are TVs, smart appliances, or phones - not standalone BLE lights
+        if family == .samsung {
+            return false
+        }
+
+        // 3. Govee: exclude environmental sensors (H5074, H5075, H5101)
+        if family == .govee {
+            if low.contains("thermo") || low.contains("hygro") || low.contains("h507") || low.contains("h510") {
+                return false
+            }
+            return true
+        }
+
+        if family == .smartLight { return true }
+
+        // 4. Check explicit light keywords, ensuring "led" is not a false match inside "qled", "oled", etc.
+        let hasLed = low.contains(" led") || low.contains("led ") || low.contains("-led") || low.contains("_led") ||
+            (low.contains("led") && !low.contains("qled") && !low.contains("oled") && !low.contains("titled") && !low.contains("scheduled"))
+        let hasLightTerms = low.contains("light") || low.contains("lamp") || low.contains("bulb") || low.contains("strip")
+        return hasLightTerms || hasLed
     }
 
     /// Converts into the HomeNode Server MobileBleScanItem format

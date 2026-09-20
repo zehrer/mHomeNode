@@ -427,10 +427,12 @@ final class AdvancedCLIBleScanner: NSObject, CBCentralManagerDelegate {
                 }
             }
 
-            // Samsung Appliance Easy Setup decoding
-            if compId == 0x0075 && mfg.count >= 6 {
+            // Samsung Appliance & TV decoding
+            if compId == 0x0075 && mfg.count >= 4 {
                 let proto = mfg[2]
                 let subtype = mfg[3]
+                family = "Samsung"
+                vendorName = "Samsung Electronics"
                 if proto == 0x42 {
                     if subtype == 0x0C {
                         resolvedName = rawName.isEmpty ? "Samsung Washer/Dryer" : rawName
@@ -442,6 +444,28 @@ final class AdvancedCLIBleScanner: NSObject, CBCentralManagerDelegate {
                         resolvedName = rawName.isEmpty ? "Samsung Refrigerator" : rawName
                         vendorCategory = "Smart Appliance"
                     }
+                } else if proto == 0x02 && subtype == 0x18 {
+                    resolvedName = rawName.isEmpty ? "Samsung Smart TV" : rawName
+                    vendorCategory = "Smart TV"
+                } else {
+                    let lowRaw = rawName.lowercased()
+                    if lowRaw.contains("tv") || lowRaw.contains("crystal") || lowRaw.contains("qled") || lowRaw.contains("uhd") || lowRaw.contains("oled") {
+                        resolvedName = rawName
+                        vendorCategory = "Smart TV"
+                    }
+                }
+            }
+
+            // Smart TV fallback by name
+            let lowRaw = rawName.lowercased()
+            if lowRaw.starts(with: "[tv]") || lowRaw.contains("crystal uhd") || lowRaw.contains("smart tv") {
+                vendorCategory = "Smart TV"
+                if lowRaw.contains("samsung") || lowRaw.contains("crystal") {
+                    family = "Samsung"
+                    vendorName = "Samsung Electronics"
+                }
+                if resolvedName == "Unknown" || resolvedName.isEmpty {
+                    resolvedName = rawName
                 }
             }
 

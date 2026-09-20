@@ -220,15 +220,22 @@ public enum DeviceFingerprinter {
             // 11. Identify Samsung / SmartThings (Company ID 0x0075)
             if mfgId == 0x0075 {
                 var samsungName = "Samsung Smart Device"
+                let isTV = lowerName.contains("tv") || lowerName.contains("crystal") || lowerName.contains("qled") || lowerName.contains("uhd") || lowerName.contains("oled")
                 if lowerName.contains("washer") {
                     samsungName = "Samsung Smart Washer"
                 } else if lowerName.contains("fridge") {
                     samsungName = "Samsung Smart Refrigerator"
-                } else if lowerName.contains("tv") || lowerName.contains("crystal") || lowerName.contains("qled") || lowerName.contains("uhd") {
+                } else if isTV {
                     samsungName = name.isEmpty ? "Samsung Smart TV" : name
+                } else if mfg.count >= 4 && mfg[2] == 0x02 && mfg[3] == 0x18 {
+                    // Samsung Smart View / Screen Mirroring beacon
+                    samsungName = (name.isEmpty || name == "Unknown") ? "Samsung Smart TV (Mirroring)" : name
+                } else if mfg.count >= 4 && mfg[2] == 0x42 && mfg[3] == 0x04 {
+                    // Samsung SmartThings / Tizen TV beacon
+                    samsungName = (name.isEmpty || name == "Unknown") ? "Samsung Smart TV" : name
                 } else if !name.isEmpty && name != "Unknown" {
                     samsungName = "Samsung (\(name))"
-                } else if mfg.count >= 4 && mfg[2] == 0x42 && mfg[3] == 0x04 {
+                } else if mfg.count >= 4 && mfg[2] == 0x42 {
                     samsungName = "Samsung SmartThings Device"
                 }
                 return DeviceIdentificationResult(
@@ -424,6 +431,25 @@ public enum DeviceFingerprinter {
                 btHomeData: parsedBTHome,
                 resolvedName: name.isEmpty || name == "Unknown" ? "Tuya / Telink Smart Device" : name,
                 macAddress: tuyaMac
+            )
+        }
+
+        // 17b. Identify Samsung and Smart TVs by advertised name
+        if lowerName.contains("samsung") || lowerName.starts(with: "[tv]") || lowerName.contains("crystal uhd") || lowerName.contains("smart tv") {
+            let isTV = lowerName.contains("tv") || lowerName.contains("crystal") || lowerName.contains("qled") || lowerName.contains("oled") || lowerName.contains("uhd")
+            let resolvedTvName: String
+            if !name.isEmpty && name != "Unknown" {
+                resolvedTvName = name
+            } else if isTV {
+                resolvedTvName = lowerName.contains("samsung") ? "Samsung Smart TV" : "Smart TV"
+            } else {
+                resolvedTvName = "Samsung Smart Device"
+            }
+            return DeviceIdentificationResult(
+                family: lowerName.contains("samsung") || lowerName.contains("crystal") ? .samsung : .standardBLE,
+                btHomeData: parsedBTHome,
+                resolvedName: resolvedTvName,
+                macAddress: resolvedMac
             )
         }
 

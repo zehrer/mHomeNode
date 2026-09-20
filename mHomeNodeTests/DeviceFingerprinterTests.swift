@@ -55,6 +55,28 @@ final class DeviceFingerprinterTests: XCTestCase {
             manufacturerData: mfgTV
         )
         XCTAssertEqual(resTV.family, .samsung)
+        XCTAssertEqual(resTV.resolvedName, "[TV] Samsung 7 Series (55)")
+
+        // Samsung TV Mirroring payload (0x02 0x18)
+        let mfgMirroring = Data([0x75, 0x00, 0x02, 0x18, 0x44, 0xA1])
+        let resMirror = DeviceFingerprinter.identifyDetails(
+            advertisedName: nil,
+            serviceUUIDs: nil,
+            serviceData: nil,
+            manufacturerData: mfgMirroring
+        )
+        XCTAssertEqual(resMirror.family, .samsung)
+        XCTAssertEqual(resMirror.resolvedName, "Samsung Smart TV (Mirroring)")
+
+        // Samsung TV detected by name without manufacturer data
+        let resNamedTV = DeviceFingerprinter.identifyDetails(
+            advertisedName: "[TV] Samsung Q7 Series (55)",
+            serviceUUIDs: nil,
+            serviceData: nil,
+            manufacturerData: nil
+        )
+        XCTAssertEqual(resNamedTV.family, .samsung)
+        XCTAssertEqual(resNamedTV.resolvedName, "[TV] Samsung Q7 Series (55)")
     }
 
     func testIdentifyMicrosoftSwiftPair() {
