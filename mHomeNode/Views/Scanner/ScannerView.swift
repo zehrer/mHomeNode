@@ -5,6 +5,7 @@ public struct ScannerView: View {
     @State private var showSettingsSheet = false
     @State private var showSaveScanSheet = false
     @State private var showSavedScansList = false
+    @State private var showLocationsSheet = false
 
     public init() {}
 
@@ -13,6 +14,38 @@ public struct ScannerView: View {
 
         NavigationStack {
             List {
+                // MARK: - Active Managed Location Banner
+                Section {
+                    Button {
+                        showLocationsSheet = true
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: vm.activeLocationState.iconName)
+                                .font(.headline)
+                                .foregroundColor(vm.activeLocationState.isAtHome ? .green : .blue)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 6) {
+                                    Text(vm.activeLocation.name)
+                                        .font(.subheadline.bold())
+                                        .foregroundColor(.primary)
+                                    Text("• \(vm.activeLocationState.title)")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                }
+                                Text("\(vm.activeLocation.devices.count) registered room device(s) configured")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 2)
+                    }
+                }
+
                 if let error = vm.bleService.errorMessage {
                     Section {
                         Label(error, systemImage: "exclamationmark.triangle.fill")
@@ -232,6 +265,9 @@ public struct ScannerView: View {
             }
             .sheet(isPresented: $showSavedScansList) {
                 SavedScansListView()
+            }
+            .sheet(isPresented: $showLocationsSheet) {
+                LocationsManagementView()
             }
             .overlay {
                 if vm.filteredDevices.isEmpty {

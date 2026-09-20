@@ -18,6 +18,7 @@ public final class ScannerViewModel {
     public let serverClient: HomeNodeServerClientProtocol
     public let locationService: LocationService
     public let savedScanStorage: SavedScanStorageService
+    public let locationManagementService: LocationManagementService
 
     public var serverConfig: ServerConfig = ServerConfig()
     public var serverRooms: [ServerRoom] = []
@@ -67,7 +68,8 @@ public final class ScannerViewModel {
         discoveryService: HomeNodeDiscoveryService? = nil,
         serverClient: HomeNodeServerClientProtocol = LiveHomeNodeServerClient(),
         locationService: LocationService? = nil,
-        savedScanStorage: SavedScanStorageService? = nil
+        savedScanStorage: SavedScanStorageService? = nil,
+        locationManagementService: LocationManagementService? = nil
     ) {
         let ign = ignoreService ?? .shared
         self.ignoreService = ign
@@ -81,6 +83,8 @@ public final class ScannerViewModel {
         let storage = savedScanStorage ?? .shared
         self.savedScanStorage = storage
         self.savedScans = storage.loadSessions()
+        let locMgr = locationManagementService ?? .shared
+        self.locationManagementService = locMgr
 
         // Load persisted auto-scan settings
         let storedAuto = UserDefaults.standard.bool(forKey: "isAutoLocationScanEnabled")
@@ -97,6 +101,10 @@ public final class ScannerViewModel {
             guard let self = self else { return }
             self.serverConfig.host = server.preferredHost
             self.serverConfig.port = server.port
+            self.locationManagementService.recalculateActiveState(
+                currentLocation: self.locationService.currentLocation,
+                activeServerHost: server.preferredHost
+            )
             Task { @MainActor in
                 await self.loadServerRooms()
             }
@@ -106,7 +114,12 @@ public final class ScannerViewModel {
         // Setup auto-location scan callback
         loc.onSignificantLocationChange = { [weak self] newLocation, distance in
             Task { @MainActor in
-                self?.handleAutoLocationChange(newLocation: newLocation, distance: distance)
+                guard let self = self else { return }
+                self.locationManagementService.recalculateActiveState(
+                    currentLocation: newLocation,
+                    activeServerHost: self.serverConfig.host
+                )
+                self.handleAutoLocationChange(newLocation: newLocation, distance: distance)
             }
         }
 
@@ -480,6 +493,44 @@ public final class ScannerViewModel {
             inspectionError = error.localizedDescription
             return false
         }
+    }
+
+    // MARK: - Managed Locations & Presence
+
+    public var activeLocationState: ActiveLocationState {
+        locationManagementService.activeLocationState
+    }
+
+    public var activeLocation: ManagedLocation {
+        locationManagementService.activeLocation
+    }
+
+    public func calibrateActiveLocationWithGPS() async {
+        if let loc = await locationService.fetchCurrentLocation() {
+            locationManagementService.updateCoordinates(
+                locationId: activeLocation.id,
+                latitude: loc.latitude,
+                longitude: loc.longitude
+            )
+            locationManagementService.recalculateActiveState(
+                currentLocation: loc,
+                activeServerHost: serverConfig.host
+            )
+        }
+    }
+
+    public func associateCurrentServerWithActiveLocation() {
+        let host = serverConfig.host
+        guard !host.isEmpty else { return }
+        locationManagementService.updateAssociatedServer(
+            locationId: activeLocation.id,
+            host: host,
+            port: serverConfig.port
+        )
+        locationManagementService.recalculateActiveState(
+            currentLocation: locationService.currentLocation,
+            activeServerHost: host
+        )
     }
 }
 

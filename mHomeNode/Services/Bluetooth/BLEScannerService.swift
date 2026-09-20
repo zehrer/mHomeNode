@@ -124,14 +124,28 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
     }
 
     public func clear() {
-        devices.removeAll()
-        storageService.clear()
+        // Retain devices that have a room assigned or are registered in the active location
+        let activeRegIds = Set(LocationManagementService.shared.activeLocation.devices.map { $0.id.uppercased() })
+        devices.removeAll { dev in
+            let key = (dev.macAddress ?? dev.id.uuidString).uppercased()
+            let hasRoom = dev.assignedRoom != nil && !(dev.assignedRoom?.isEmpty ?? true)
+            return !hasRoom && !activeRegIds.contains(key)
+        }
+        storageService.saveDevicesSync(devices)
     }
 
     public func updateRoom(for deviceId: UUID, room: String?) {
         if let index = devices.firstIndex(where: { $0.id == deviceId }) {
             devices[index].assignedRoom = room
             storageService.scheduleSave(devices)
+            let dev = devices[index]
+            let devKey = dev.macAddress ?? dev.id.uuidString
+            LocationManagementService.shared.registerDevice(
+                deviceId: devKey,
+                customName: dev.customName,
+                room: room,
+                family: dev.family.rawValue
+            )
         }
     }
 
@@ -139,6 +153,14 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
         if let index = devices.firstIndex(where: { $0.id == id }) {
             devices[index].customName = customName
             storageService.scheduleSave(devices)
+            let dev = devices[index]
+            let devKey = dev.macAddress ?? dev.id.uuidString
+            LocationManagementService.shared.registerDevice(
+                deviceId: devKey,
+                customName: customName,
+                room: dev.assignedRoom,
+                family: dev.family.rawValue
+            )
         }
     }
 
@@ -273,8 +295,24 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
 
             devices[index].isIgnored = isIgnored
             devices[index].lastSeen = now
+
+            let devKey = devices[index].macAddress ?? devices[index].id.uuidString
+            if let reg = LocationManagementService.shared.lookupDevice(deviceId: devKey) {
+                if devices[index].assignedRoom == nil { devices[index].assignedRoom = reg.assignedRoom }
+                if devices[index].customName == nil { devices[index].customName = reg.customName }
+                LocationManagementService.shared.markDeviceSeen(deviceId: devKey)
+            }
         } else {
-            // Permanently record newly seen device
+            // Check if device is already registered in active location registry
+            let devKey = identification.macAddress ?? peripheral.identifier.uuidString
+            let reg = LocationManagementService.shared.lookupDevice(deviceId: devKey)
+            let initialCustomName = reg?.customName
+            let initialRoom = reg?.assignedRoom
+            if reg != nil {
+                LocationManagementService.shared.markDeviceSeen(deviceId: devKey)
+            }
+
+            // Record newly seen device
             let newDevice = DiscoveredDevice(
                 id: peripheral.identifier,
                 name: resolvedName,
@@ -286,7 +324,8 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
                 btHomeData: identification.btHomeData,
                 family: identification.family,
                 isConnectable: isConnectable,
-                assignedRoom: nil,
+                assignedRoom: initialRoom,
+                customName: initialCustomName,
                 isIgnored: isIgnored,
                 macAddress: identification.macAddress,
                 firstSeen: now,

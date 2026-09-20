@@ -5,6 +5,7 @@ public struct RoomsView: View {
     @State private var selectedRoomName: String = ""
     @State private var selectedDevice: DiscoveredDevice?
     @State private var showSettingsSheet = false
+    @State private var showLocationsSheet = false
     @State private var detectionToast: String?
     @State private var isDetecting: Bool = false
 
@@ -21,7 +22,19 @@ public struct RoomsView: View {
             seenNames.insert(room.name.lowercased())
         }
 
-        // 2. Any additional custom rooms assigned on devices
+        // 2. Any rooms from the active location's persistent device registry
+        for reg in viewModel.locationManagementService.activeLocation.devices {
+            if let assigned = reg.assignedRoom,
+               !assigned.isEmpty,
+               assigned != "Not Assigned",
+               assigned != "Nicht zugeordnet",
+               !seenNames.contains(assigned.lowercased()) {
+                result.append((name: assigned, serverRoom: nil))
+                seenNames.insert(assigned.lowercased())
+            }
+        }
+
+        // 3. Any additional custom rooms assigned on currently discovered devices
         for dev in viewModel.bleService.devices {
             if let assigned = dev.assignedRoom,
                !assigned.isEmpty,
@@ -47,6 +60,31 @@ public struct RoomsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
+                    // MARK: - Location Presence Pill Banner
+                    Button {
+                        showLocationsSheet = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: viewModel.activeLocationState.iconName)
+                                .foregroundColor(viewModel.activeLocationState.isAtHome ? .green : .blue)
+                            Text(viewModel.activeLocation.name)
+                                .font(.subheadline.bold())
+                                .foregroundColor(.primary)
+                            Text("• \(viewModel.activeLocationState.title)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(Color(.secondarySystemGroupedBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    }
+                    .padding(.horizontal)
+
                     // MARK: - Proximity Detection Toast Banner
                     if let toast = detectionToast {
                         HStack(spacing: 8) {
@@ -184,6 +222,9 @@ public struct RoomsView: View {
             }
             .sheet(isPresented: $showSettingsSheet) {
                 ServerStatusView()
+            }
+            .sheet(isPresented: $showLocationsSheet) {
+                LocationsManagementView()
             }
             .sheet(item: $selectedDevice) { dev in
                 NavigationStack {

@@ -65,6 +65,11 @@
 		EF341971B1B640C6F2A4E11C /* SavedScanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5E47E9CB7F6A5E7FF27A58 /* SavedScanTests.swift */; };
 		F77F915E2C1AD3103088A213 /* GoveeCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEB774EBDBA6FA9A1EF2D42F /* GoveeCommand.swift */; };
 		FA19B3792A74D1A68990972D /* MiBeaconParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2798A87DE38639B9F1151C82 /* MiBeaconParserTests.swift */; };
+		9B334062A697D08493887233 /* LocationDeviceRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BDD6AC3DA2C5A39DE40709E /* LocationDeviceRecord.swift */; };
+		8AC792E73AC3FA8ED37A03FE /* ManagedLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D87EDA90EFAF7DDA9FDEDDF /* ManagedLocation.swift */; };
+		5086CB352F14686818FA9DA2 /* LocationManagementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80E15B3D179863FD2A5F5931 /* LocationManagementService.swift */; };
+		5C26C0006CB352A041E96C11 /* LocationsManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9077C4DE29CC3E252C453332 /* LocationsManagementView.swift */; };
+		CF999D864EA351BA2C78180A /* LocationManagementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B0AC85397511B6DD713534A /* LocationManagementTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -139,6 +144,11 @@
 		E497F7F1F542491CCCC9DD4A /* DiscoveredDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveredDevice.swift; sourceTree = "<group>"; };
 		EE71337FF9C0731AF128A4F4 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		FC9995201F4DA405349D3D22 /* SaveScanSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveScanSheet.swift; sourceTree = "<group>"; };
+		4BDD6AC3DA2C5A39DE40709E /* LocationDeviceRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocationDeviceRecord.swift"; sourceTree = "<group>"; };
+		7D87EDA90EFAF7DDA9FDEDDF /* ManagedLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ManagedLocation.swift"; sourceTree = "<group>"; };
+		80E15B3D179863FD2A5F5931 /* LocationManagementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocationManagementService.swift"; sourceTree = "<group>"; };
+		9077C4DE29CC3E252C453332 /* LocationsManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocationsManagementView.swift"; sourceTree = "<group>"; };
+		5B0AC85397511B6DD713534A /* LocationManagementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocationManagementTests.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -163,6 +173,7 @@
 			isa = PBXGroup;
 			children = (
 				AA1F835F417C31916A6DEB41 /* LocationService.swift */,
+				80E15B3D179863FD2A5F5931 /* LocationManagementService.swift */,
 			);
 			path = Location;
 			sourceTree = "<group>";
@@ -240,6 +251,7 @@
 		78EF4B0EA3FDA2A792BCF074 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				4FD1C87EAA1779FCE2E18F0E /* Locations */,
 				EE71337FF9C0731AF128A4F4 /* ContentView.swift */,
 				176CDE9ED38CFC17DFCA90B6 /* Rooms */,
 				552ABBC5B1EDB7A15864BDDD /* Climate */,
@@ -335,6 +347,8 @@
 				DEB774EBDBA6FA9A1EF2D42F /* GoveeCommand.swift */,
 				B7D676CA78252788923A2A65 /* SavedScanSession.swift */,
 				1DBD014035DF15A589B4777E /* DeviceGrouping.swift */,
+				4BDD6AC3DA2C5A39DE40709E /* LocationDeviceRecord.swift */,
+				7D87EDA90EFAF7DDA9FDEDDF /* ManagedLocation.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -374,8 +388,17 @@
 				6EEE96E7109687F5E059E1FF /* AutoLocationScanTests.swift */,
 				7E36C363BB6FFDD935C0B16D /* BLEInspectorTests.swift */,
 				4C1203BD91149EC86BBB5A34 /* DeviceGroupingTests.swift */,
+				5B0AC85397511B6DD713534A /* LocationManagementTests.swift */,
 			);
 			path = mHomeNodeTests;
+			sourceTree = "<group>";
+		};
+		4FD1C87EAA1779FCE2E18F0E /* Locations */ = {
+			isa = PBXGroup;
+			children = (
+				9077C4DE29CC3E252C453332 /* LocationsManagementView.swift */,
+			);
+			path = Locations;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -484,6 +507,7 @@
 				7E42CE48D7C10D9521B5B9E7 /* AutoLocationScanTests.swift in Sources */,
 				B5BC91621BECA9A7A8113A5A /* BLEInspectorTests.swift in Sources */,
 				9DD927B6A26F677EBD96EA44 /* DeviceGroupingTests.swift in Sources */,
+				CF999D864EA351BA2C78180A /* LocationManagementTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -500,6 +524,10 @@
 				F77F915E2C1AD3103088A213 /* GoveeCommand.swift in Sources */,
 				6F9F302A40935993C848D342 /* SavedScanSession.swift in Sources */,
 				D905E72278D57E11BE513E9C /* DeviceGrouping.swift in Sources */,
+				9B334062A697D08493887233 /* LocationDeviceRecord.swift in Sources */,
+				8AC792E73AC3FA8ED37A03FE /* ManagedLocation.swift in Sources */,
+				5086CB352F14686818FA9DA2 /* LocationManagementService.swift in Sources */,
+				5C26C0006CB352A041E96C11 /* LocationsManagementView.swift in Sources */,
 				A4E5F23904C5E58859DE85FC /* BTHomeParser.swift in Sources */,
 				3EF20E822BA8CE3DB5B86206 /* DeviceFingerprinter.swift in Sources */,
 				B383CC8A06780BF95ECC12A3 /* QingpingParser.swift in Sources */,
