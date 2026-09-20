@@ -6,6 +6,8 @@ public struct RoomDetailView: View {
     public let serverRoom: ServerRoom?
     public var onSelectDevice: ((DiscoveredDevice) -> Void)?
 
+    @State private var showSensorsDetail: Bool = false
+
     public init(
         scannerVM: ScannerViewModel,
         roomName: String,
@@ -32,9 +34,13 @@ public struct RoomDetailView: View {
         roomDevices.filter { $0.isLightingDevice }
     }
 
+    private var plugDevices: [DiscoveredDevice] {
+        roomDevices.filter { $0.isSwitchablePlug }
+    }
+
     private var otherDevices: [DiscoveredDevice] {
         roomDevices.filter { dev in
-            !dev.isLightingDevice && dev.btHomeData?.temperature == nil && dev.btHomeData?.humidity == nil
+            !dev.isLightingDevice && !dev.isSwitchablePlug && dev.btHomeData?.temperature == nil && dev.btHomeData?.humidity == nil
         }
     }
 
@@ -103,47 +109,212 @@ public struct RoomDetailView: View {
             }
             .padding(.horizontal)
 
-            // MARK: - Climate Telemetry Cards (if any)
+            // MARK: - Compact Climate Telemetry Cards (Clickable to reveal/hide sensors)
             if avgTemp != nil || avgHumidity != nil {
-                HStack(spacing: 12) {
-                    if let temp = avgTemp {
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
+                Button {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                        showSensorsDetail.toggle()
+                    }
+                    #if canImport(UIKit)
+                    let generator = UIImpactFeedbackGenerator(style: .light)
+                    generator.impactOccurred()
+                    #endif
+                } label: {
+                    HStack(spacing: 10) {
+                        if let temp = avgTemp {
+                            HStack(spacing: 8) {
                                 Image(systemName: "thermometer.medium")
+                                    .font(.subheadline.weight(.semibold))
                                     .foregroundColor(.orange)
-                                Text("TEMPERATURE")
-                                    .font(.caption2.bold())
-                                    .foregroundColor(.secondary)
+
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text("TEMP")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .foregroundColor(.secondary)
+                                    Text(String(format: "%.1f°C", temp))
+                                        .font(.subheadline.bold().monospacedDigit())
+                                        .foregroundColor(.primary)
+                                }
                             }
-                            Text(String(format: "%.1f°C", temp))
-                                .font(.title.bold().monospacedDigit())
-                                .foregroundColor(.primary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color(.secondarySystemGroupedBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .shadow(color: Color.black.opacity(0.03), radius: 3, x: 0, y: 1)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(14)
-                        .background(Color(.secondarySystemGroupedBackground))
-                        .cornerRadius(14)
-                        .shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 2)
+
+                        if let hum = avgHumidity {
+                            HStack(spacing: 8) {
+                                Image(systemName: "humidity.fill")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundColor(.teal)
+
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text("HUMIDITY")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .foregroundColor(.secondary)
+                                    Text(String(format: "%.1f%%", hum))
+                                        .font(.subheadline.bold().monospacedDigit())
+                                        .foregroundColor(.primary)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color(.secondarySystemGroupedBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .shadow(color: Color.black.opacity(0.03), radius: 3, x: 0, y: 1)
+                        }
+
+                        // Sensor Expand/Collapse Badge
+                        HStack(spacing: 4) {
+                            Image(systemName: "sensor.tag.radiowaves.forward.fill")
+                                .font(.caption2)
+                            Text("\(climateDevices.count)")
+                                .font(.caption2.bold())
+                            Image(systemName: showSensorsDetail ? "chevron.up" : "chevron.down")
+                                .font(.caption2.bold())
+                        }
+                        .foregroundColor(showSensorsDetail ? .blue : .secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 9)
+                        .background(showSensorsDetail ? Color.blue.opacity(0.12) : Color(.secondarySystemGroupedBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .shadow(color: Color.black.opacity(0.03), radius: 3, x: 0, y: 1)
+                    }
+                    .padding(.horizontal)
+                }
+                .buttonStyle(.plain)
+            }
+
+            // MARK: - Climate Sensors Individual Cards (Toggled by Climate Bar)
+            if showSensorsDetail && !climateDevices.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Label("Sensors in \(roomName) (\(climateDevices.count))", systemImage: "sensor.tag.radiowaves.forward.fill")
+                            .font(.caption.bold())
+                            .foregroundColor(.secondary)
+                        Spacer()
                     }
 
-                    if let hum = avgHumidity {
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Image(systemName: "humidity.fill")
-                                    .foregroundColor(.teal)
-                                Text("HUMIDITY")
-                                    .font(.caption2.bold())
-                                    .foregroundColor(.secondary)
+                    ForEach(climateDevices) { device in
+                        Button {
+                            onSelectDevice?(device)
+                        } label: {
+                            HStack(spacing: 12) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .fill(Color.blue.opacity(0.12))
+                                        .frame(width: 38, height: 38)
+                                    Image(systemName: "thermometer.sun")
+                                        .foregroundColor(.blue)
+                                }
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(device.displayTitle)
+                                        .font(.subheadline.bold())
+                                        .foregroundColor(device.isSignalLost ? .secondary : .primary)
+
+                                    HStack(spacing: 6) {
+                                        if device.isSignalLost {
+                                             HStack(spacing: 2) {
+                                                Image(systemName: "wifi.slash")
+                                                Text("No signal")
+                                            }
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                        } else {
+                                            HStack(spacing: 2) {
+                                                Image(systemName: "clock")
+                                                Text(device.measurementAgeText)
+                                            }
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+
+                                            if let bth = device.btHomeData {
+                                                if let t = bth.temperature {
+                                                    Text("•")
+                                                        .font(.caption2)
+                                                        .foregroundColor(.secondary)
+                                                    Text(String(format: "%.1f°C", t))
+                                                        .font(.caption.bold())
+                                                        .foregroundColor(.primary)
+                                                }
+                                                if let h = bth.humidity {
+                                                    Text(String(format: "%.0f%%", h))
+                                                        .font(.caption)
+                                                        .foregroundColor(.secondary)
+                                                }
+                                                if let bat = bth.battery {
+                                                    Text("🔋 \(bat)%")
+                                                        .font(.caption2)
+                                                        .foregroundColor(.secondary)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .font(.caption2)
+                                    .foregroundColor(Color(.tertiaryLabel))
                             }
-                            Text(String(format: "%.1f%%", hum))
-                                .font(.title.bold().monospacedDigit())
-                                .foregroundColor(.primary)
+                            .padding(10)
+                            .background(Color(.secondarySystemGroupedBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .shadow(color: Color.black.opacity(0.03), radius: 3, x: 0, y: 1)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(14)
-                        .background(Color(.secondarySystemGroupedBackground))
-                        .cornerRadius(14)
-                        .shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 2)
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+
+            // MARK: - Smart Plugs / Switches Section (Shelly Plugs)
+            if !plugDevices.isEmpty {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Label("Plugs & Sockets (\(plugDevices.count))", systemImage: "powerplug.fill")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+
+                        Spacer()
+
+                        if plugDevices.count > 1 {
+                            HStack(spacing: 8) {
+                                Button("On") {
+                                    for dev in plugDevices {
+                                        scannerVM.setPlugPower(for: dev, isOn: true)
+                                    }
+                                }
+                                .font(.caption.weight(.semibold))
+                                .buttonStyle(.bordered)
+                                .tint(.green)
+
+                                Button("Off") {
+                                    for dev in plugDevices {
+                                        scannerVM.setPlugPower(for: dev, isOn: false)
+                                    }
+                                }
+                                .font(.caption.weight(.semibold))
+                                .buttonStyle(.bordered)
+                                .tint(.secondary)
+                            }
+                        }
+                    }
+
+                    ForEach(plugDevices) { device in
+                        PlugDeviceCard(
+                            device: device,
+                            controller: scannerVM.shellyController,
+                            onSelect: {
+                                onSelectDevice?(device)
+                            }
+                        )
                     }
                 }
                 .padding(.horizontal)
@@ -190,88 +361,6 @@ public struct RoomDetailView: View {
                                 onSelectDevice?(device)
                             }
                         )
-                    }
-                }
-                .padding(.horizontal)
-            }
-
-            // MARK: - Climate Sensors Individual Cards
-            if !climateDevices.isEmpty {
-                VStack(alignment: .leading, spacing: 10) {
-                    Label("Sensors (\(climateDevices.count))", systemImage: "sensor.tag.radiowaves.forward.fill")
-                        .font(.headline)
-                        .foregroundColor(.primary)
-
-                    ForEach(climateDevices) { device in
-                        Button {
-                            onSelectDevice?(device)
-                        } label: {
-                            HStack(spacing: 12) {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .fill(Color.blue.opacity(0.12))
-                                        .frame(width: 42, height: 42)
-                                    Image(systemName: "thermometer.sun")
-                                        .foregroundColor(.blue)
-                                }
-
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(device.displayTitle)
-                                        .font(.subheadline.bold())
-                                        .foregroundColor(device.isSignalLost ? .secondary : .primary)
-
-                                    HStack(spacing: 6) {
-                                        if device.isSignalLost {
-                                            HStack(spacing: 2) {
-                                                Image(systemName: "wifi.slash")
-                                                Text("No signal")
-                                            }
-                                            .font(.caption2)
-                                            .foregroundColor(.secondary)
-                                        } else {
-                                            HStack(spacing: 2) {
-                                                Image(systemName: "clock")
-                                                Text(device.measurementAgeText)
-                                            }
-                                            .font(.caption2)
-                                            .foregroundColor(.secondary)
-
-                                            if let bth = device.btHomeData {
-                                                if let t = bth.temperature {
-                                                    Text("•")
-                                                        .font(.caption2)
-                                                        .foregroundColor(.secondary)
-                                                    Text(String(format: "%.1f°C", t))
-                                                        .font(.caption.bold())
-                                                        .foregroundColor(.primary)
-                                                }
-                                                if let h = bth.humidity {
-                                                    Text(String(format: "%.0f%%", h))
-                                                        .font(.caption)
-                                                        .foregroundColor(.secondary)
-                                                }
-                                                if let bat = bth.battery {
-                                                    Text("🔋 \(bat)%")
-                                                        .font(.caption2)
-                                                        .foregroundColor(.secondary)
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                Spacer()
-
-                                Image(systemName: "chevron.right")
-                                    .font(.caption2)
-                                    .foregroundColor(Color(.tertiaryLabel))
-                            }
-                            .padding(12)
-                            .background(Color(.secondarySystemGroupedBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 1)
-                        }
-                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal)

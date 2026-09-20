@@ -17,6 +17,7 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
 
     public private(set) var peripheralMap: [UUID: CBPeripheral] = [:]
     public let goveeController = GoveeLightController()
+    public let shellyController = ShellyPlugController()
     public let inspectorService = BLEInspectorService()
 
     public init(ignoreService: IgnoreService? = nil, storageService: DeviceStorageService? = nil) {
@@ -26,6 +27,7 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
         self.devices = storage.loadDevices()
         super.init()
         self.goveeController.connectionManager = self
+        self.shellyController.connectionManager = self
         let cm = CBCentralManager(delegate: self, queue: .main)
         self.centralManager = cm
         self.inspectorService.setCentralManager(cm)

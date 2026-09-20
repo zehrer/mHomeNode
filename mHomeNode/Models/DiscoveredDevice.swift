@@ -231,6 +231,19 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
         return hasLightTerms || hasLed
     }
 
+    /// Whether this device represents a switchable smart plug or relay (Shelly Plug, Shelly Plus 1, smart socket)
+    public var isSwitchablePlug: Bool {
+        let low = (displayTitle + " " + name).lowercased()
+        if low.contains("shellyplug") || low.contains("shelly plug") || low.contains("shellyplus1") ||
+           low.contains("shelly plus 1") || low.contains("shellypro") || low.contains("shelly pro") {
+            return true
+        }
+        if low.contains("plug") || low.contains("steckdose") || low.contains("smart socket") || low.contains("relay") {
+            return true
+        }
+        return false
+    }
+
     /// Converts into the HomeNode Server MobileBleScanItem format
     public func toMobileBleScanItem(scoutName: String = "iPhone (mHomeNode)") -> MobileBleScanItem {
         MobileBleScanItem(

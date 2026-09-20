@@ -70,6 +70,9 @@
 		5086CB352F14686818FA9DA2 /* LocationManagementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80E15B3D179863FD2A5F5931 /* LocationManagementService.swift */; };
 		5C26C0006CB352A041E96C11 /* LocationsManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9077C4DE29CC3E252C453332 /* LocationsManagementView.swift */; };
 		CF999D864EA351BA2C78180A /* LocationManagementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B0AC85397511B6DD713534A /* LocationManagementTests.swift */; };
+		81A00001B001B001B0010001 /* ShellyPlugController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00001F001F001F0010001 /* ShellyPlugController.swift */; };
+		81A00002B002B002B0020002 /* PlugDeviceCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00002F002F002F0020002 /* PlugDeviceCard.swift */; };
+		81A00003B003B003B0030003 /* ShellyPlugTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00003F003F003F0030003 /* ShellyPlugTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -149,6 +152,9 @@
 		80E15B3D179863FD2A5F5931 /* LocationManagementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocationManagementService.swift"; sourceTree = "<group>"; };
 		9077C4DE29CC3E252C453332 /* LocationsManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocationsManagementView.swift"; sourceTree = "<group>"; };
 		5B0AC85397511B6DD713534A /* LocationManagementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocationManagementTests.swift"; sourceTree = "<group>"; };
+		81A00001F001F001F0010001 /* ShellyPlugController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ShellyPlugController.swift"; sourceTree = "<group>"; };
+		81A00002F002F002F0020002 /* PlugDeviceCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PlugDeviceCard.swift"; sourceTree = "<group>"; };
+		81A00003F003F003F0030003 /* ShellyPlugTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ShellyPlugTests.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -183,6 +189,7 @@
 			children = (
 				615C38F428E29108F0059EF4 /* RoomsView.swift */,
 				E2090A56BC8B9D42F01B86ED /* RoomDetailView.swift */,
+				81A00002F002F002F0020002 /* PlugDeviceCard.swift */,
 			);
 			path = Rooms;
 			sourceTree = "<group>";
@@ -296,6 +303,7 @@
 				BFEC2043EB2EA5DA4B34B4D5 /* MiBeaconParser.swift */,
 				86333B2F37318EBA181C25F6 /* BLEScannerService.swift */,
 				AF43DD70BC9F7234F1998133 /* GoveeLightController.swift */,
+				81A00001F001F001F0010001 /* ShellyPlugController.swift */,
 				338300292716400AB47D57F4 /* BLEInspectorService.swift */,
 			);
 			path = Bluetooth;
@@ -389,6 +397,7 @@
 				7E36C363BB6FFDD935C0B16D /* BLEInspectorTests.swift */,
 				4C1203BD91149EC86BBB5A34 /* DeviceGroupingTests.swift */,
 				5B0AC85397511B6DD713534A /* LocationManagementTests.swift */,
+				81A00003F003F003F0030003 /* ShellyPlugTests.swift */,
 			);
 			path = mHomeNodeTests;
 			sourceTree = "<group>";
@@ -508,6 +517,7 @@
 				B5BC91621BECA9A7A8113A5A /* BLEInspectorTests.swift in Sources */,
 				9DD927B6A26F677EBD96EA44 /* DeviceGroupingTests.swift in Sources */,
 				CF999D864EA351BA2C78180A /* LocationManagementTests.swift in Sources */,
+				81A00003B003B003B0030003 /* ShellyPlugTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -560,6 +570,8 @@
 				D080D3096ACDC5D57FD1E936 /* IgnoredDevicesListView.swift in Sources */,
 				AB96CC22CB7D323E7976E174 /* ServerStatusView.swift in Sources */,
 				B0D02913C35EF51883F29A14 /* ContentView.swift in Sources */,
+				81A00001B001B001B0010001 /* ShellyPlugController.swift in Sources */,
+				81A00002B002B002B0020002 /* PlugDeviceCard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

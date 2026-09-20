@@ -131,6 +131,54 @@ public struct DeviceDetailView: View {
                         }
                     }
 
+                    // MARK: - Smart Plug / Switch Controls
+                    if device.isSwitchablePlug {
+                        Section {
+                            let isPlugOn = scannerVM.shellyController.isPowerOn(for: device.id)
+                            let isBusy = scannerVM.shellyController.isDeviceBusy(device.id)
+
+                            // Power Toggle Row
+                            HStack {
+                                Label {
+                                    Text("Socket Power")
+                                        .font(.body.weight(.medium))
+                                } icon: {
+                                    Image(systemName: isPlugOn ? "powerplug.fill" : "powerplug")
+                                        .foregroundColor(isPlugOn ? .green : .secondary)
+                                }
+
+                                Spacer()
+
+                                if isBusy {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                        .padding(.trailing, 6)
+                                }
+
+                                Toggle("", isOn: Binding(
+                                    get: { isPlugOn },
+                                    set: { scannerVM.shellyController.setPower(for: device.id, isOn: $0) }
+                                ))
+                                .labelsHidden()
+                                .tint(.green)
+                            }
+
+                            if let error = scannerVM.shellyController.lastError[device.id] {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .foregroundColor(.red)
+                                    Text(error)
+                                        .font(.caption)
+                                        .foregroundColor(.red)
+                                }
+                            }
+                        } header: {
+                            Text("Smart Plug Controls")
+                        } footer: {
+                            Text("Direct local control for Shelly and Bluetooth smart plugs.")
+                        }
+                    }
+
                     // MARK: - 1. Name & Room Assignment Section
                     Section {
                         HStack {

@@ -357,6 +357,20 @@ public final class ScannerViewModel {
         lightController.setColor(for: device.id, red: red, green: green, blue: blue)
     }
 
+    // MARK: - Smart Plug / Switch Control
+
+    public var shellyController: ShellyPlugController {
+        bleService.shellyController
+    }
+
+    public func togglePlugPower(for device: DiscoveredDevice) {
+        shellyController.togglePower(for: device.id)
+    }
+
+    public func setPlugPower(for device: DiscoveredDevice, isOn: Bool) {
+        shellyController.setPower(for: device.id, isOn: isOn)
+    }
+
     // MARK: - Proximity-Based Room Detection
 
     /// Detects the user's current room based on the strongest BLE signal of assigned devices
