@@ -221,8 +221,13 @@ public struct DeviceDetailView: View {
                         Picker("Room", selection: $selectedRoom) {
                             Text("Not Assigned").tag("")
                             ForEach(scannerVM.roomManagementService.rooms) { room in
-                                Label(room.name, systemImage: room.icon)
-                                    .tag(room.name)
+                                if room.icon.isSFSymbolName {
+                                    Label(room.name, systemImage: room.icon)
+                                        .tag(room.name)
+                                } else {
+                                    Text("\(room.icon) \(room.name)")
+                                        .tag(room.name)
+                                }
                             }
                             ForEach(scannerVM.serverRooms.filter { sr in
                                 !scannerVM.roomManagementService.rooms.contains(where: { $0.name.lowercased() == sr.name.lowercased() })

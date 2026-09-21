@@ -35,8 +35,18 @@ public final class RoomManagementService {
         }
 
         self.rooms = loadRoomsFromDisk()
+        // Sanitize any existing emoji icons to valid SF symbols
+        var needsSave = false
+        for i in self.rooms.indices {
+            if !self.rooms[i].icon.isSFSymbolName {
+                self.rooms[i].icon = ManagedRoom.sfSymbol(for: self.rooms[i].icon)
+                needsSave = true
+            }
+        }
         if self.rooms.isEmpty {
             self.rooms = Self.defaultRooms
+            saveRoomsToDisk()
+        } else if needsSave {
             saveRoomsToDisk()
         }
     }
@@ -100,18 +110,20 @@ public final class RoomManagementService {
 
         for sRoom in serverRooms {
             let sName = sRoom.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            let mappedIcon = sRoom.icon.map { ManagedRoom.sfSymbol(for: $0) } ?? "door.left.hand.open"
+
             if let index = rooms.firstIndex(where: { $0.name.lowercased() == sName.lowercased() }) {
                 // Update existing room with server reference
                 rooms[index].serverRoomId = sRoom.id
-                if let sIcon = sRoom.icon, !sIcon.isEmpty, rooms[index].icon == "door.left.hand.open" {
-                    rooms[index].icon = sIcon
+                if rooms[index].icon == "door.left.hand.open" {
+                    rooms[index].icon = mappedIcon
                 }
             } else {
                 // Add new server room
                 let newRoom = ManagedRoom(
                     id: sRoom.id,
                     name: sName,
-                    icon: sRoom.icon ?? "door.left.hand.open",
+                    icon: mappedIcon,
                     source: .homeNodeServer,
                     serverRoomId: sRoom.id
                 )

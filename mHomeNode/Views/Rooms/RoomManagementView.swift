@@ -99,9 +99,7 @@ public struct RoomManagementView: View {
                                 Circle()
                                     .fill(room.displayColor.opacity(0.15))
                                     .frame(width: 38, height: 38)
-                                Image(systemName: room.icon)
-                                    .font(.subheadline.bold())
-                                    .foregroundColor(room.displayColor)
+                                RoomIconView(room.icon, size: 16, color: room.displayColor)
                             }
 
                             VStack(alignment: .leading, spacing: 3) {
@@ -271,9 +269,7 @@ public struct RoomEditSheet: View {
                             Circle()
                                 .fill((Color(hex: selectedColorHex) ?? .blue).opacity(0.15))
                                 .frame(width: 50, height: 50)
-                            Image(systemName: selectedIcon)
-                                .font(.title3.bold())
-                                .foregroundColor(Color(hex: selectedColorHex) ?? .blue)
+                            RoomIconView(selectedIcon, size: 22, color: Color(hex: selectedColorHex) ?? .blue)
                         }
 
                         VStack(alignment: .leading, spacing: 4) {
@@ -305,9 +301,7 @@ public struct RoomEditSheet: View {
                                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                                         .fill(selectedIcon == icon ? (Color(hex: selectedColorHex) ?? .blue).opacity(0.2) : Color(.tertiarySystemFill))
                                         .frame(height: 44)
-                                    Image(systemName: icon)
-                                        .font(.subheadline)
-                                        .foregroundColor(selectedIcon == icon ? (Color(hex: selectedColorHex) ?? .blue) : .primary)
+                                    RoomIconView(icon, size: 16, color: selectedIcon == icon ? (Color(hex: selectedColorHex) ?? .blue) : .primary)
                                 }
                             }
                             .buttonStyle(.plain)

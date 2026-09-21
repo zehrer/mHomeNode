@@ -68,12 +68,42 @@ public struct ManagedRoom: Identifiable, Codable, Sendable, Equatable, Hashable 
         return .blue
     }
 
+    /// Maps emoji icons (commonly sent by HomeNode Server) to corresponding SF Symbols
+    public static func sfSymbol(for iconOrEmoji: String) -> String {
+        let clean = iconOrEmoji.trimmingCharacters(in: .whitespacesAndNewlines)
+        switch clean {
+        case "🛋️", "🛋": return "sofa.fill"
+        case "🛏️", "🛏": return "bed.double.fill"
+        case "🛁", "🚿": return "bathtub.fill"
+        case "🍳", "🍽️", "🍴": return "fork.knife"
+        case "💼", "💻", "🖥️": return "laptopcomputer"
+        case "🧸": return "figure.child"
+        case "🚪": return "door.left.hand.open"
+        case "🧖", "🧖‍♂️", "🧖‍♀️": return "shower.fill"
+        case "🌳", "🪴", "🌿", "🌱": return "tree.fill"
+        case "🏠", "🏡": return "house.fill"
+        case "📺": return "tv.fill"
+        case "🚗", "🚙": return "car.fill"
+        case "📦": return "archivebox.fill"
+        case "📚": return "books.vertical.fill"
+        case "🔥": return "fireplace.fill"
+        case "💡": return "lightbulb.fill"
+        case "📍": return "mappin.and.ellipse"
+        default:
+            if clean.isSFSymbolName {
+                return clean
+            }
+            return "door.left.hand.open"
+        }
+    }
+
     /// Converts a ServerRoom into a ManagedRoom
     public static func from(serverRoom: ServerRoom) -> ManagedRoom {
-        ManagedRoom(
+        let mappedIcon = serverRoom.icon.map { sfSymbol(for: $0) } ?? "door.left.hand.open"
+        return ManagedRoom(
             id: serverRoom.id,
             name: serverRoom.name,
-            icon: serverRoom.icon ?? "door.left.hand.open",
+            icon: mappedIcon,
             colorHex: nil,
             source: .homeNodeServer,
             serverRoomId: serverRoom.id
@@ -90,6 +120,37 @@ public struct ManagedRoom: Identifiable, Codable, Sendable, Equatable, Hashable 
             archetype: nil,
             deviceCount: deviceCount
         )
+    }
+}
+
+// MARK: - SF Symbol / Emoji Helper & Safe View
+extension String {
+    public var isSFSymbolName: Bool {
+        guard !isEmpty else { return false }
+        return allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "." || $0 == "-" || $0 == "_") }
+    }
+}
+
+public struct RoomIconView: View {
+    public let icon: String
+    public var size: CGFloat
+    public var color: Color
+
+    public init(_ icon: String, size: CGFloat = 16, color: Color = .primary) {
+        self.icon = icon
+        self.size = size
+        self.color = color
+    }
+
+    public var body: some View {
+        if icon.isSFSymbolName {
+            Image(systemName: icon)
+                .font(.system(size: size, weight: .semibold))
+                .foregroundColor(color)
+        } else {
+            Text(icon)
+                .font(.system(size: size))
+        }
     }
 }
 

@@ -116,4 +116,46 @@ final class RoomManagementTests: XCTestCase {
         XCTAssertEqual(hkRoom?.source, .appleHome)
         XCTAssertEqual(hkRoom?.externalId, "hk-456")
     }
+
+    @MainActor
+    func testEmojiIconMappingAndSFSymbolDetection() {
+        // Test String.isSFSymbolName
+        XCTAssertTrue("sofa.fill".isSFSymbolName)
+        XCTAssertTrue("bed.double.fill".isSFSymbolName)
+        XCTAssertFalse("🛋️".isSFSymbolName)
+        XCTAssertFalse("🛁".isSFSymbolName)
+        XCTAssertFalse("".isSFSymbolName)
+
+        // Test ManagedRoom.sfSymbol(for:)
+        XCTAssertEqual(ManagedRoom.sfSymbol(for: "🛋️"), "sofa.fill")
+        XCTAssertEqual(ManagedRoom.sfSymbol(for: "🛏️"), "bed.double.fill")
+        XCTAssertEqual(ManagedRoom.sfSymbol(for: "🛁"), "bathtub.fill")
+        XCTAssertEqual(ManagedRoom.sfSymbol(for: "🍳"), "cooktop.fill")
+        XCTAssertEqual(ManagedRoom.sfSymbol(for: "💼"), "briefcase.fill")
+        XCTAssertEqual(ManagedRoom.sfSymbol(for: "🧸"), "figure.child")
+        XCTAssertEqual(ManagedRoom.sfSymbol(for: "🚪"), "door.left.hand.open")
+        XCTAssertEqual(ManagedRoom.sfSymbol(for: "🧖"), "shower.fill")
+        XCTAssertEqual(ManagedRoom.sfSymbol(for: "🌳"), "tree.fill")
+        XCTAssertEqual(ManagedRoom.sfSymbol(for: "🏠"), "house.fill")
+        XCTAssertEqual(ManagedRoom.sfSymbol(for: "📍"), "mappin.and.ellipse")
+
+        // Already valid SF Symbol should pass through
+        XCTAssertEqual(ManagedRoom.sfSymbol(for: "tv.fill"), "tv.fill")
+
+        // Syncing with ServerRooms containing emojis should sanitize icons to SF Symbols
+        let service = RoomManagementService(customFileURL: tempFileURL)
+        let serverRooms = [
+            ServerRoom(id: "srv-bath", name: "Master Bathroom", icon: "🛁"),
+            ServerRoom(id: "srv-bed", name: "Guest Bedroom", icon: "🛏️")
+        ]
+        service.syncWithServerRooms(serverRooms)
+
+        let bath = service.room(named: "Master Bathroom")
+        XCTAssertEqual(bath?.icon, "bathtub.fill")
+        XCTAssertTrue(bath?.icon.isSFSymbolName ?? false)
+
+        let bed = service.room(named: "Guest Bedroom")
+        XCTAssertEqual(bed?.icon, "bed.double.fill")
+        XCTAssertTrue(bed?.icon.isSFSymbolName ?? false)
+    }
 }

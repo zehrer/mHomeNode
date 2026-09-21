@@ -135,12 +135,9 @@ public struct RoomsView: View {
                                     } label: {
                                         HStack(spacing: 6) {
                                             if let m = item.managedRoom {
-                                                Image(systemName: m.icon)
-                                                    .font(.subheadline)
-                                                    .foregroundColor(isSelected ? .white : m.displayColor)
+                                                RoomIconView(m.icon, size: 14, color: isSelected ? .white : m.displayColor)
                                             } else {
-                                                Text(item.serverRoom?.icon ?? "🏠")
-                                                    .font(.subheadline)
+                                                RoomIconView(item.serverRoom?.icon ?? "house.fill", size: 14, color: isSelected ? .white : .primary)
                                             }
                                             Text(item.name)
                                                 .font(.subheadline.weight(isSelected ? .bold : .regular))
