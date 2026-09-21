@@ -1,5 +1,5 @@
 import Foundation
-import CoreBluetooth
+@preconcurrency import CoreBluetooth
 import OSLog
 
 /// Standard Bluetooth SIG GATT characteristic and service UUIDs
@@ -254,15 +254,17 @@ public final class BLEInspectorService: NSObject, @unchecked Sendable, CBPeriphe
             DispatchQueue.main.asyncAfter(deadline: .now() + timeoutSeconds, execute: item)
 
             self.logger.info("Connecting to peripheral \(peripheral.identifier) for GATT inspection...")
-            let connectBlock = {
+            if let q = self.centralQueue {
+                q.async { [weak central, weak peripheral] in
+                    guard let central = central, let peripheral = peripheral else { return }
+                    central.connect(peripheral, options: [
+                        CBConnectPeripheralOptionNotifyOnDisconnectionKey: false
+                    ])
+                }
+            } else {
                 central.connect(peripheral, options: [
                     CBConnectPeripheralOptionNotifyOnDisconnectionKey: false
                 ])
-            }
-            if let q = self.centralQueue {
-                q.async(execute: connectBlock)
-            } else {
-                connectBlock()
             }
         }
     }

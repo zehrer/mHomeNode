@@ -337,7 +337,7 @@ public final class BLEScannerService: NSObject, BLEConnectionManager {
 
 // MARK: - Background BLE Central Worker
 
-private final class BLECentralWorker: NSObject, @preconcurrency CBCentralManagerDelegate, @unchecked Sendable {
+private final class BLECentralWorker: NSObject, CBCentralManagerDelegate, @unchecked Sendable {
     private let logger = Logger(subsystem: "net.zehrer.homenode.mHomeNode", category: "BLEWorker")
     let queue: DispatchQueue
     private(set) var centralManager: CBCentralManager?
