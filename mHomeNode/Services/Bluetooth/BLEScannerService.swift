@@ -335,13 +335,16 @@ public final class BLEScannerService: NSObject, BLEConnectionManager {
                 userInfo: [NSLocalizedDescriptionKey: "Peripheral not currently reachable or out of signal range."]
             )
         }
+        let wasBurst = self.isBurstScanning
         let wasScanning = self.isScanning
-        if wasScanning {
-            worker.stopScan()
+        if wasBurst || wasScanning {
+            pauseScan()
         }
         defer {
-            if wasScanning {
-                worker.startScan()
+            if wasBurst {
+                startBurstScan(activeDuration: self.burstActiveDuration, pauseDuration: self.burstPauseDuration)
+            } else if wasScanning {
+                startScan()
             }
         }
         let info = try await inspectorService.inspect(peripheral: peripheral, timeoutSeconds: 15.0)

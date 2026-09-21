@@ -598,6 +598,12 @@ public struct DeviceDetailView: View {
                                     .font(.caption2)
                                     .foregroundColor(.secondary)
                             }
+
+                            if device.isHomeKitAccessory {
+                                Label("Tipp: Wenn der Sensor im Thread-Mesh arbeitet oder schläft, drücke kurz die Taste am Sensor, um die BLE-Schnittstelle für die Inspektion aufzuwecken.", systemImage: "info.circle")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
                         } header: {
                             Text("Active GATT Deep Inspection")
                         } footer: {
