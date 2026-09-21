@@ -256,11 +256,13 @@ public final class BLEScannerService: NSObject, BLEConnectionManager {
     private func applyBatchUpdate(snapshot: [DiscoveredDevice], peripherals: [UUID: CBPeripheral]) {
         var merged = snapshot
         for i in merged.indices {
-            let devKey = merged[i].macAddress ?? merged[i].id.uuidString
-            if let reg = LocationManagementService.shared.lookupDevice(deviceId: devKey) {
-                if merged[i].assignedRoom == nil { merged[i].assignedRoom = reg.assignedRoom }
-                if merged[i].customName == nil { merged[i].customName = reg.customName }
-                LocationManagementService.shared.markDeviceSeen(deviceId: devKey)
+            if merged[i].assignedRoom == nil || merged[i].customName == nil {
+                let devKey = merged[i].macAddress ?? merged[i].id.uuidString
+                if let reg = LocationManagementService.shared.lookupDevice(deviceId: devKey) {
+                    if merged[i].assignedRoom == nil { merged[i].assignedRoom = reg.assignedRoom }
+                    if merged[i].customName == nil { merged[i].customName = reg.customName }
+                    LocationManagementService.shared.markDeviceSeen(deviceId: devKey)
+                }
             }
         }
 
@@ -375,9 +377,9 @@ private final class BLECentralWorker: NSObject, CBCentralManagerDelegate, @unche
         }
         super.init()
 
-        // Coalesce updates to UI at ~150ms intervals
+        // Coalesce updates to UI at ~600ms intervals (preserves 60fps main thread responsiveness)
         let timer = DispatchSource.makeTimerSource(queue: queue)
-        timer.schedule(deadline: .now() + .milliseconds(150), repeating: .milliseconds(150))
+        timer.schedule(deadline: .now() + .milliseconds(600), repeating: .milliseconds(600))
         timer.setEventHandler { [weak self] in
             self?.flushBatchIfNeeded()
         }

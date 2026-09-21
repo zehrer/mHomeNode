@@ -99,4 +99,34 @@ final class DeviceGroupingTests: XCTestCase {
         XCTAssertEqual(sections.count, 1)
         XCTAssertEqual(sections[0].devices.count, 2)
     }
+
+    @MainActor
+    func testProximityFilterAndCollapsibleSections() {
+        let vm = ScannerViewModel()
+
+        // Test default grouping mode is category
+        XCTAssertEqual(vm.groupingMode, .category)
+
+        // Test default proximity filter is nearby (-85 dBm)
+        XCTAssertEqual(vm.proximityFilter, .nearby)
+
+        // Test collapsible section tracking
+        XCTAssertFalse(vm.isSectionExpanded("test-section"))
+        vm.toggleSectionExpanded("test-section")
+        XCTAssertTrue(vm.isSectionExpanded("test-section"))
+        vm.toggleSectionExpanded("test-section")
+        XCTAssertFalse(vm.isSectionExpanded("test-section"))
+
+        vm.expandAllSections()
+        vm.collapseAllSections()
+        XCTAssertTrue(vm.expandedSectionIds.isEmpty)
+    }
+
+    func testProximityFilterThresholds() {
+        XCTAssertEqual(ProximityFilter.all.rawValue, -120.0)
+        XCTAssertEqual(ProximityFilter.distant.rawValue, -90.0)
+        XCTAssertEqual(ProximityFilter.nearby.rawValue, -85.0)
+        XCTAssertEqual(ProximityFilter.inRoom.rawValue, -70.0)
+        XCTAssertEqual(ProximityFilter.immediate.rawValue, -60.0)
+    }
 }

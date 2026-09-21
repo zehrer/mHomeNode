@@ -106,47 +106,110 @@ public struct ScannerView: View {
                     }
                 }
 
+                // MARK: - Proximity Filter & Grouping Quick Bar
+                Section {
+                    HStack(spacing: 8) {
+                        Image(systemName: vm.proximityFilter.iconName)
+                            .foregroundColor(.blue)
+                            .font(.subheadline)
+
+                        Picker("Proximity Filter", selection: $vm.proximityFilter) {
+                            ForEach(ProximityFilter.allCases) { filter in
+                                Text(filter.shortTitle).tag(filter)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+
+                        if vm.groupingMode != .none {
+                            Menu {
+                                Button("Expand All Groups", systemImage: "rectangle.expand.vertical") {
+                                    withAnimation { vm.expandAllSections() }
+                                }
+                                Button("Collapse All Groups", systemImage: "rectangle.compress.vertical") {
+                                    withAnimation { vm.collapseAllSections() }
+                                }
+                            } label: {
+                                Image(systemName: "rectangle.compress.vertical")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                    .padding(.horizontal, 2)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+
                 ForEach(vm.groupedSections) { section in
                     Section {
-                        ForEach(section.devices) { device in
-                            NavigationLink(destination: DeviceDetailView(scannerVM: vm, deviceId: device.id)) {
-                                DeviceRowView(device: device)
-                            }
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                if device.isIgnored {
-                                    Button {
-                                        vm.unignoreDevice(device)
-                                    } label: {
-                                        Label("Restore", systemImage: "arrow.uturn.backward")
+                        if vm.groupingMode == .none || vm.isSectionExpanded(section.id) {
+                            ForEach(section.devices) { device in
+                                NavigationLink(value: device.id) {
+                                    DeviceRowView(device: device)
+                                }
+                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                    if device.isIgnored {
+                                        Button {
+                                            vm.unignoreDevice(device)
+                                        } label: {
+                                            Label("Restore", systemImage: "arrow.uturn.backward")
+                                        }
+                                        .tint(.green)
+                                    } else {
+                                        Button(role: .destructive) {
+                                            vm.ignoreDevice(device, reason: "User Ignored")
+                                        } label: {
+                                            Label("Ignore", systemImage: "nosign")
+                                        }
+                                        .tint(.red)
                                     }
-                                    .tint(.green)
-                                } else {
-                                    Button(role: .destructive) {
-                                        vm.ignoreDevice(device, reason: "User Ignored")
-                                    } label: {
-                                        Label("Ignore", systemImage: "nosign")
-                                    }
-                                    .tint(.red)
                                 }
                             }
                         }
                     } header: {
-                        HStack {
-                            if vm.groupingMode == .none {
+                        if vm.groupingMode == .none {
+                            HStack {
                                 Text("Devices (\(vm.filteredDevices.count) total • \(vm.activeDevicesCount) active)")
-                            } else {
-                                Label("\(section.title) (\(section.devices.count))", systemImage: section.iconName)
+                                Spacer()
+                                if vm.isScanning {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                }
                             }
-                            Spacer()
-                            if vm.isScanning && (vm.groupingMode == .none || section.id == vm.groupedSections.first?.id) {
-                                ProgressView()
-                                    .controlSize(.small)
+                        } else {
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    vm.toggleSectionExpanded(section.id)
+                                }
+                            } label: {
+                                HStack {
+                                    Label(section.title, systemImage: section.iconName)
+                                        .font(.subheadline.bold())
+                                        .foregroundColor(.primary)
+
+                                    Spacer()
+
+                                    Text("\(section.devices.count)")
+                                        .font(.caption2.bold())
+                                        .foregroundColor(.secondary)
+                                        .padding(.horizontal, 7)
+                                        .padding(.vertical, 2)
+                                        .background(Color.secondary.opacity(0.12))
+                                        .clipShape(Capsule())
+
+                                    Image(systemName: vm.isSectionExpanded(section.id) ? "chevron.down" : "chevron.right")
+                                        .font(.caption2.bold())
+                                        .foregroundColor(.secondary)
+                                }
                             }
+                            .buttonStyle(.plain)
                         }
                     }
                 }
             }
             .listStyle(.insetGrouped)
+            .navigationDestination(for: UUID.self) { deviceId in
+                DeviceDetailView(scannerVM: vm, deviceId: deviceId)
+            }
             .navigationTitle("BLE Scout")
             .searchable(text: $vm.searchText, prompt: "Search by name, room, MAC, or UUID")
             .toolbar {
@@ -221,6 +284,14 @@ public struct ScannerView: View {
                                 }
                             }
 
+                            Section("Signal & Distance") {
+                                Picker("Signal Threshold", selection: $vm.proximityFilter) {
+                                    ForEach(ProximityFilter.allCases) { filter in
+                                        Label(filter.title, systemImage: filter.iconName).tag(filter)
+                                    }
+                                }
+                            }
+
                             Section("Filters") {
                                 Toggle("Known Sensors Only", isOn: $vm.onlyKnownDevices)
                                 Toggle("Show Ignored Devices", isOn: $vm.showIgnoredDevices)
@@ -231,6 +302,17 @@ public struct ScannerView: View {
                             Picker("Group By", selection: $vm.groupingMode) {
                                 ForEach(DeviceGroupingMode.allCases) { mode in
                                     Label(mode.rawValue, systemImage: mode.systemImage).tag(mode)
+                                }
+                            }
+
+                            if vm.groupingMode != .none {
+                                Section("Groups") {
+                                    Button("Expand All Groups", systemImage: "rectangle.expand.vertical") {
+                                        withAnimation { vm.expandAllSections() }
+                                    }
+                                    Button("Collapse All Groups", systemImage: "rectangle.compress.vertical") {
+                                        withAnimation { vm.collapseAllSections() }
+                                    }
                                 }
                             }
 

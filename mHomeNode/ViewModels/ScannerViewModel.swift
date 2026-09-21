@@ -1,6 +1,46 @@
 import Foundation
 import SwiftUI
 
+public enum ProximityFilter: Double, CaseIterable, Identifiable, Sendable {
+    case all = -120.0
+    case distant = -90.0
+    case nearby = -85.0
+    case inRoom = -70.0
+    case immediate = -60.0
+
+    public var id: Double { rawValue }
+
+    public var title: String {
+        switch self {
+        case .all: return "All Signals"
+        case .distant: return "Distant (≥ -90 dBm)"
+        case .nearby: return "Nearby (≥ -85 dBm)"
+        case .inRoom: return "In Room (≥ -70 dBm)"
+        case .immediate: return "Immediate (≥ -60 dBm)"
+        }
+    }
+
+    public var shortTitle: String {
+        switch self {
+        case .all: return "All"
+        case .distant: return "< 15m"
+        case .nearby: return "Nearby"
+        case .inRoom: return "Room"
+        case .immediate: return "< 1m"
+        }
+    }
+
+    public var iconName: String {
+        switch self {
+        case .all: return "dot.radiowaves.left.and.right"
+        case .distant: return "wave.3.forward"
+        case .nearby: return "antenna.radiowaves.left.and.right"
+        case .inRoom: return "house"
+        case .immediate: return "location.fill"
+        }
+    }
+}
+
 public enum DeviceSortOrder: String, CaseIterable, Identifiable {
     case rssi = "Signal Strength"
     case name = "Name"
@@ -27,12 +67,39 @@ public final class ScannerViewModel {
     public var searchText: String = ""
     public var onlyKnownDevices: Bool = false
     public var showIgnoredDevices: Bool = false
+    public var proximityFilter: ProximityFilter = .nearby {
+        didSet {
+            UserDefaults.standard.set(proximityFilter.rawValue, forKey: "proximityFilter")
+        }
+    }
     public var minRSSI: Double = -120
     public var sortOrder: DeviceSortOrder = .rssi
-    public var groupingMode: DeviceGroupingMode = .none {
+    public var groupingMode: DeviceGroupingMode = .category {
         didSet {
             UserDefaults.standard.set(groupingMode.rawValue, forKey: "deviceGroupingMode")
         }
+    }
+
+    public var expandedSectionIds: Set<String> = []
+
+    public func isSectionExpanded(_ id: String) -> Bool {
+        expandedSectionIds.contains(id)
+    }
+
+    public func toggleSectionExpanded(_ id: String) {
+        if expandedSectionIds.contains(id) {
+            expandedSectionIds.remove(id)
+        } else {
+            expandedSectionIds.insert(id)
+        }
+    }
+
+    public func expandAllSections() {
+        expandedSectionIds = Set(groupedSections.map(\.id))
+    }
+
+    public func collapseAllSections() {
+        expandedSectionIds.removeAll()
     }
 
     public var isSyncing: Bool = false
@@ -95,6 +162,15 @@ public final class ScannerViewModel {
         if let storedGroup = UserDefaults.standard.string(forKey: "deviceGroupingMode"),
            let mode = DeviceGroupingMode(rawValue: storedGroup) {
             self.groupingMode = mode
+        } else {
+            self.groupingMode = .category
+        }
+
+        let storedProximity = UserDefaults.standard.double(forKey: "proximityFilter")
+        if storedProximity != 0, let filter = ProximityFilter(rawValue: storedProximity) {
+            self.proximityFilter = filter
+        } else {
+            self.proximityFilter = .nearby
         }
 
         disc.onServerDiscovered = { [weak self] server in
@@ -200,7 +276,7 @@ public final class ScannerViewModel {
             if onlyKnownDevices && device.family == .standardBLE {
                 return false
             }
-            if Double(device.rssi) < minRSSI {
+            if Double(device.rssi) < proximityFilter.rawValue || Double(device.rssi) < minRSSI {
                 return false
             }
             if !searchText.isEmpty {
