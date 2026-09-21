@@ -208,6 +208,47 @@ public struct DeviceDetailView: View {
                         }
                     }
 
+                    // MARK: - Apple HomeKit Status
+                    if device.isHomeKitAccessory {
+                        Section {
+                            VStack(alignment: .leading, spacing: 10) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "house.fill")
+                                        .font(.title3)
+                                        .foregroundColor(.orange)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Apple HomeKit Zubehör")
+                                            .font(.headline)
+                                        Text(device.isHomeKitPaired ? "In Apple Home eingebunden (HAP over BLE)" : "Bereit für Apple Home Kopplung")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+
+                                Text("Dieses Gerät kommuniziert über das verschlüsselte Apple HomeKit Accessory Protocol (HAP). Die Sensorwerte (Temperatur & Feuchtigkeit) werden kryptografisch geschützt übertragen.")
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
+
+                                Divider()
+
+                                HStack {
+                                    Label("Verschlüsselung", systemImage: device.isHomeKitPaired ? "lock.fill" : "lock.open.fill")
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                    Spacer()
+                                    Text(device.isHomeKitPaired ? "Aktiv (ChaCha20-Poly1305)" : "Keine")
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundColor(device.isHomeKitPaired ? .orange : .blue)
+                                }
+                            }
+                            .padding(.vertical, 4)
+                        } header: {
+                            Text("Apple Home")
+                        } footer: {
+                            Text("Über die Apple HomeKit Integration kann mHomeNode die Live-Messwerte direkt und entschlüsselt über das HomeKit-Framework (HMHomeManager) von iOS synchronisieren.")
+                        }
+                    }
+
                     // MARK: - 1. Name & Room Assignment Section
                     Section {
                         HStack {

@@ -37,9 +37,17 @@ public enum KnownGATTService {
         if upper.contains("FE2C") { return "Google Fast Pair" }
         if upper.contains("FCD2") { return "BTHome V2" }
         if upper.contains("FDCD") { return "Qingping Service" }
+        if upper.contains("22210000") { return "Qingping Cloud & History" }
+        if upper.contains("FE59") { return "Nordic Secure DFU" }
         if upper.contains("FE95") { return "Xiaomi MiHome" }
         if upper.contains("FFF0") { return "Tuya / Telink Service" }
         if upper.contains("ADE3D529") { return "Samsung Diagnostics & Setup" }
+        if upper.hasPrefix("0000003E") { return "HomeKit Accessory Information" }
+        if upper.hasPrefix("00000082") { return "HomeKit Temperature Sensor" }
+        if upper.hasPrefix("0000008A") { return "HomeKit Humidity Sensor" }
+        if upper.hasPrefix("00000096") { return "HomeKit Battery Service" }
+        if upper.hasPrefix("000000A2") { return "HomeKit Protocol Service" }
+        if upper.hasPrefix("00000079") { return "HomeKit Pairing Service" }
         return "Service (\(uuid.prefix(8)))"
     }
 }
@@ -58,6 +66,12 @@ public enum KnownGATTCharacteristic {
         if upper.contains("2A28") { return "Software Revision" }
         if upper.contains("E9241982") { return "Samsung OS & Diagnostic JSON" }
         if upper.contains("AD7B334F") { return "Samsung Device Command Port" }
+        if upper.hasPrefix("00000011") { return "HomeKit Current Temperature (HAP)" }
+        if upper.hasPrefix("00000010") { return "HomeKit Current Relative Humidity (HAP)" }
+        if upper.hasPrefix("00000068") { return "HomeKit Status Active" }
+        if upper.hasPrefix("00000075") { return "HomeKit Status Fault" }
+        if upper.hasPrefix("0000007A") { return "HomeKit Status Low Battery" }
+        if upper.hasPrefix("00000052") { return "HomeKit Identify" }
         return "Char (\(uuid.prefix(8)))"
     }
 }

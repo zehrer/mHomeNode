@@ -6,17 +6,23 @@ public struct DeviceIdentificationResult: Sendable {
     public let btHomeData: BTHomeData?
     public let resolvedName: String?
     public let macAddress: String?
+    public let isHomeKitAccessory: Bool
+    public let isHomeKitPaired: Bool
 
     public init(
         family: DeviceFamily,
         btHomeData: BTHomeData? = nil,
         resolvedName: String? = nil,
-        macAddress: String? = nil
+        macAddress: String? = nil,
+        isHomeKitAccessory: Bool = false,
+        isHomeKitPaired: Bool = false
     ) {
         self.family = family
         self.btHomeData = btHomeData
         self.resolvedName = resolvedName
         self.macAddress = macAddress
+        self.isHomeKitAccessory = isHomeKitAccessory
+        self.isHomeKitPaired = isHomeKitPaired
     }
 }
 
@@ -202,18 +208,40 @@ public enum DeviceFingerprinter {
             let mfgId = UInt16(mfg[0]) | (UInt16(mfg[1]) << 8)
             if mfgId == 0x004C {
                 var appleName = resolvedName ?? (name.isEmpty ? "Apple Device" : name)
-                if mfg.count >= 3 && mfg[2] == 0x12 {
+                var isHomeKit = false
+                var isPaired = false
+                var resolvedFamily: DeviceFamily = .apple
+
+                if mfg.count >= 3 && mfg[2] == 0x06 {
+                    // Apple HomeKit Accessory Protocol (HAP over BLE)
+                    isHomeKit = true
+                    if mfg.count >= 4 {
+                        let statusFlags = mfg[3]
+                        isPaired = (statusFlags & 0x01) != 0
+                    }
+                    if lowerName.contains("qin") {
+                        resolvedFamily = .qingping
+                        appleName = isPaired ? "Qingping Temp & RH (HomeKit)" : "Qingping Temp & RH"
+                    } else if !name.isEmpty {
+                        appleName = isPaired ? "\(name) (HomeKit)" : name
+                    } else {
+                        appleName = isPaired ? "HomeKit Accessory" : "HomeKit Device (Unpaired)"
+                    }
+                } else if mfg.count >= 3 && mfg[2] == 0x12 {
                     appleName = name.isEmpty ? "Find My / AirTag" : name
                 } else if lowerName.contains("homepod") {
                     appleName = name
                 } else if lowerName.contains("watch") {
                     appleName = "Apple Watch (\(name))"
                 }
+
                 return DeviceIdentificationResult(
-                    family: .apple,
+                    family: resolvedFamily,
                     btHomeData: nil,
                     resolvedName: appleName,
-                    macAddress: resolvedMac
+                    macAddress: resolvedMac,
+                    isHomeKitAccessory: isHomeKit,
+                    isHomeKitPaired: isPaired
                 )
             }
 

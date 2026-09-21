@@ -252,4 +252,20 @@ final class DeviceFingerprinterTests: XCTestCase {
         )
         XCTAssertEqual(res.family, .nordic)
     }
+
+    func testIdentifyAppleHomeKitQingping() {
+        // Apple Mfg ID: 0x004C -> [0x4C, 0x00]
+        // Type 0x06 (HomeKit HAP), status flag 0x31 (paired: 0x31 & 0x01 != 0), etc.
+        let mfgHomeKit = Data([0x4C, 0x00, 0x06, 0x31, 0x00, 0xA5, 0xEA, 0x3B, 0x02, 0xE5])
+        let res = DeviceFingerprinter.identifyDetails(
+            advertisedName: "Qin",
+            serviceUUIDs: nil,
+            serviceData: nil,
+            manufacturerData: mfgHomeKit
+        )
+        XCTAssertEqual(res.family, .qingping)
+        XCTAssertEqual(res.resolvedName, "Qingping Temp & RH (HomeKit)")
+        XCTAssertTrue(res.isHomeKitAccessory)
+        XCTAssertTrue(res.isHomeKitPaired)
+    }
 }

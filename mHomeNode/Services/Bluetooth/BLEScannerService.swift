@@ -506,7 +506,9 @@ private final class BLECentralWorker: NSObject, CBCentralManagerDelegate, @unche
         )
 
         let resolvedName: String
-        if !rawName.isEmpty {
+        if identification.isHomeKitAccessory, let modelName = identification.resolvedName {
+            resolvedName = modelName
+        } else if !rawName.isEmpty && rawName.lowercased() != "qin" {
             resolvedName = rawName
         } else if let modelName = identification.resolvedName {
             resolvedName = modelName
@@ -532,8 +534,12 @@ private final class BLECentralWorker: NSObject, CBCentralManagerDelegate, @unche
             if dev.rssiHistory.count > 20 {
                 dev.rssiHistory.removeFirst()
             }
-            if resolvedName != "Unknown" && (dev.name == "Unknown" || dev.name.isEmpty) {
+            if resolvedName != "Unknown" && (dev.name == "Unknown" || dev.name.isEmpty || dev.name == "Qin") {
                 dev.name = resolvedName
+            }
+            if identification.isHomeKitAccessory {
+                dev.isHomeKitAccessory = true
+                dev.isHomeKitPaired = identification.isHomeKitPaired
             }
             if let btHomeData = identification.btHomeData {
                 if dev.btHomeData != nil {
@@ -594,6 +600,8 @@ private final class BLECentralWorker: NSObject, CBCentralManagerDelegate, @unche
                 customName: nil,
                 isIgnored: isIgnored,
                 macAddress: identification.macAddress,
+                isHomeKitAccessory: identification.isHomeKitAccessory,
+                isHomeKitPaired: identification.isHomeKitPaired,
                 firstSeen: now,
                 lastSeen: now,
                 lastMeasurementDate: identification.btHomeData != nil ? now : nil

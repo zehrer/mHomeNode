@@ -52,6 +52,8 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
     public var lastSeen: Date
     public var lastMeasurementDate: Date?
     public var inspectionInfo: DeviceInspectionInfo?
+    public var isHomeKitAccessory: Bool
+    public var isHomeKitPaired: Bool
 
     public init(
         id: UUID,
@@ -71,6 +73,8 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
         macAddress: String? = nil,
         lanAddress: String? = nil,
         activeControlInterface: ControlInterface? = nil,
+        isHomeKitAccessory: Bool = false,
+        isHomeKitPaired: Bool = false,
         firstSeen: Date = Date(),
         lastSeen: Date = Date(),
         lastMeasurementDate: Date? = nil
@@ -92,6 +96,8 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
         self.macAddress = macAddress
         self.lanAddress = lanAddress
         self.activeControlInterface = activeControlInterface
+        self.isHomeKitAccessory = isHomeKitAccessory
+        self.isHomeKitPaired = isHomeKitPaired
         self.firstSeen = firstSeen
         self.lastSeen = lastSeen
         self.lastMeasurementDate = lastMeasurementDate ?? (btHomeData != nil ? lastSeen : nil)
@@ -100,6 +106,14 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
     /// Merges retrieved GATT inspection info and updates name, family, and battery if unassigned
     public mutating func applyInspectionInfo(_ info: DeviceInspectionInfo) {
         self.inspectionInfo = info
+
+        // Check if discovered services include Apple HomeKit (HAP) base UUID
+        for s in info.discoveredServices {
+            let u = s.uuid.uppercased()
+            if u.contains("0026BB765291") || u.hasPrefix("0000003E") || u.hasPrefix("00000082") || u.hasPrefix("0000008A") {
+                self.isHomeKitAccessory = true
+            }
+        }
 
         if self.name == "Unknown" || self.name.isEmpty {
             if let dname = info.deviceName, !dname.isEmpty {

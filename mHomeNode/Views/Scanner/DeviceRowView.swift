@@ -36,6 +36,20 @@ public struct DeviceRowView: View {
                                 .background(Color.red.opacity(0.12))
                                 .clipShape(Capsule())
                         }
+
+                        if device.isHomeKitAccessory {
+                            HStack(spacing: 3) {
+                                Image(systemName: "house.fill")
+                                    .font(.system(size: 8))
+                                Text(device.isHomeKitPaired ? "Apple Home" : "HomeKit")
+                                    .font(.system(size: 9, weight: .semibold))
+                            }
+                            .foregroundColor(.orange)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(Color.orange.opacity(0.12))
+                            .clipShape(Capsule())
+                        }
                     }
 
                     HStack(spacing: 6) {
@@ -132,6 +146,23 @@ public struct DeviceRowView: View {
                             color: .indigo
                         )
                     }
+                }
+                .padding(.top, 2)
+            } else if device.isHomeKitAccessory && !device.isIgnored {
+                HStack(spacing: 6) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "lock.shield")
+                            .font(.caption2)
+                        Text(device.isHomeKitPaired ? "HomeKit Encrypted (HAP)" : "HomeKit Pairing Ready")
+                            .font(.caption2.weight(.medium))
+                    }
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color(.tertiarySystemFill))
+                    .clipShape(Capsule())
+
+                    Spacer()
                 }
                 .padding(.top, 2)
             }
