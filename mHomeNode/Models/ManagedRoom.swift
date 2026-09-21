@@ -31,6 +31,7 @@ public enum RoomSource: String, Codable, Sendable, CaseIterable, Identifiable {
 public struct ManagedRoom: Identifiable, Codable, Sendable, Equatable, Hashable {
     public let id: String
     public var name: String
+    public var floor: String?
     public var icon: String
     public var colorHex: String?
     public var source: RoomSource
@@ -39,9 +40,18 @@ public struct ManagedRoom: Identifiable, Codable, Sendable, Equatable, Hashable 
     public var createdAt: Date
     public var updatedAt: Date
 
+    public static let standardFloors: [String] = [
+        "Erdgeschoss",
+        "Obergeschoss",
+        "Keller",
+        "Dachgeschoss",
+        "Außenbereich"
+    ]
+
     public init(
         id: String = UUID().uuidString,
         name: String,
+        floor: String? = nil,
         icon: String = "door.left.hand.open",
         colorHex: String? = nil,
         source: RoomSource = .local,
@@ -52,6 +62,7 @@ public struct ManagedRoom: Identifiable, Codable, Sendable, Equatable, Hashable 
     ) {
         self.id = id
         self.name = name
+        self.floor = floor
         self.icon = icon
         self.colorHex = colorHex
         self.source = source
@@ -59,6 +70,13 @@ public struct ManagedRoom: Identifiable, Codable, Sendable, Equatable, Hashable 
         self.externalId = externalId
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+    }
+
+    public var displayFloor: String {
+        guard let f = floor?.trimmingCharacters(in: .whitespacesAndNewlines), !f.isEmpty else {
+            return "Ohne Etage"
+        }
+        return f
     }
 
     public var displayColor: Color {
@@ -103,6 +121,7 @@ public struct ManagedRoom: Identifiable, Codable, Sendable, Equatable, Hashable 
         return ManagedRoom(
             id: serverRoom.id,
             name: serverRoom.name,
+            floor: serverRoom.floor,
             icon: mappedIcon,
             colorHex: nil,
             source: .homeNodeServer,
@@ -115,7 +134,7 @@ public struct ManagedRoom: Identifiable, Codable, Sendable, Equatable, Hashable 
         ServerRoom(
             id: serverRoomId ?? id,
             name: name,
-            floor: nil,
+            floor: floor,
             icon: icon,
             archetype: nil,
             deviceCount: deviceCount

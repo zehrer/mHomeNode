@@ -17,22 +17,16 @@ public struct RoomsView: View {
         var result: [(name: String, serverRoom: ServerRoom?, managedRoom: ManagedRoom?)] = []
         var seenNames = Set<String>()
 
-        // 1. Persistent Managed Rooms (always available offline)
+        // 1. Persistent Unified Rooms (always available offline)
         for room in viewModel.roomManagementService.rooms {
-            let sRoom = viewModel.serverRooms.first(where: { $0.name.lowercased() == room.name.lowercased() })
+            let sRoom = viewModel.serverRooms.first(where: {
+                $0.id == room.serverRoomId || $0.name.lowercased() == room.name.lowercased()
+            })
             result.append((name: room.name, serverRoom: sRoom ?? room.toServerRoom(), managedRoom: room))
             seenNames.insert(room.name.lowercased())
         }
 
-        // 2. Configured Server Rooms not yet merged
-        for room in viewModel.serverRooms {
-            if !seenNames.contains(room.name.lowercased()) {
-                result.append((name: room.name, serverRoom: room, managedRoom: nil))
-                seenNames.insert(room.name.lowercased())
-            }
-        }
-
-        // 3. Any rooms from active location's persistent device registry
+        // 2. Any rooms from active location's persistent device registry
         for reg in viewModel.locationManagementService.activeLocation.devices {
             if let assigned = reg.assignedRoom,
                !assigned.isEmpty,

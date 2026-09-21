@@ -158,4 +158,70 @@ final class RoomManagementTests: XCTestCase {
         XCTAssertEqual(bed?.icon, "bed.double.fill")
         XCTAssertTrue(bed?.icon.isSFSymbolName ?? false)
     }
+
+    @MainActor
+    func testFloorAssignmentAndGrouping() {
+        let service = RoomManagementService(customFileURL: tempFileURL)
+        // Clear defaults for clean test
+        for r in service.rooms {
+            service.deleteRoom(id: r.id)
+        }
+
+        service.addRoom(name: "Wohnzimmer", floor: "Erdgeschoss", icon: "sofa.fill")
+        service.addRoom(name: "Küche", floor: "Erdgeschoss", icon: "fork.knife")
+        service.addRoom(name: "Schlafzimmer", floor: "Obergeschoss", icon: "bed.double.fill")
+        service.addRoom(name: "Weinkeller", floor: "Keller", icon: "cup.and.saucer.fill")
+        service.addRoom(name: "Flur", floor: nil, icon: "door.left.hand.open")
+
+        // Check distinct floors ordering (EG before OG before Keller)
+        let floors = service.distinctFloors
+        XCTAssertTrue(floors.contains("Erdgeschoss"))
+        XCTAssertTrue(floors.contains("Obergeschoss"))
+        XCTAssertTrue(floors.contains("Keller"))
+        XCTAssertEqual(floors.first, "Erdgeschoss")
+
+        // Rooms for specific floor
+        let egRooms = service.rooms(forFloor: "Erdgeschoss")
+        XCTAssertEqual(egRooms.count, 2)
+        XCTAssertTrue(egRooms.contains(where: { $0.name == "Wohnzimmer" }))
+        XCTAssertTrue(egRooms.contains(where: { $0.name == "Küche" }))
+
+        let unassigned = service.rooms(forFloor: nil)
+        XCTAssertEqual(unassigned.count, 1)
+        XCTAssertEqual(unassigned.first?.name, "Flur")
+
+        // Disk persistence check
+        let reloaded = RoomManagementService(customFileURL: tempFileURL)
+        let reloadedWohnzimmer = reloaded.room(named: "Wohnzimmer")
+        XCTAssertEqual(reloadedWohnzimmer?.floor, "Erdgeschoss")
+        XCTAssertEqual(reloadedWohnzimmer?.displayFloor, "Erdgeschoss")
+    }
+
+    @MainActor
+    func testServerSyncSupersedesDefaultDummyRooms() {
+        // Starts with untouched default seed rooms ("Living Room", "Bedroom", etc.)
+        let service = RoomManagementService(customFileURL: tempFileURL)
+        XCTAssertTrue(service.rooms.contains(where: { $0.name == "Living Room" }))
+
+        // Incoming server rooms in German
+        let serverRooms = [
+            ServerRoom(id: "srv-wz", name: "Wohnzimmer", floor: "EG", icon: "sofa.fill"),
+            ServerRoom(id: "srv-sz", name: "Schlafzimmer", floor: "OG", icon: "bed.double.fill")
+        ]
+        service.syncWithServerRooms(serverRooms)
+
+        // Dummy English rooms should NOT remain in parallel
+        XCTAssertNil(service.room(named: "Living Room"))
+        XCTAssertNil(service.room(named: "Bedroom"))
+
+        // Server rooms must be present
+        let wz = service.room(named: "Wohnzimmer")
+        XCTAssertNotNil(wz)
+        XCTAssertEqual(wz?.floor, "EG")
+        XCTAssertEqual(wz?.serverRoomId, "srv-wz")
+
+        let sz = service.room(named: "Schlafzimmer")
+        XCTAssertNotNil(sz)
+        XCTAssertEqual(sz?.floor, "OG")
+    }
 }

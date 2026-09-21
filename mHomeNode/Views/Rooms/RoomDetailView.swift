@@ -64,12 +64,13 @@ public struct RoomDetailView: View {
         VStack(alignment: .leading, spacing: 18) {
             // MARK: - Room Hero Banner
             HStack(spacing: 14) {
-                Text(serverRoom?.icon ?? "🏠")
-                    .font(.system(size: 38))
-                    .frame(width: 58, height: 58)
-                    .background(Color(.secondarySystemGroupedBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 2)
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Color(.secondarySystemGroupedBackground))
+                        .frame(width: 58, height: 58)
+                        .shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 2)
+                    RoomIconView(serverRoom?.icon ?? "door.left.hand.open", size: 26, color: .primary)
+                }
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(roomName)

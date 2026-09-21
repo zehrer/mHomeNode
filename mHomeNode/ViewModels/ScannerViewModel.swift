@@ -366,6 +366,54 @@ public final class ScannerViewModel {
         }
     }
 
+    public func saveRoom(name: String, floor: String?, icon: String, colorHex: String?, existingRoom: ManagedRoom? = nil) async {
+        let cleanFloor = floor?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let resolvedFloor = (cleanFloor?.isEmpty == true) ? nil : cleanFloor
+
+        let targetRoom: ManagedRoom
+        if let existing = existingRoom {
+            roomManagementService.updateRoom(
+                id: existing.id,
+                name: name,
+                floor: resolvedFloor,
+                icon: icon,
+                colorHex: colorHex
+            )
+            targetRoom = roomManagementService.room(named: name) ?? existing
+        } else {
+            targetRoom = roomManagementService.addRoom(
+                name: name,
+                floor: resolvedFloor,
+                icon: icon,
+                colorHex: colorHex,
+                source: .local
+            )
+        }
+
+        // If server is connected and configured, sync upstream
+        if !serverConfig.isLocalhost {
+            do {
+                _ = try await serverClient.createOrUpdateRoom(config: serverConfig, room: targetRoom)
+                await loadServerRooms()
+            } catch {
+                // Offline fallback: saved locally, will sync when server becomes available
+            }
+        }
+    }
+
+    public func deleteRoom(_ room: ManagedRoom) async {
+        roomManagementService.deleteRoom(id: room.id)
+        if !serverConfig.isLocalhost {
+            let serverId = room.serverRoomId ?? room.id
+            do {
+                _ = try await serverClient.deleteRoomOnServer(config: serverConfig, id: serverId)
+                await loadServerRooms()
+            } catch {
+                // Server offline
+            }
+        }
+    }
+
     public func renameAndClaimDevice(_ device: DiscoveredDevice, newName: String?, newRoom: String?) async -> Bool {
         bleService.updateDeviceName(id: device.id, customName: newName)
         bleService.updateRoom(for: device.id, room: newRoom)

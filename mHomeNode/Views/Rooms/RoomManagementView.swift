@@ -88,60 +88,45 @@ public struct RoomManagementView: View {
                 Text("Rooms persist permanently on your iPhone. When offline, all smart plugs, lights, and climate sensors remain assigned to their rooms.")
             }
 
-            // MARK: - Rooms List
-            Section {
-                ForEach(viewModel.roomManagementService.rooms) { room in
-                    Button {
-                        editingRoom = room
-                    } label: {
-                        HStack(spacing: 14) {
-                            ZStack {
-                                Circle()
-                                    .fill(room.displayColor.opacity(0.15))
-                                    .frame(width: 38, height: 38)
-                                RoomIconView(room.icon, size: 16, color: room.displayColor)
-                            }
+            // MARK: - Rooms Grouped by Floor
+            let distinctFloors = viewModel.roomManagementService.distinctFloors
+            let unassignedRooms = viewModel.roomManagementService.rooms(forFloor: nil)
 
-                            VStack(alignment: .leading, spacing: 3) {
-                                HStack(spacing: 6) {
-                                    Text(room.name)
-                                        .font(.headline)
-                                        .foregroundColor(.primary)
-
-                                    sourceBadge(for: room.source)
-                                }
-
-                                let devCount = deviceCount(for: room.name)
-                                Text("\(devCount) device\(devCount == 1 ? "" : "s") assigned")
-                                    .font(.caption2)
-                                    .foregroundColor(.secondary)
-                            }
-
-                            Spacer()
-
-                            Image(systemName: "chevron.right")
+            if viewModel.roomManagementService.rooms.isEmpty {
+                Section {
+                    Text("No rooms configured yet. Tap + to add a room.")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+            } else {
+                ForEach(distinctFloors, id: \.self) { floor in
+                    let floorRooms = viewModel.roomManagementService.rooms(forFloor: floor)
+                    Section {
+                        ForEach(floorRooms) { room in
+                            roomRow(room)
+                        }
+                    } header: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "stairs")
                                 .font(.caption2)
-                                .foregroundColor(.secondary)
+                            Text("\(floor) (\(floorRooms.count))")
                         }
-                        .padding(.vertical, 2)
-                    }
-                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                        Button(role: .destructive) {
-                            roomToDelete = room
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-
-                        Button {
-                            editingRoom = room
-                        } label: {
-                            Label("Edit", systemImage: "pencil")
-                        }
-                        .tint(.blue)
                     }
                 }
-            } header: {
-                Text("Rooms (\(viewModel.roomManagementService.rooms.count))")
+
+                if !unassignedRooms.isEmpty {
+                    Section {
+                        ForEach(unassignedRooms) { room in
+                            roomRow(room)
+                        }
+                    } header: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "questionmark.folder")
+                                .font(.caption2)
+                            Text("Ohne Etage (\(unassignedRooms.count))")
+                        }
+                    }
+                }
             }
         }
         .navigationTitle("Room Management")
@@ -158,13 +143,15 @@ public struct RoomManagementView: View {
             RoomEditSheet(
                 title: "New Room",
                 room: nil,
-                onSave: { name, icon, colorHex in
-                    viewModel.roomManagementService.addRoom(
-                        name: name,
-                        icon: icon,
-                        colorHex: colorHex,
-                        source: .local
-                    )
+                onSave: { name, floor, icon, colorHex in
+                    Task {
+                        await viewModel.saveRoom(
+                            name: name,
+                            floor: floor,
+                            icon: icon,
+                            colorHex: colorHex
+                        )
+                    }
                 }
             )
         }
@@ -172,13 +159,16 @@ public struct RoomManagementView: View {
             RoomEditSheet(
                 title: "Edit Room",
                 room: room,
-                onSave: { name, icon, colorHex in
-                    viewModel.roomManagementService.updateRoom(
-                        id: room.id,
-                        name: name,
-                        icon: icon,
-                        colorHex: colorHex
-                    )
+                onSave: { name, floor, icon, colorHex in
+                    Task {
+                        await viewModel.saveRoom(
+                            name: name,
+                            floor: floor,
+                            icon: icon,
+                            colorHex: colorHex,
+                            existingRoom: room
+                        )
+                    }
                 }
             )
         }
@@ -192,7 +182,9 @@ public struct RoomManagementView: View {
         ) {
             if let target = roomToDelete {
                 Button("Delete '\(target.name)'", role: .destructive) {
-                    viewModel.roomManagementService.deleteRoom(id: target.id)
+                    Task {
+                        await viewModel.deleteRoom(target)
+                    }
                     roomToDelete = nil
                 }
                 Button("Cancel", role: .cancel) {
@@ -204,18 +196,70 @@ public struct RoomManagementView: View {
         }
     }
 
-    private func sourceBadge(for source: RoomSource) -> some View {
-        HStack(spacing: 3) {
-            Image(systemName: source.iconName)
-                .font(.system(size: 8))
-            Text(source.rawValue)
-                .font(.system(size: 9, weight: .semibold))
+    private func roomRow(_ room: ManagedRoom) -> some View {
+        Button {
+            editingRoom = room
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(room.displayColor.opacity(0.15))
+                        .frame(width: 38, height: 38)
+                    RoomIconView(room.icon, size: 16, color: room.displayColor)
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text(room.name)
+                            .font(.headline)
+                            .foregroundColor(.primary)
+
+                        syncStatusBadge(for: room)
+                    }
+
+                    let devCount = deviceCount(for: room.name)
+                    Text("\(devCount) device\(devCount == 1 ? "" : "s") assigned")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.vertical, 2)
         }
-        .foregroundColor(source.badgeColor)
-        .padding(.horizontal, 5)
-        .padding(.vertical, 2)
-        .background(source.badgeColor.opacity(0.12))
-        .clipShape(Capsule())
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button(role: .destructive) {
+                roomToDelete = room
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+
+            Button {
+                editingRoom = room
+            } label: {
+                Label("Edit", systemImage: "pencil")
+            }
+            .tint(.blue)
+        }
+    }
+
+    private func syncStatusBadge(for room: ManagedRoom) -> some View {
+        HStack(spacing: 4) {
+            if room.serverRoomId != nil {
+                Image(systemName: "arrow.triangle.2.circlepath.icloud.fill")
+                    .font(.system(size: 10))
+                    .foregroundColor(.purple)
+            }
+            if room.externalId != nil {
+                Image(systemName: "link")
+                    .font(.system(size: 9))
+                    .foregroundColor(.orange)
+            }
+        }
     }
 
     private func deviceCount(for roomName: String) -> Int {
@@ -243,16 +287,17 @@ public struct RoomEditSheet: View {
     @Environment(\.dismiss) private var dismiss
     public let title: String
     public let room: ManagedRoom?
-    public let onSave: (String, String, String?) -> Void
+    public let onSave: (String, String?, String, String?) -> Void
 
     @State private var roomName: String = ""
+    @State private var selectedFloor: String = ""
     @State private var selectedIcon: String = "sofa.fill"
     @State private var selectedColorHex: String = "#007AFF"
 
     public init(
         title: String,
         room: ManagedRoom?,
-        onSave: @escaping (String, String, String?) -> Void
+        onSave: @escaping (String, String?, String, String?) -> Void
     ) {
         self.title = title
         self.room = room
@@ -276,7 +321,7 @@ public struct RoomEditSheet: View {
                             Text(roomName.isEmpty ? "Room Name" : roomName)
                                 .font(.title3.bold())
                                 .foregroundColor(roomName.isEmpty ? .secondary : .primary)
-                            Text("Preview")
+                            Text(selectedFloor.isEmpty ? "Keine Etage zugewiesen" : selectedFloor)
                                 .font(.caption2)
                                 .foregroundColor(.secondary)
                         }
@@ -286,8 +331,42 @@ public struct RoomEditSheet: View {
 
                 // Name Input
                 Section("Room Details") {
-                    TextField("e.g. Living Room, Bedroom...", text: $roomName)
+                    TextField("z.B. Wohnzimmer, Schlafzimmer...", text: $roomName)
                         .autocorrectionDisabled()
+                }
+
+                // Floor / Level
+                Section("Etage / Floor") {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(ManagedRoom.standardFloors, id: \.self) { preset in
+                                Button {
+                                    if selectedFloor == preset {
+                                        selectedFloor = ""
+                                    } else {
+                                        selectedFloor = preset
+                                    }
+                                } label: {
+                                    Text(preset)
+                                        .font(.subheadline)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(selectedFloor == preset ? (Color(hex: selectedColorHex) ?? .blue) : Color(.tertiarySystemFill))
+                                        .foregroundColor(selectedFloor == preset ? .white : .primary)
+                                        .clipShape(Capsule())
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.vertical, 2)
+                    }
+
+                    HStack {
+                        Image(systemName: "stairs")
+                            .foregroundColor(.secondary)
+                        TextField("Oder eigene Etage (z.B. 2. OG, Studio...)", text: $selectedFloor)
+                            .autocorrectionDisabled()
+                    }
                 }
 
                 // Icon Palette
@@ -345,8 +424,9 @@ public struct RoomEditSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         let clean = roomName.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let cleanFloor = selectedFloor.trimmingCharacters(in: .whitespacesAndNewlines)
                         if !clean.isEmpty {
-                            onSave(clean, selectedIcon, selectedColorHex)
+                            onSave(clean, cleanFloor.isEmpty ? nil : cleanFloor, selectedIcon, selectedColorHex)
                             dismiss()
                         }
                     }
@@ -357,6 +437,7 @@ public struct RoomEditSheet: View {
             .onAppear {
                 if let r = room {
                     roomName = r.name
+                    selectedFloor = r.floor ?? ""
                     selectedIcon = r.icon
                     selectedColorHex = r.colorHex ?? "#007AFF"
                 }

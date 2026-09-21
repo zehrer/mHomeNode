@@ -134,6 +134,8 @@ public protocol HomeNodeServerClientProtocol: Sendable {
     func sendMobileBleScan(config: ServerConfig, items: [MobileBleScanItem]) async throws -> (ingested: Int, ignored: Int)
     func claimDevice(config: ServerConfig, id: String, name: String?, room: String?, family: String?) async throws -> Bool
     func fetchRooms(config: ServerConfig) async throws -> [ServerRoom]
+    func createOrUpdateRoom(config: ServerConfig, room: ManagedRoom) async throws -> Bool
+    func deleteRoomOnServer(config: ServerConfig, id: String) async throws -> Bool
     func fetchIgnoredDevices(config: ServerConfig) async throws -> [IgnoredDeviceRecord]
     func ignoreDeviceOnServer(config: ServerConfig, id: String, name: String?, reason: String?) async throws -> Bool
     func unignoreDeviceOnServer(config: ServerConfig, id: String) async throws -> Bool
@@ -182,6 +184,16 @@ public final class MockHomeNodeServerClient: HomeNodeServerClientProtocol, @unch
             ServerRoom(id: "bad-og", name: "Bad OG", floor: "Obergeschoss", icon: "🛁"),
             ServerRoom(id: "buero", name: "Büro", floor: "Obergeschoss", icon: "💼")
         ]
+    }
+
+    public func createOrUpdateRoom(config: ServerConfig, room: ManagedRoom) async throws -> Bool {
+        try await Task.sleep(nanoseconds: 100_000_000)
+        return shouldSucceed
+    }
+
+    public func deleteRoomOnServer(config: ServerConfig, id: String) async throws -> Bool {
+        try await Task.sleep(nanoseconds: 100_000_000)
+        return shouldSucceed
     }
 
     public func fetchIgnoredDevices(config: ServerConfig) async throws -> [IgnoredDeviceRecord] {
@@ -305,6 +317,52 @@ public final class LiveHomeNodeServerClient: HomeNodeServerClientProtocol {
         }
 
         return try JSONDecoder().decode([ServerRoom].self, from: data)
+    }
+
+    public func createOrUpdateRoom(config: ServerConfig, room: ManagedRoom) async throws -> Bool {
+        guard let baseURL = config.baseURL else { throw URLError(.badURL) }
+        let url = baseURL.appendingPathComponent("api/rooms")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 5.0
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let apiKey = config.apiKey, !apiKey.isEmpty {
+            request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
+
+        var payload: [String: Any] = [
+            "id": room.serverRoomId ?? room.id,
+            "name": room.name,
+            "icon": room.icon
+        ]
+        if let floor = room.floor, !floor.isEmpty {
+            payload["floor"] = floor
+        }
+        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+
+        let (_, response) = try await session.data(for: request)
+        guard let httpResp = response as? HTTPURLResponse, (200...299).contains(httpResp.statusCode) else {
+            return false
+        }
+        return true
+    }
+
+    public func deleteRoomOnServer(config: ServerConfig, id: String) async throws -> Bool {
+        guard let baseURL = config.baseURL else { throw URLError(.badURL) }
+        let escapedId = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id
+        let url = baseURL.appendingPathComponent("api/rooms/\(escapedId)")
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.timeoutInterval = 5.0
+        if let apiKey = config.apiKey, !apiKey.isEmpty {
+            request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
+
+        let (_, response) = try await session.data(for: request)
+        guard let httpResp = response as? HTTPURLResponse, (200...299).contains(httpResp.statusCode) else {
+            return false
+        }
+        return true
     }
 
     public func fetchIgnoredDevices(config: ServerConfig) async throws -> [IgnoredDeviceRecord] {
