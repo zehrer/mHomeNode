@@ -25,6 +25,27 @@ public struct ServerConfig: Codable, Sendable, Equatable {
         let scheme = useTLS ? "https" : "http"
         return URL(string: "\(scheme)://\(host):\(port)")
     }
+
+    /// Whether the host is the unconfigured default or loopback address
+    public var isLocalhost: Bool {
+        host == "127.0.0.1" || host == "localhost" || host.isEmpty
+    }
+
+    private static let userDefaultsKey = "homenode_saved_server_config"
+
+    public static func load() -> ServerConfig {
+        guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
+              let config = try? JSONDecoder().decode(ServerConfig.self, from: data) else {
+            return ServerConfig()
+        }
+        return config
+    }
+
+    public func save() {
+        if let data = try? JSONEncoder().encode(self) {
+            UserDefaults.standard.set(data, forKey: ServerConfig.userDefaultsKey)
+        }
+    }
 }
 
 public enum ServerConnectionStatus: String, Sendable {

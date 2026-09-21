@@ -61,7 +61,7 @@ public final class ScannerViewModel {
     public let locationManagementService: LocationManagementService
     public let roomManagementService: RoomManagementService
 
-    public var serverConfig: ServerConfig = ServerConfig()
+    public var serverConfig: ServerConfig = ServerConfig.load()
     public var serverRooms: [ServerRoom] = []
     public var savedScans: [SavedScanSession] = []
 
@@ -188,6 +188,7 @@ public final class ScannerViewModel {
             guard let self = self else { return }
             self.serverConfig.host = server.preferredHost
             self.serverConfig.port = server.port
+            self.serverConfig.save()
             self.locationManagementService.recalculateActiveState(
                 currentLocation: self.locationService.currentLocation,
                 activeServerHost: server.preferredHost
@@ -226,9 +227,11 @@ public final class ScannerViewModel {
         // Auto-start duty-cycled burst scanning on launch to discover devices while preserving battery
         ble.startBurstScan(activeDuration: 4.0, pauseDuration: 4.0)
 
-        // Initial room load
-        Task { [weak self] in
-            await self?.loadServerRooms()
+        // Initial room load only if a real server host is configured/remembered
+        if !self.serverConfig.isLocalhost {
+            Task { [weak self] in
+                await self?.loadServerRooms()
+            }
         }
     }
 
@@ -347,6 +350,7 @@ public final class ScannerViewModel {
         discoveryService.activeServer = server
         serverConfig.host = server.preferredHost
         serverConfig.port = server.port
+        serverConfig.save()
         Task {
             await loadServerRooms()
         }
