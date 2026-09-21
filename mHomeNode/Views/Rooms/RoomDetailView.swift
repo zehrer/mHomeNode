@@ -1,9 +1,13 @@
 import SwiftUI
 
 public struct RoomDetailView: View {
+    public typealias RoomItem = (name: String, serverRoom: ServerRoom?, managedRoom: ManagedRoom?)
+
     @Bindable var scannerVM: ScannerViewModel
     public let roomName: String
     public let serverRoom: ServerRoom?
+    public let availableRooms: [RoomItem]
+    public var onSelectRoom: ((String) -> Void)?
     public var onSelectDevice: ((DiscoveredDevice) -> Void)?
 
     @State private var showSensorsDetail: Bool = false
@@ -12,11 +16,15 @@ public struct RoomDetailView: View {
         scannerVM: ScannerViewModel,
         roomName: String,
         serverRoom: ServerRoom?,
+        availableRooms: [RoomItem] = [],
+        onSelectRoom: ((String) -> Void)? = nil,
         onSelectDevice: ((DiscoveredDevice) -> Void)? = nil
     ) {
         self.scannerVM = scannerVM
         self.roomName = roomName
         self.serverRoom = serverRoom
+        self.availableRooms = availableRooms
+        self.onSelectRoom = onSelectRoom
         self.onSelectDevice = onSelectDevice
     }
 
@@ -62,53 +70,77 @@ public struct RoomDetailView: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            // MARK: - Room Hero Banner
-            HStack(spacing: 14) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(Color(.secondarySystemGroupedBackground))
-                        .frame(width: 58, height: 58)
-                        .shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 2)
-                    RoomIconView(serverRoom?.icon ?? "door.left.hand.open", size: 26, color: .primary)
-                }
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(roomName)
-                        .font(.title2.bold())
-                        .foregroundColor(.primary)
-
-                    HStack(spacing: 8) {
-                        if let floor = serverRoom?.floor, !floor.isEmpty {
-                            Text(floor)
-                                .font(.caption.weight(.medium))
-                                .foregroundColor(.secondary)
-                            Text("•")
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
+            // MARK: - Room Hero Banner (Interactive with integrated room selector)
+            if availableRooms.count > 1 {
+                Menu {
+                    let distinctFloors = Array(Set(availableRooms.compactMap { $0.managedRoom?.floor ?? $0.serverRoom?.floor })).sorted()
+                    if distinctFloors.count > 1 {
+                        ForEach(distinctFloors, id: \.self) { floor in
+                            Section(floor) {
+                                ForEach(availableRooms.filter { ($0.managedRoom?.floor ?? $0.serverRoom?.floor) == floor }, id: \.name) { item in
+                                    Button {
+                                        onSelectRoom?(item.name)
+                                    } label: {
+                                        HStack {
+                                            if let m = item.managedRoom {
+                                                Label(item.name, systemImage: m.icon)
+                                            } else {
+                                                Label(item.name, systemImage: item.serverRoom?.icon ?? "house.fill")
+                                            }
+                                            if roomName == item.name {
+                                                Image(systemName: "checkmark")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
-
-                        Text("\(roomDevices.count) \(roomDevices.count == 1 ? "device" : "devices")")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-
-                        let activeCount = roomDevices.filter { $0.isCurrentlyActive }.count
-                        if activeCount > 0 {
-                            Text("•")
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
-                            HStack(spacing: 4) {
-                                Circle().fill(Color.green).frame(width: 6, height: 6)
-                                Text("\(activeCount) active")
-                                    .font(.caption)
-                                    .foregroundColor(.green)
+                        let noFloorRooms = availableRooms.filter { ($0.managedRoom?.floor ?? $0.serverRoom?.floor) == nil || ($0.managedRoom?.floor ?? $0.serverRoom?.floor)?.isEmpty == true }
+                        if !noFloorRooms.isEmpty {
+                            Section("Other") {
+                                ForEach(noFloorRooms, id: \.name) { item in
+                                    Button {
+                                        onSelectRoom?(item.name)
+                                    } label: {
+                                        HStack {
+                                            if let m = item.managedRoom {
+                                                Label(item.name, systemImage: m.icon)
+                                            } else {
+                                                Label(item.name, systemImage: item.serverRoom?.icon ?? "house.fill")
+                                            }
+                                            if roomName == item.name {
+                                                Image(systemName: "checkmark")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        ForEach(availableRooms, id: \.name) { item in
+                            Button {
+                                onSelectRoom?(item.name)
+                            } label: {
+                                HStack {
+                                    if let m = item.managedRoom {
+                                        Label(item.name, systemImage: m.icon)
+                                    } else {
+                                        Label(item.name, systemImage: item.serverRoom?.icon ?? "house.fill")
+                                    }
+                                    if roomName == item.name {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
                             }
                         }
                     }
+                } label: {
+                    heroBannerContent(hasDropdown: true)
                 }
-
-                Spacer()
+                .buttonStyle(.plain)
+            } else {
+                heroBannerContent(hasDropdown: false)
             }
-            .padding(.horizontal)
 
             // MARK: - Compact Climate Telemetry Cards (Clickable to reveal/hide sensors)
             if avgTemp != nil || avgHumidity != nil {
@@ -412,5 +444,63 @@ public struct RoomDetailView: View {
                 .padding(.top, 40)
             }
         }
+    }
+
+    private func heroBannerContent(hasDropdown: Bool) -> some View {
+        HStack(spacing: 14) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color(.secondarySystemGroupedBackground))
+                    .frame(width: 58, height: 58)
+                    .shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 2)
+                RoomIconView(serverRoom?.icon ?? "door.left.hand.open", size: 26, color: .primary)
+            }
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Text(roomName)
+                        .font(.title2.bold())
+                        .foregroundColor(.primary)
+
+                    if hasDropdown {
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.caption.bold())
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                HStack(spacing: 8) {
+                    if let floor = serverRoom?.floor, !floor.isEmpty {
+                        Text(floor)
+                            .font(.caption.weight(.medium))
+                            .foregroundColor(.secondary)
+                        Text("•")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Text("\(roomDevices.count) \(roomDevices.count == 1 ? "device" : "devices")")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    let activeCount = roomDevices.filter { $0.isCurrentlyActive }.count
+                    if activeCount > 0 {
+                        Text("•")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        HStack(spacing: 4) {
+                            Circle().fill(Color.green).frame(width: 6, height: 6)
+                            Text("\(activeCount) active")
+                                .font(.caption)
+                                .foregroundColor(.green)
+                        }
+                    }
+                }
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal)
+        .contentShape(Rectangle())
     }
 }

@@ -63,110 +63,6 @@ public struct RoomsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                    // MARK: - Room Selector Dropdown
-                    if !availableRooms.isEmpty {
-                        HStack {
-                            Menu {
-                                let distinctFloors = Array(Set(availableRooms.compactMap { $0.managedRoom?.floor ?? $0.serverRoom?.floor })).sorted()
-                                if distinctFloors.count > 1 {
-                                    ForEach(distinctFloors, id: \.self) { floor in
-                                        Section(floor) {
-                                            ForEach(availableRooms.filter { ($0.managedRoom?.floor ?? $0.serverRoom?.floor) == floor }, id: \.name) { item in
-                                                Button {
-                                                    withAnimation(.easeInOut(duration: 0.2)) {
-                                                        selectedRoomName = item.name
-                                                    }
-                                                } label: {
-                                                    HStack {
-                                                        if let m = item.managedRoom {
-                                                            Label(item.name, systemImage: m.icon)
-                                                        } else {
-                                                            Label(item.name, systemImage: item.serverRoom?.icon ?? "house.fill")
-                                                        }
-                                                        if currentRoomData?.name == item.name {
-                                                            Image(systemName: "checkmark")
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    let noFloorRooms = availableRooms.filter { ($0.managedRoom?.floor ?? $0.serverRoom?.floor) == nil || ($0.managedRoom?.floor ?? $0.serverRoom?.floor)?.isEmpty == true }
-                                    if !noFloorRooms.isEmpty {
-                                        Section("Other") {
-                                            ForEach(noFloorRooms, id: \.name) { item in
-                                                Button {
-                                                    withAnimation(.easeInOut(duration: 0.2)) {
-                                                        selectedRoomName = item.name
-                                                    }
-                                                } label: {
-                                                    HStack {
-                                                        if let m = item.managedRoom {
-                                                            Label(item.name, systemImage: m.icon)
-                                                        } else {
-                                                            Label(item.name, systemImage: item.serverRoom?.icon ?? "house.fill")
-                                                        }
-                                                        if currentRoomData?.name == item.name {
-                                                            Image(systemName: "checkmark")
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    ForEach(availableRooms, id: \.name) { item in
-                                        Button {
-                                            withAnimation(.easeInOut(duration: 0.2)) {
-                                                selectedRoomName = item.name
-                                            }
-                                        } label: {
-                                            HStack {
-                                                if let m = item.managedRoom {
-                                                    Label(item.name, systemImage: m.icon)
-                                                } else {
-                                                    Label(item.name, systemImage: item.serverRoom?.icon ?? "house.fill")
-                                                }
-                                                if currentRoomData?.name == item.name {
-                                                    Image(systemName: "checkmark")
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            } label: {
-                                HStack(spacing: 8) {
-                                    if let current = currentRoomData {
-                                        if let m = current.managedRoom {
-                                            RoomIconView(m.icon, size: 16, color: m.displayColor)
-                                        } else {
-                                            RoomIconView(current.serverRoom?.icon ?? "house.fill", size: 16, color: .primary)
-                                        }
-                                        Text(current.name)
-                                            .font(.headline.weight(.semibold))
-                                            .foregroundColor(.primary)
-                                    } else {
-                                        Text("Select Room")
-                                            .font(.headline)
-                                            .foregroundColor(.secondary)
-                                    }
-
-                                    Image(systemName: "chevron.up.chevron.down")
-                                        .font(.caption.weight(.bold))
-                                        .foregroundColor(.secondary)
-                                }
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
-                                .background(Color(.secondarySystemGroupedBackground))
-                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                .shadow(color: Color.black.opacity(0.04), radius: 3, x: 0, y: 1)
-                            }
-
-                            Spacer()
-                        }
-                        .padding(.horizontal)
-                    }
-
                     // MARK: - Proximity Detection Toast Banner
                     if let toast = detectionToast {
                         HStack(spacing: 8) {
@@ -193,12 +89,18 @@ public struct RoomsView: View {
                         .transition(.move(edge: .top).combined(with: .opacity))
                     }
 
-                    // MARK: - Selected Room Detail Content
+                    // MARK: - Selected Room Detail Content (with integrated room selector in Hero Banner)
                     if let current = currentRoomData {
                         RoomDetailView(
                             scannerVM: viewModel,
                             roomName: current.name,
                             serverRoom: current.serverRoom,
+                            availableRooms: availableRooms,
+                            onSelectRoom: { newName in
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    selectedRoomName = newName
+                                }
+                            },
                             onSelectDevice: { dev in
                                 selectedDevice = dev
                             }
