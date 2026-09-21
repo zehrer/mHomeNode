@@ -11,6 +11,9 @@ public struct DeviceDetailView: View {
     @State private var showingIgnoreAlert = false
     @State private var isSaving = false
     @State private var syncStatusMessage: String?
+    @State private var lanAddressInput = ""
+    @State private var isTestingLAN = false
+    @State private var lanTestResult: String?
 
     private var device: DiscoveredDevice? {
         scannerVM.bleService.devices.first(where: { $0.id == deviceId })
@@ -157,10 +160,36 @@ public struct DeviceDetailView: View {
 
                                 Toggle("", isOn: Binding(
                                     get: { isPlugOn },
-                                    set: { scannerVM.shellyController.setPower(for: device.id, isOn: $0) }
+                                    set: { scannerVM.shellyController.setPower(for: device, isOn: $0) }
                                 ))
                                 .labelsHidden()
                                 .tint(.green)
+                                .disabled(isBusy)
+                            }
+
+                            // Active Interface Row
+                            HStack {
+                                Text("Control Interface")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                                let active = scannerVM.shellyController.getActiveInterface(for: device.id)
+                                let isServer = active == .server
+                                let isLan = active == .lan || (active == nil && device.lanAddress != nil)
+                                HStack(spacing: 4) {
+                                    if isServer {
+                                        Image(systemName: "server.rack")
+                                        Text("HomeNode Server")
+                                    } else if isLan {
+                                        Image(systemName: "network")
+                                        Text("Wi-Fi / LAN HTTP")
+                                    } else {
+                                        Image(systemName: "point.3.connected.trianglepath.dotted")
+                                        Text("Direct Bluetooth LE")
+                                    }
+                                }
+                                .font(.caption.bold())
+                                .foregroundColor(isServer ? .purple : (isLan ? .blue : .secondary))
                             }
 
                             if let error = scannerVM.shellyController.lastError[device.id] {
@@ -175,7 +204,7 @@ public struct DeviceDetailView: View {
                         } header: {
                             Text("Smart Plug Controls")
                         } footer: {
-                            Text("Direct local control for Shelly and Bluetooth smart plugs.")
+                            Text("Multi-interface control: uses HomeNode Server if connected, direct local Wi-Fi/LAN if reachable, or direct Bluetooth Low Energy as fallback.")
                         }
                     }
 
@@ -224,6 +253,67 @@ public struct DeviceDetailView: View {
                         Text("Device Name & Room Assignment")
                     } footer: {
                         Text("Assign a friendly name and link this device to a room. Changes are saved locally and synced directly to HomeNode Server.")
+                    }
+
+                    // MARK: - Wi-Fi & LAN Settings (for Shellys & Network Plugs)
+                    if device.isSwitchablePlug || device.family == .shellyBlu {
+                        Section {
+                            HStack {
+                                Text("IP / Host")
+                                    .frame(width: 80, alignment: .leading)
+                                TextField("192.168.178.xx oder .local", text: $lanAddressInput)
+                                    .textFieldStyle(.plain)
+                                    .multilineTextAlignment(.trailing)
+                                    .autocorrectionDisabled()
+                                    #if canImport(UIKit)
+                                    .textInputAutocapitalization(.never)
+                                    .keyboardType(.URL)
+                                    #endif
+                            }
+
+                            let resolved = scannerVM.shellyController.lanDiscovery.lookupHost(macAddress: device.macAddress, name: device.name)
+                            if let res = resolved, !res.isEmpty, lanAddressInput != res {
+                                HStack {
+                                    Text("Discovered via mDNS:")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Spacer()
+                                    Text(res)
+                                        .font(.caption.monospaced())
+                                        .foregroundColor(.blue)
+                                    Button("Use") {
+                                        lanAddressInput = res
+                                    }
+                                    .buttonStyle(.borderless)
+                                    .font(.caption.bold())
+                                }
+                            }
+
+                            Button {
+                                testLANConnection(device: device)
+                            } label: {
+                                HStack {
+                                    Label("Test LAN Connection", systemImage: "network")
+                                        .fontWeight(.medium)
+                                    Spacer()
+                                    if isTestingLAN {
+                                        ProgressView()
+                                            .controlSize(.small)
+                                    }
+                                }
+                            }
+                            .disabled(isTestingLAN || (lanAddressInput.isEmpty && resolved == nil))
+
+                            if let testRes = lanTestResult {
+                                Text(testRes)
+                                    .font(.caption)
+                                    .foregroundColor(testRes.contains("Reachable") ? .green : .orange)
+                            }
+                        } header: {
+                            Text("Wi-Fi & LAN Settings")
+                        } footer: {
+                            Text("When connected to your local home network, commands are sent directly via HTTP RPC over Wi-Fi, bypassing Bluetooth distance limits.")
+                        }
                     }
 
                     // MARK: - 2. Proximity & Signal Section
@@ -517,6 +607,7 @@ public struct DeviceDetailView: View {
                 .onAppear {
                     customNameInput = device.customName ?? (device.name == "Unknown" ? "" : device.name)
                     selectedRoom = device.assignedRoom ?? ""
+                    lanAddressInput = device.lanAddress ?? ""
                 }
             } else {
                 ContentUnavailableView("Device Not Found", systemImage: "antenna.radiowaves.left.and.right.slash")
@@ -534,6 +625,30 @@ public struct DeviceDetailView: View {
         }
     }
 
+    private func testLANConnection(device: DiscoveredDevice) {
+        let host = lanAddressInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? scannerVM.shellyController.lanDiscovery.lookupHost(macAddress: device.macAddress, name: device.name)
+            : lanAddressInput.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard let targetHost = host, !targetHost.isEmpty else {
+            lanTestResult = "No IP or hostname specified"
+            return
+        }
+
+        isTestingLAN = true
+        lanTestResult = nil
+
+        Task {
+            let reachable = await scannerVM.shellyController.lanClient.probe(host: targetHost)
+            await MainActor.run {
+                self.isTestingLAN = false
+                self.lanTestResult = reachable
+                    ? "✅ Reachable at \(targetHost)"
+                    : "⚠️ No response from \(targetHost). Ensure you are connected to the same Wi-Fi."
+            }
+        }
+    }
+
     private func saveAndSync(device: DiscoveredDevice) {
         isSaving = true
         syncStatusMessage = nil
@@ -541,6 +656,10 @@ public struct DeviceDetailView: View {
         let trimmedName = customNameInput.trimmingCharacters(in: .whitespacesAndNewlines)
         let newName = trimmedName.isEmpty ? nil : trimmedName
         let newRoom = selectedRoom.isEmpty ? nil : selectedRoom
+        let trimmedLan = lanAddressInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        let newLan = trimmedLan.isEmpty ? nil : trimmedLan
+
+        scannerVM.updateDeviceLANAddress(id: device.id, lanAddress: newLan)
 
         Task {
             let success = await scannerVM.renameAndClaimDevice(device, newName: newName, newRoom: newRoom)

@@ -9,24 +9,34 @@ public final class ShellyPlugController: NSObject, CBPeripheralDelegate {
     private let logger = Logger(subsystem: "net.zehrer.homenode.mHomeNode", category: "ShellyPlugController")
 
     public weak var connectionManager: BLEConnectionManager?
+    public let lanClient: ShellyLANClientProtocol
+    public let lanDiscovery: ShellyLANDiscoveryService
+    public var serverClient: (any HomeNodeServerClientProtocol)?
+    public var serverConfigProvider: (@MainActor () -> (config: ServerConfig, isConnected: Bool))?
 
     // Device power states (persisted across app restarts)
     public var powerState: [UUID: Bool] = [:]
     public var isBusy: [UUID: Bool] = [:]
     public var lastError: [UUID: String] = [:]
+    public var activeInterface: [UUID: ControlInterface] = [:]
 
     // Shelly Gen2/Gen3 BLE RPC Service & Characteristic UUIDs
     public static let shellyRpcServiceUUID = CBUUID(string: "5F5A0001-5D94-403F-A70B-A7F33667C0D3")
     public static let shellyRpcRxUUID = CBUUID(string: "5F5A0002-5D94-403F-A70B-A7F33667C0D3") // Data In / Write
     public static let shellyRpcTxUUID = CBUUID(string: "5F5A0003-5D94-403F-A70B-A7F33667C0D3") // Data Out / Notify
 
-    // Active command queue & connection state per device
+    // Active command queue & connection state per device (BLE)
     private var pendingPackets: [UUID: [Data]] = [:]
     private var writeCharacteristics: [UUID: CBCharacteristic] = [:]
     private var disconnectTimers: [UUID: Task<Void, Never>] = [:]
     private var timeoutTasks: [UUID: Task<Void, Never>] = [:]
 
-    public override init() {
+    public init(
+        lanClient: ShellyLANClientProtocol = ShellyLANClient(),
+        lanDiscovery: ShellyLANDiscoveryService? = nil
+    ) {
+        self.lanClient = lanClient
+        self.lanDiscovery = lanDiscovery ?? .shared
         super.init()
         loadPersistedState()
     }
@@ -41,34 +51,128 @@ public final class ShellyPlugController: NSObject, CBPeripheralDelegate {
         isBusy[deviceId] ?? false
     }
 
+    public func getActiveInterface(for deviceId: UUID) -> ControlInterface? {
+        activeInterface[deviceId]
+    }
+
     public func togglePower(for deviceId: UUID) {
         let current = isPowerOn(for: deviceId)
         setPower(for: deviceId, isOn: !current)
     }
 
-    public func setPower(for deviceId: UUID, isOn: Bool) {
-        logger.info("Setting Shelly plug power for \(deviceId) -> \(isOn ? "ON" : "OFF")")
-        powerState[deviceId] = isOn
-        savePersistedState()
-
-        // Construct Shelly RPC JSON frame
-        let rpcJson = "{\"id\":1,\"src\":\"mHomeNode\",\"method\":\"Switch.Set\",\"params\":{\"id\":0,\"on\":\(isOn)}}"
-        guard let packet = rpcJson.data(using: .utf8) else { return }
-
-        sendCommand(packet: packet, for: deviceId)
+    public func togglePower(for device: DiscoveredDevice) {
+        let current = isPowerOn(for: device.id)
+        setPower(for: device, isOn: !current)
     }
 
-    // MARK: - Command Execution & Connection Pipeline
+    public func setPower(for device: DiscoveredDevice, isOn: Bool) {
+        setPower(
+            for: device.id,
+            lanHost: device.lanAddress,
+            macAddress: device.macAddress,
+            name: device.name,
+            isOn: isOn
+        )
+    }
 
-    private func sendCommand(packet: Data, for deviceId: UUID) {
+    public func setPower(for deviceId: UUID, isOn: Bool) {
+        setPower(for: deviceId, lanHost: nil, macAddress: nil, name: nil, isOn: isOn)
+    }
+
+    /// Hybrid multi-path power control:
+    /// 1. HomeNode Server (if server is active & online)
+    /// 2. Local Wi-Fi / LAN HTTP RPC (if IP known or discovered via Bonjour)
+    /// 3. Direct BLE CoreBluetooth RPC (fallback if LAN is unavailable or out of range)
+    public func setPower(
+        for deviceId: UUID,
+        lanHost: String? = nil,
+        macAddress: String? = nil,
+        name: String? = nil,
+        isOn: Bool
+    ) {
+        logger.info("Setting Shelly plug power for \(deviceId) -> \(isOn ? "ON" : "OFF") [LAN hint: \(lanHost ?? "none")]")
+        powerState[deviceId] = isOn
+        savePersistedState()
+        isBusy[deviceId] = true
+        lastError[deviceId] = nil
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            // -------------------------------------------------------------
+            // Path 1: HomeNode Server API (if server is active & connected)
+            // -------------------------------------------------------------
+            if let provider = self.serverConfigProvider {
+                let (config, isConnected) = provider()
+                if isConnected, let sClient = self.serverClient {
+                    let targetId = macAddress ?? deviceId.uuidString
+                    do {
+                        self.logger.info("Attempting Shelly control via HomeNode Server for \(targetId)...")
+                        let ok = try await sClient.toggleDevice(config: config, id: targetId, isOn: isOn)
+                        if ok {
+                            self.activeInterface[deviceId] = .server
+                            self.isBusy[deviceId] = false
+                            self.logger.info("Shelly controlled successfully via HomeNode Server")
+                            return
+                        }
+                    } catch {
+                        self.logger.info("HomeNode Server control failed: \(error.localizedDescription); trying LAN...")
+                    }
+                }
+            }
+
+            // -------------------------------------------------------------
+            // Path 2: Direct Local LAN HTTP RPC
+            // -------------------------------------------------------------
+            var resolvedHost = lanHost
+            if resolvedHost == nil || resolvedHost?.isEmpty == true {
+                resolvedHost = self.lanDiscovery.lookupHost(macAddress: macAddress, name: name)
+            }
+
+            if let host = resolvedHost, !host.isEmpty {
+                do {
+                    self.logger.info("Attempting Shelly control via LAN at \(host)...")
+                    let ok = try await self.lanClient.setPower(host: host, isOn: isOn, channel: 0)
+                    if ok {
+                        self.activeInterface[deviceId] = .lan
+                        self.isBusy[deviceId] = false
+                        self.logger.info("Shelly controlled successfully via direct LAN (\(host))")
+                        return
+                    }
+                } catch {
+                    self.logger.info("Shelly LAN control failed at \(host): \(error.localizedDescription); falling back to BLE...")
+                }
+            }
+
+            // -------------------------------------------------------------
+            // Path 3: Direct BLE CoreBluetooth RPC Fallback
+            // -------------------------------------------------------------
+            self.logger.info("Dispatching Shelly control via direct Bluetooth LE for \(deviceId)...")
+            self.activeInterface[deviceId] = .ble
+
+            let rpcJson = "{\"id\":1,\"src\":\"mHomeNode\",\"method\":\"Switch.Set\",\"params\":{\"id\":0,\"on\":\(isOn)}}"
+            guard let packet = rpcJson.data(using: .utf8) else {
+                self.isBusy[deviceId] = false
+                return
+            }
+
+            self.sendBLECommand(packet: packet, for: deviceId)
+        }
+    }
+
+    // MARK: - BLE Command Execution & Connection Pipeline
+
+    private func sendBLECommand(packet: Data, for deviceId: UUID) {
         guard let mgr = connectionManager else {
             logger.error("Connection manager not configured")
             lastError[deviceId] = "BLE Connection Manager unavailable"
+            isBusy[deviceId] = false
             return
         }
 
         guard let peripheral = mgr.getPeripheral(id: deviceId) else {
-            logger.info("Peripheral \(deviceId) not in active BLE cache; state updated locally.")
+            logger.info("Peripheral \(deviceId) not in active BLE cache; command retained in local state.")
+            isBusy[deviceId] = false
             return
         }
 
@@ -155,7 +259,6 @@ public final class ShellyPlugController: NSObject, CBPeripheralDelegate {
             }
 
             guard let services = peripheral.services, !services.isEmpty else {
-                // Try discovering all services as fallback
                 peripheral.discoverServices(nil)
                 return
             }
@@ -182,7 +285,6 @@ public final class ShellyPlugController: NSObject, CBPeripheralDelegate {
 
             guard let chars = service.characteristics else { return }
             for char in chars {
-                // Match Shelly RPC RX or any writable characteristic
                 if char.uuid == Self.shellyRpcRxUUID ||
                    char.properties.contains(.write) ||
                    char.properties.contains(.writeWithoutResponse) {

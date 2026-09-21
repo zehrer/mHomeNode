@@ -48,6 +48,12 @@ public struct PlugDeviceCard: View {
                                 .font(.caption2)
                                 .foregroundColor(.secondary)
 
+                            interfaceBadge
+
+                            Text("•")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+
                             Text("\(device.rssi) dBm")
                                 .font(.caption2)
                                 .foregroundColor(.secondary)
@@ -78,7 +84,7 @@ public struct PlugDeviceCard: View {
                 Toggle("", isOn: Binding(
                     get: { isOn },
                     set: { newValue in
-                        controller.setPower(for: device.id, isOn: newValue)
+                        controller.setPower(for: device, isOn: newValue)
                         #if canImport(UIKit)
                         let generator = UIImpactFeedbackGenerator(style: .light)
                         generator.impactOccurred()
@@ -93,5 +99,38 @@ public struct PlugDeviceCard: View {
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 1)
+    }
+
+    private var interfaceBadge: some View {
+        let active = controller.getActiveInterface(for: device.id)
+        let isServer = active == .server
+        let isLan = active == .lan || (active == nil && device.lanAddress != nil)
+
+        return HStack(spacing: 3) {
+            if isServer {
+                Image(systemName: "server.rack")
+                    .font(.system(size: 8))
+                Text("Server")
+                    .font(.system(size: 9, weight: .semibold))
+            } else if isLan {
+                Image(systemName: "network")
+                    .font(.system(size: 8))
+                Text("LAN")
+                    .font(.system(size: 9, weight: .semibold))
+            } else {
+                Image(systemName: "point.3.connected.trianglepath.dotted")
+                    .font(.system(size: 8))
+                Text("BLE")
+                    .font(.system(size: 9, weight: .semibold))
+            }
+        }
+        .foregroundColor(isServer ? .purple : (isLan ? .blue : .secondary))
+        .padding(.horizontal, 5)
+        .padding(.vertical, 2)
+        .background(
+            (isServer ? Color.purple : (isLan ? Color.blue : Color.secondary))
+                .opacity(0.12)
+        )
+        .clipShape(Capsule())
     }
 }

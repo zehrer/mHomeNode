@@ -127,6 +127,15 @@ public final class ScannerViewModel {
             loc.startAutoTracking(distanceThreshold: self.autoScanDistanceThreshold)
         }
 
+        // Wire Shelly Plug Multi-Path Server & LAN Client
+        ble.shellyController.serverClient = serverClient
+        ble.shellyController.serverConfigProvider = { [weak self] in
+            guard let self = self else { return (ServerConfig(), false) }
+            let isConnected = self.discoveryService.activeServer != nil || !self.serverRooms.isEmpty
+            return (self.serverConfig, isConnected)
+        }
+        ble.shellyController.lanDiscovery.startBrowsing()
+
         // Auto-start duty-cycled burst scanning on launch to discover devices while preserving battery
         ble.startBurstScan(activeDuration: 4.0, pauseDuration: 4.0)
 
@@ -282,6 +291,10 @@ public final class ScannerViewModel {
         } catch {
             return false
         }
+    }
+
+    public func updateDeviceLANAddress(id: UUID, lanAddress: String?) {
+        bleService.updateDeviceLANAddress(id: id, lanAddress: lanAddress)
     }
 
     public func ignoreDevice(_ device: DiscoveredDevice, reason: String = "User Ignored") {

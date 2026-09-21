@@ -25,6 +25,12 @@ public enum DeviceFamily: String, Codable, Sendable {
     case standardBLE = "Bluetooth LE Device"
 }
 
+public enum ControlInterface: String, Codable, Sendable {
+    case server = "Server"
+    case lan = "LAN"
+    case ble = "BLE"
+}
+
 public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
     public let id: UUID
     public var name: String
@@ -40,6 +46,8 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
     public var customName: String?
     public var isIgnored: Bool
     public var macAddress: String?
+    public var lanAddress: String?
+    public var activeControlInterface: ControlInterface?
     public var firstSeen: Date
     public var lastSeen: Date
     public var lastMeasurementDate: Date?
@@ -61,6 +69,8 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
         customName: String? = nil,
         isIgnored: Bool = false,
         macAddress: String? = nil,
+        lanAddress: String? = nil,
+        activeControlInterface: ControlInterface? = nil,
         firstSeen: Date = Date(),
         lastSeen: Date = Date(),
         lastMeasurementDate: Date? = nil
@@ -80,6 +90,8 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
         self.customName = customName
         self.isIgnored = isIgnored
         self.macAddress = macAddress
+        self.lanAddress = lanAddress
+        self.activeControlInterface = activeControlInterface
         self.firstSeen = firstSeen
         self.lastSeen = lastSeen
         self.lastMeasurementDate = lastMeasurementDate ?? (btHomeData != nil ? lastSeen : nil)

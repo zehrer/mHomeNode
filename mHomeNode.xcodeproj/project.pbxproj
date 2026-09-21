@@ -37,6 +37,9 @@
 		81A00002B002B002B0020002 /* PlugDeviceCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00002F002F002F0020002 /* PlugDeviceCard.swift */; };
 		81A00003B003B003B0030003 /* ShellyPlugTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00003F003F003F0030003 /* ShellyPlugTests.swift */; };
 		81A00004B004B004B0040004 /* BLEScannerServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00004F004F004F0040004 /* BLEScannerServiceTests.swift */; };
+		81A00005B005B005B0050005 /* ShellyLANClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00005F005F005F0050005 /* ShellyLANClient.swift */; };
+		81A00006B006B006B0060006 /* ShellyLANDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00006F006F006F0060006 /* ShellyLANDiscoveryService.swift */; };
+		81A00007B007B007B0070007 /* ShellyMultiPathTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00007F007F007F0070007 /* ShellyMultiPathTests.swift */; };
 		84CB017421AD3FF9D930F87D /* ScanExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87A31344B56BC23197338A37 /* ScanExportTests.swift */; };
 		85D513B5C06524ACE29677CF /* RoomsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 615C38F428E29108F0059EF4 /* RoomsView.swift */; };
 		8AC792E73AC3FA8ED37A03FE /* ManagedLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D87EDA90EFAF7DDA9FDEDDF /* ManagedLocation.swift */; };
@@ -122,6 +125,9 @@
 		81A00002F002F002F0020002 /* PlugDeviceCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlugDeviceCard.swift; sourceTree = "<group>"; };
 		81A00003F003F003F0030003 /* ShellyPlugTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellyPlugTests.swift; sourceTree = "<group>"; };
 		81A00004F004F004F0040004 /* BLEScannerServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEScannerServiceTests.swift; sourceTree = "<group>"; };
+		81A00005F005F005F0050005 /* ShellyLANClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellyLANClient.swift; sourceTree = "<group>"; };
+		81A00006F006F006F0060006 /* ShellyLANDiscoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellyLANDiscoveryService.swift; sourceTree = "<group>"; };
+		81A00007F007F007F0070007 /* ShellyMultiPathTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellyMultiPathTests.swift; sourceTree = "<group>"; };
 		83FEF1CCAB4E7ECAF2DC08F2 /* QingpingParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QingpingParserTests.swift; sourceTree = "<group>"; };
 		85FBD0516FCDAC06E3F9A1B7 /* DeviceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceDetailView.swift; sourceTree = "<group>"; };
 		86333B2F37318EBA181C25F6 /* BLEScannerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEScannerService.swift; sourceTree = "<group>"; };
@@ -328,8 +334,18 @@
 				688A9E7E6C600A4B86F0A873 /* Storage */,
 				105E5B008E78F40BB4325A0A /* Location */,
 				2224CDC0DFC998777F56180B /* Export */,
+				81A00005G005G005G0050005 /* Shelly */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		81A00005G005G005G0050005 /* Shelly */ = {
+			isa = PBXGroup;
+			children = (
+				81A00005F005F005F0050005 /* ShellyLANClient.swift */,
+				81A00006F006F006F0060006 /* ShellyLANDiscoveryService.swift */,
+			);
+			path = Shelly;
 			sourceTree = "<group>";
 		};
 		ADEB32716AD1CE1BE264CB57 /* Scanner */ = {
@@ -409,6 +425,7 @@
 				5B0AC85397511B6DD713534A /* LocationManagementTests.swift */,
 				81A00003F003F003F0030003 /* ShellyPlugTests.swift */,
 				81A00004F004F004F0040004 /* BLEScannerServiceTests.swift */,
+				81A00007F007F007F0070007 /* ShellyMultiPathTests.swift */,
 			);
 			path = mHomeNodeTests;
 			sourceTree = "<group>";
@@ -522,6 +539,7 @@
 				CF999D864EA351BA2C78180A /* LocationManagementTests.swift in Sources */,
 				81A00003B003B003B0030003 /* ShellyPlugTests.swift in Sources */,
 				81A00004B004B004B0040004 /* BLEScannerServiceTests.swift in Sources */,
+				81A00007B007B007B0070007 /* ShellyMultiPathTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -576,6 +594,8 @@
 				B0D02913C35EF51883F29A14 /* ContentView.swift in Sources */,
 				81A00001B001B001B0010001 /* ShellyPlugController.swift in Sources */,
 				81A00002B002B002B0020002 /* PlugDeviceCard.swift in Sources */,
+				81A00005B005B005B0050005 /* ShellyLANClient.swift in Sources */,
+				81A00006B006B006B0060006 /* ShellyLANDiscoveryService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

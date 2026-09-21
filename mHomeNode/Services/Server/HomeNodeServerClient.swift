@@ -137,6 +137,7 @@ public protocol HomeNodeServerClientProtocol: Sendable {
     func fetchIgnoredDevices(config: ServerConfig) async throws -> [IgnoredDeviceRecord]
     func ignoreDeviceOnServer(config: ServerConfig, id: String, name: String?, reason: String?) async throws -> Bool
     func unignoreDeviceOnServer(config: ServerConfig, id: String) async throws -> Bool
+    func toggleDevice(config: ServerConfig, id: String, isOn: Bool?) async throws -> Bool
 }
 
 public final class MockHomeNodeServerClient: HomeNodeServerClientProtocol, @unchecked Sendable {
@@ -197,6 +198,12 @@ public final class MockHomeNodeServerClient: HomeNodeServerClientProtocol, @unch
 
     public func unignoreDeviceOnServer(config: ServerConfig, id: String) async throws -> Bool {
         try await Task.sleep(nanoseconds: 200_000_000)
+        return true
+    }
+
+    public func toggleDevice(config: ServerConfig, id: String, isOn: Bool?) async throws -> Bool {
+        try await Task.sleep(nanoseconds: 100_000_000)
+        if !shouldSucceed { throw URLError(.cannotConnectToHost) }
         return true
     }
 }
@@ -356,6 +363,29 @@ public final class LiveHomeNodeServerClient: HomeNodeServerClientProtocol {
         let (_, response) = try await session.data(for: request)
         guard let httpResp = response as? HTTPURLResponse, (200...299).contains(httpResp.statusCode) else {
             return false
+        }
+        return true
+    }
+
+    public func toggleDevice(config: ServerConfig, id: String, isOn: Bool?) async throws -> Bool {
+        guard let baseURL = config.baseURL else { throw URLError(.badURL) }
+        let escapedId = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id
+        let url = baseURL.appendingPathComponent("api/v1/devices/\(escapedId)/toggle")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 3.5
+        if let apiKey = config.apiKey, !apiKey.isEmpty {
+            request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
+        if let on = isOn {
+            let body: [String: Any] = ["on": on]
+            request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        }
+
+        let (_, response) = try await session.data(for: request)
+        guard let httpResp = response as? HTTPURLResponse, (200...299).contains(httpResp.statusCode) else {
+            throw URLError(.badServerResponse)
         }
         return true
     }

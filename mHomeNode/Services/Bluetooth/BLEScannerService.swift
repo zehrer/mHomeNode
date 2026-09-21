@@ -234,6 +234,14 @@ public final class BLEScannerService: NSObject, BLEConnectionManager {
         }
     }
 
+    public func updateDeviceLANAddress(id: UUID, lanAddress: String?) {
+        if let index = devices.firstIndex(where: { $0.id == id }) {
+            devices[index].lanAddress = lanAddress
+            storageService.scheduleSave(devices)
+            worker.syncDevices(devices)
+        }
+    }
+
     public func setDeviceIgnored(id: UUID, isIgnored: Bool) {
         if let index = devices.firstIndex(where: { $0.id == id }) {
             devices[index].isIgnored = isIgnored
