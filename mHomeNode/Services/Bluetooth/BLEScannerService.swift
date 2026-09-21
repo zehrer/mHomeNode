@@ -4,9 +4,9 @@ import OSLog
 
 @Observable
 @MainActor
-public final class BLEScannerService: NSObject, @preconcurrency CBCentralManagerDelegate, BLEConnectionManager {
+public final class BLEScannerService: NSObject, BLEConnectionManager {
     private let logger = Logger(subsystem: "net.zehrer.homenode.mHomeNode", category: "BLEScanner")
-    private var centralManager: CBCentralManager?
+    private let worker: BLECentralWorker
     private let ignoreService: IgnoreService
     private let storageService: DeviceStorageService
 
@@ -20,17 +20,75 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
     public let shellyController = ShellyPlugController()
     public let inspectorService = BLEInspectorService()
 
+    private var pendingScanStart: Bool = false
+
     public init(ignoreService: IgnoreService? = nil, storageService: DeviceStorageService? = nil) {
-        self.ignoreService = ignoreService ?? .shared
+        let ign = ignoreService ?? .shared
+        self.ignoreService = ign
         let storage = storageService ?? .shared
         self.storageService = storage
-        self.devices = storage.loadDevices()
+        let initialDevices = storage.loadDevices()
+        self.devices = initialDevices
+
+        let bleQueue = DispatchQueue(label: "net.zehrer.homenode.bleQueue", qos: .userInitiated)
+        let worker = BLECentralWorker(
+            queue: bleQueue,
+            initialDevices: initialDevices,
+            ignoredRecords: ign.ignoredRecords
+        )
+        self.worker = worker
+
         super.init()
+
+        if let state = worker.centralManager?.state, state != .unknown {
+            self.bluetoothState = state
+        }
+
         self.goveeController.connectionManager = self
         self.shellyController.connectionManager = self
-        let cm = CBCentralManager(delegate: self, queue: .main)
-        self.centralManager = cm
-        self.inspectorService.setCentralManager(cm)
+        if let cm = worker.centralManager {
+            self.inspectorService.setCentralManager(cm, queue: bleQueue)
+        }
+
+        worker.onDevicesBatched = { [weak self] snapshot, periphs in
+            Task { @MainActor [weak self] in
+                self?.applyBatchUpdate(snapshot: snapshot, peripherals: periphs)
+            }
+        }
+
+        worker.onStateChanged = { [weak self] state in
+            Task { @MainActor [weak self] in
+                self?.handleStateChanged(state)
+            }
+        }
+
+        worker.onDidConnect = { [weak self] peripheral in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.peripheralMap[peripheral.identifier] = peripheral
+                self.goveeController.didConnect(peripheral: peripheral)
+                self.shellyController.didConnect(peripheral: peripheral)
+                self.inspectorService.didConnect(peripheral: peripheral)
+            }
+        }
+
+        worker.onDidFailToConnect = { [weak self] peripheral, error in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.goveeController.didFailToConnect(peripheral: peripheral, error: error)
+                self.shellyController.didFailToConnect(peripheral: peripheral, error: error)
+                self.inspectorService.didFailToConnect(peripheral: peripheral, error: error)
+            }
+        }
+
+        worker.onDidDisconnect = { [weak self] peripheral, error in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.goveeController.didDisconnect(peripheral: peripheral, error: error)
+                self.shellyController.didDisconnect(peripheral: peripheral, error: error)
+                self.inspectorService.didDisconnect(peripheral: peripheral, error: error)
+            }
+        }
     }
 
     public private(set) var isBurstScanning: Bool = false
@@ -40,21 +98,31 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
     private var burstPauseDuration: TimeInterval = 4.0
 
     public func startScan() {
-        guard let central = centralManager else { return }
-        guard central.state == .poweredOn else {
-            errorMessage = "Bluetooth is not powered on (\(central.state.description))."
-            return
+        switch bluetoothState {
+        case .poweredOn:
+            errorMessage = nil
+            pendingScanStart = false
+            isScanning = true
+            logger.info("Starting BLE scan for nearby devices and BTHome broadcasts...")
+            worker.startScan()
+        case .unknown, .resetting:
+            // Do NOT display a red error message during startup or reset.
+            errorMessage = nil
+            pendingScanStart = true
+            logger.info("Bluetooth state is \(self.bluetoothState.description); scan will begin once powered on.")
+        case .poweredOff:
+            pendingScanStart = false
+            errorMessage = "Bluetooth is turned off."
+        case .unauthorized:
+            pendingScanStart = false
+            errorMessage = "Bluetooth permission is required."
+        case .unsupported:
+            pendingScanStart = false
+            errorMessage = "Bluetooth Low Energy is not supported on this device."
+        @unknown default:
+            pendingScanStart = false
+            errorMessage = "Bluetooth is unavailable."
         }
-
-        errorMessage = nil
-        isScanning = true
-        logger.info("Starting BLE scan for nearby devices and BTHome broadcasts...")
-
-        // Scan allowing duplicates to ensure continuous RSSI and broadcast updates
-        central.scanForPeripherals(
-            withServices: nil,
-            options: [CBCentralManagerScanOptionAllowDuplicatesKey: true]
-        )
     }
 
     /// Starts a duty-cycled burst scan (e.g. 4s active, 4s pause) to continuously receive telemetry while conserving battery
@@ -77,17 +145,14 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
                 guard let self = self, self.isBurstScanning else { return }
                 if self.isBurstActivePhase {
                     // Switch to pause phase to save battery
-                    self.centralManager?.stopScan()
+                    self.worker.stopScan()
                     self.isScanning = false
                     self.isBurstActivePhase = false
                     self.logger.debug("Burst scan cycle: paused (conserving battery)")
                 } else {
                     // Switch to active scanning phase
-                    guard let central = self.centralManager, central.state == .poweredOn else { return }
-                    central.scanForPeripherals(
-                        withServices: nil,
-                        options: [CBCentralManagerScanOptionAllowDuplicatesKey: true]
-                    )
+                    guard self.bluetoothState == .poweredOn else { return }
+                    self.worker.startScan()
                     self.isScanning = true
                     self.isBurstActivePhase = true
                     self.logger.debug("Burst scan cycle: active")
@@ -100,7 +165,7 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
     public func pauseScan() {
         burstTimer?.invalidate()
         burstTimer = nil
-        centralManager?.stopScan()
+        worker.stopScan()
         isScanning = false
         logger.info("Paused BLE scan.")
     }
@@ -119,7 +184,7 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
         isBurstScanning = false
         burstTimer?.invalidate()
         burstTimer = nil
-        centralManager?.stopScan()
+        worker.stopScan()
         isScanning = false
         storageService.saveDevicesSync(devices)
         logger.info("Stopped BLE scan.")
@@ -134,12 +199,14 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
             return !hasRoom && !activeRegIds.contains(key)
         }
         storageService.saveDevicesSync(devices)
+        worker.syncDevices(devices)
     }
 
     public func updateRoom(for deviceId: UUID, room: String?) {
         if let index = devices.firstIndex(where: { $0.id == deviceId }) {
             devices[index].assignedRoom = room
             storageService.scheduleSave(devices)
+            worker.syncDevices(devices)
             let dev = devices[index]
             let devKey = dev.macAddress ?? dev.id.uuidString
             LocationManagementService.shared.registerDevice(
@@ -155,6 +222,7 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
         if let index = devices.firstIndex(where: { $0.id == id }) {
             devices[index].customName = customName
             storageService.scheduleSave(devices)
+            worker.syncDevices(devices)
             let dev = devices[index]
             let devKey = dev.macAddress ?? dev.id.uuidString
             LocationManagementService.shared.registerDevice(
@@ -170,28 +238,230 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
         if let index = devices.firstIndex(where: { $0.id == id }) {
             devices[index].isIgnored = isIgnored
             storageService.scheduleSave(devices)
+            worker.syncDevices(devices)
+        }
+        worker.syncIgnoredRecords(ignoreService.ignoredRecords)
+    }
+
+    // MARK: - Batch Updates & State Handling
+
+    private func applyBatchUpdate(snapshot: [DiscoveredDevice], peripherals: [UUID: CBPeripheral]) {
+        var merged = snapshot
+        for i in merged.indices {
+            let devKey = merged[i].macAddress ?? merged[i].id.uuidString
+            if let reg = LocationManagementService.shared.lookupDevice(deviceId: devKey) {
+                if merged[i].assignedRoom == nil { merged[i].assignedRoom = reg.assignedRoom }
+                if merged[i].customName == nil { merged[i].customName = reg.customName }
+                LocationManagementService.shared.markDeviceSeen(deviceId: devKey)
+            }
+        }
+
+        self.devices = merged
+        for (k, v) in peripherals {
+            self.peripheralMap[k] = v
+        }
+        self.storageService.scheduleSave(merged)
+    }
+
+    private func handleStateChanged(_ state: CBManagerState) {
+        self.bluetoothState = state
+        logger.info("Bluetooth state changed: \(state.description)")
+
+        switch state {
+        case .poweredOn:
+            errorMessage = nil
+            if pendingScanStart || isScanning || isBurstScanning {
+                pendingScanStart = false
+                if isBurstScanning && !isBurstActivePhase {
+                    // Wait for next active cycle
+                } else {
+                    isScanning = true
+                    worker.startScan()
+                }
+            }
+        case .poweredOff:
+            isScanning = false
+            pendingScanStart = false
+            errorMessage = "Bluetooth is turned off."
+        case .unauthorized:
+            isScanning = false
+            pendingScanStart = false
+            errorMessage = "Bluetooth permission is required."
+        case .unsupported:
+            isScanning = false
+            pendingScanStart = false
+            errorMessage = "Bluetooth Low Energy is not supported on this device."
+        case .unknown, .resetting:
+            isScanning = false
+            errorMessage = nil
+        @unknown default:
+            break
+        }
+    }
+
+    // MARK: - BLEConnectionManager
+
+    public func connect(peripheral: CBPeripheral) {
+        peripheralMap[peripheral.identifier] = peripheral
+        worker.connect(peripheral: peripheral)
+    }
+
+    public func cancelConnection(peripheral: CBPeripheral) {
+        worker.cancelConnection(peripheral: peripheral)
+    }
+
+    public func getPeripheral(id: UUID) -> CBPeripheral? {
+        if let p = peripheralMap[id] { return p }
+        return worker.getPeripheral(id: id)
+    }
+
+    // MARK: - Active GATT Inspection
+
+    public func inspectDevice(id: UUID) async throws -> DeviceInspectionInfo {
+        guard let peripheral = getPeripheral(id: id) else {
+            throw NSError(
+                domain: "BLEScannerService",
+                code: 404,
+                userInfo: [NSLocalizedDescriptionKey: "Peripheral not currently reachable or out of signal range."]
+            )
+        }
+        let info = try await inspectorService.inspect(peripheral: peripheral)
+        if let index = devices.firstIndex(where: { $0.id == id }) {
+            devices[index].applyInspectionInfo(info)
+            storageService.scheduleSave(devices)
+            worker.syncDevices(devices)
+        }
+        return info
+    }
+}
+
+// MARK: - Background BLE Central Worker
+
+private final class BLECentralWorker: NSObject, @preconcurrency CBCentralManagerDelegate, @unchecked Sendable {
+    private let logger = Logger(subsystem: "net.zehrer.homenode.mHomeNode", category: "BLEWorker")
+    let queue: DispatchQueue
+    private(set) var centralManager: CBCentralManager?
+
+    private var deviceMap: [UUID: DiscoveredDevice] = [:]
+    private var macToId: [String: UUID] = [:]
+    private var peripheralMap: [UUID: CBPeripheral] = [:]
+    private var ignoredRecords: [IgnoredDeviceRecord] = []
+
+    private var hasPendingBatchUpdate: Bool = false
+    private var batchTimer: DispatchSourceTimer?
+
+    var onDevicesBatched: (@Sendable ([DiscoveredDevice], [UUID: CBPeripheral]) -> Void)?
+    var onStateChanged: (@Sendable (CBManagerState) -> Void)?
+    var onDidConnect: (@Sendable (CBPeripheral) -> Void)?
+    var onDidFailToConnect: (@Sendable (CBPeripheral, Error?) -> Void)?
+    var onDidDisconnect: (@Sendable (CBPeripheral, Error?) -> Void)?
+
+    init(queue: DispatchQueue, initialDevices: [DiscoveredDevice], ignoredRecords: [IgnoredDeviceRecord]) {
+        self.queue = queue
+        self.ignoredRecords = ignoredRecords
+        for dev in initialDevices {
+            self.deviceMap[dev.id] = dev
+            if let mac = dev.macAddress {
+                self.macToId[mac.uppercased()] = dev.id
+            }
+        }
+        super.init()
+
+        // Coalesce updates to UI at ~150ms intervals
+        let timer = DispatchSource.makeTimerSource(queue: queue)
+        timer.schedule(deadline: .now() + .milliseconds(150), repeating: .milliseconds(150))
+        timer.setEventHandler { [weak self] in
+            self?.flushBatchIfNeeded()
+        }
+        timer.resume()
+        self.batchTimer = timer
+
+        self.centralManager = CBCentralManager(delegate: self, queue: queue)
+    }
+
+    deinit {
+        batchTimer?.cancel()
+    }
+
+    private func flushBatchIfNeeded() {
+        guard hasPendingBatchUpdate else { return }
+        hasPendingBatchUpdate = false
+        let snapshot = Array(deviceMap.values)
+        let periphSnapshot = peripheralMap
+        onDevicesBatched?(snapshot, periphSnapshot)
+    }
+
+    func syncDevices(_ devices: [DiscoveredDevice]) {
+        queue.async { [weak self] in
+            guard let self = self else { return }
+            self.deviceMap.removeAll(keepingCapacity: true)
+            self.macToId.removeAll(keepingCapacity: true)
+            for dev in devices {
+                self.deviceMap[dev.id] = dev
+                if let mac = dev.macAddress {
+                    self.macToId[mac.uppercased()] = dev.id
+                }
+            }
+        }
+    }
+
+    func syncIgnoredRecords(_ records: [IgnoredDeviceRecord]) {
+        queue.async { [weak self] in
+            self?.ignoredRecords = records
+        }
+    }
+
+    func startScan() {
+        queue.async { [weak self] in
+            guard let self = self, let cm = self.centralManager else { return }
+            guard cm.state == .poweredOn else { return }
+            cm.scanForPeripherals(
+                withServices: nil,
+                options: [CBCentralManagerScanOptionAllowDuplicatesKey: true]
+            )
+        }
+    }
+
+    func stopScan() {
+        queue.async { [weak self] in
+            guard let self = self else { return }
+            self.centralManager?.stopScan()
+            self.flushBatchIfNeeded()
+        }
+    }
+
+    func connect(peripheral: CBPeripheral) {
+        queue.async { [weak self] in
+            self?.centralManager?.connect(peripheral, options: nil)
+        }
+    }
+
+    func cancelConnection(peripheral: CBPeripheral) {
+        queue.async { [weak self] in
+            self?.centralManager?.cancelPeripheralConnection(peripheral)
+        }
+    }
+
+    func getPeripheral(id: UUID) -> CBPeripheral? {
+        queue.sync {
+            if let p = peripheralMap[id] { return p }
+            return centralManager?.retrievePeripherals(withIdentifiers: [id]).first
         }
     }
 
     // MARK: - CBCentralManagerDelegate
 
-    public func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        self.bluetoothState = central.state
-        logger.info("Bluetooth state changed: \(central.state.description)")
-
-        if central.state != .poweredOn {
-            self.isScanning = false
-        }
+    func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        onStateChanged?(central.state)
     }
 
-    public func centralManager(
+    func centralManager(
         _ central: CBCentralManager,
         didDiscover peripheral: CBPeripheral,
         advertisementData: [String: Any],
         rssi RSSI: NSNumber
     ) {
         let rssiVal = RSSI.intValue
-        // Ignore out-of-range outlier readings (127 means unavailable in CoreBluetooth)
         guard rssiVal != 127 else { return }
 
         peripheralMap[peripheral.identifier] = peripheral
@@ -234,87 +504,71 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
             resolvedName = "Unknown"
         }
 
-        let isIgnored = ignoreService.isIgnored(
+        let isIgnored = isDeviceIgnored(
             id: identification.macAddress ?? peripheral.identifier.uuidString,
             name: resolvedName
         )
         let now = Date()
 
-        // Match existing device by peripheral UUID or MAC address
-        let existingIndex = devices.firstIndex { dev in
-            dev.id == peripheral.identifier ||
-            (identification.macAddress != nil && dev.macAddress == identification.macAddress)
+        // Lookup existing device: first by UUID, then by MAC address
+        var existingDev = deviceMap[peripheral.identifier]
+        if existingDev == nil, let mac = identification.macAddress?.uppercased(), let existingId = macToId[mac] {
+            existingDev = deviceMap[existingId]
         }
 
-        if let index = existingIndex {
-            // Update existing device in-place without removing or flickering
-            devices[index].rssi = rssiVal
-            devices[index].rssiHistory.append(rssiVal)
-            if devices[index].rssiHistory.count > 20 {
-                devices[index].rssiHistory.removeFirst()
+        if var dev = existingDev {
+            dev.rssi = rssiVal
+            dev.rssiHistory.append(rssiVal)
+            if dev.rssiHistory.count > 20 {
+                dev.rssiHistory.removeFirst()
             }
-            if resolvedName != "Unknown" && (devices[index].name == "Unknown" || devices[index].name.isEmpty) {
-                devices[index].name = resolvedName
+            if resolvedName != "Unknown" && (dev.name == "Unknown" || dev.name.isEmpty) {
+                dev.name = resolvedName
             }
             if let btHomeData = identification.btHomeData {
-                if devices[index].btHomeData != nil {
-                    devices[index].btHomeData?.merge(with: btHomeData)
+                if dev.btHomeData != nil {
+                    dev.btHomeData?.merge(with: btHomeData)
                 } else {
-                    devices[index].btHomeData = btHomeData
+                    dev.btHomeData = btHomeData
                 }
-                devices[index].lastMeasurementDate = now
+                dev.lastMeasurementDate = now
             }
             if identification.family != .standardBLE {
-                devices[index].family = identification.family
+                dev.family = identification.family
             }
             if let mac = identification.macAddress {
-                devices[index].macAddress = mac
+                dev.macAddress = mac
+                macToId[mac.uppercased()] = dev.id
             }
             if isConnectable {
-                devices[index].isConnectable = true
+                dev.isConnectable = true
             }
 
-            // Merge scan-response data (service UUIDs, manufacturer data, service data)
             for suuid in serviceUUIDStrings {
-                if !devices[index].serviceUUIDs.contains(suuid) {
-                    devices[index].serviceUUIDs.append(suuid)
+                if !dev.serviceUUIDs.contains(suuid) {
+                    dev.serviceUUIDs.append(suuid)
                 }
             }
             if let mfg = mfgDataHex, !mfg.isEmpty {
-                if devices[index].manufacturerDataHex == nil || devices[index].manufacturerDataHex?.isEmpty == true {
-                    devices[index].manufacturerDataHex = mfg
+                if dev.manufacturerDataHex == nil || dev.manufacturerDataHex?.isEmpty == true {
+                    dev.manufacturerDataHex = mfg
                 }
             }
             if let sdict = serviceDataHexDict {
-                if devices[index].serviceDataHex == nil {
-                    devices[index].serviceDataHex = sdict
+                if dev.serviceDataHex == nil {
+                    dev.serviceDataHex = sdict
                 } else {
                     for (k, v) in sdict {
-                        devices[index].serviceDataHex?[k] = v
+                        dev.serviceDataHex?[k] = v
                     }
                 }
             }
 
-            devices[index].isIgnored = isIgnored
-            devices[index].lastSeen = now
+            dev.isIgnored = isIgnored
+            dev.lastSeen = now
 
-            let devKey = devices[index].macAddress ?? devices[index].id.uuidString
-            if let reg = LocationManagementService.shared.lookupDevice(deviceId: devKey) {
-                if devices[index].assignedRoom == nil { devices[index].assignedRoom = reg.assignedRoom }
-                if devices[index].customName == nil { devices[index].customName = reg.customName }
-                LocationManagementService.shared.markDeviceSeen(deviceId: devKey)
-            }
+            deviceMap[dev.id] = dev
         } else {
-            // Check if device is already registered in active location registry
-            let devKey = identification.macAddress ?? peripheral.identifier.uuidString
-            let reg = LocationManagementService.shared.lookupDevice(deviceId: devKey)
-            let initialCustomName = reg?.customName
-            let initialRoom = reg?.assignedRoom
-            if reg != nil {
-                LocationManagementService.shared.markDeviceSeen(deviceId: devKey)
-            }
-
-            // Record newly seen device
             let newDevice = DiscoveredDevice(
                 id: peripheral.identifier,
                 name: resolvedName,
@@ -326,69 +580,51 @@ public final class BLEScannerService: NSObject, @preconcurrency CBCentralManager
                 btHomeData: identification.btHomeData,
                 family: identification.family,
                 isConnectable: isConnectable,
-                assignedRoom: initialRoom,
-                customName: initialCustomName,
+                assignedRoom: nil,
+                customName: nil,
                 isIgnored: isIgnored,
                 macAddress: identification.macAddress,
                 firstSeen: now,
                 lastSeen: now,
                 lastMeasurementDate: identification.btHomeData != nil ? now : nil
             )
-            devices.append(newDevice)
+            deviceMap[newDevice.id] = newDevice
+            if let mac = identification.macAddress {
+                macToId[mac.uppercased()] = newDevice.id
+            }
         }
 
-        // Persist updated device inventory
-        storageService.scheduleSave(devices)
+        hasPendingBatchUpdate = true
     }
 
-    // MARK: - BLEConnectionManager
-
-    public func connect(peripheral: CBPeripheral) {
-        peripheralMap[peripheral.identifier] = peripheral
-        centralManager?.connect(peripheral, options: nil)
-    }
-
-    public func cancelConnection(peripheral: CBPeripheral) {
-        centralManager?.cancelPeripheralConnection(peripheral)
-    }
-
-    public func getPeripheral(id: UUID) -> CBPeripheral? {
-        if let p = peripheralMap[id] { return p }
-        return centralManager?.retrievePeripherals(withIdentifiers: [id]).first
-    }
-
-    // MARK: - Active GATT Inspection
-    public func inspectDevice(id: UUID) async throws -> DeviceInspectionInfo {
-        guard let peripheral = getPeripheral(id: id) else {
-            throw NSError(
-                domain: "BLEScannerService",
-                code: 404,
-                userInfo: [NSLocalizedDescriptionKey: "Peripheral not currently reachable or out of signal range."]
-            )
+    private func isDeviceIgnored(id: String, name: String?) -> Bool {
+        let normId = id.replacingOccurrences(of: ":", with: "").replacingOccurrences(of: "-", with: "").uppercased()
+        guard !normId.isEmpty else { return false }
+        for r in ignoredRecords {
+            let rNorm = r.normalizedId
+            if rNorm == normId { return true }
+            if let tName = name?.lowercased().trimmingCharacters(in: .whitespacesAndNewlines),
+               !tName.isEmpty,
+               !IgnoreService.genericNames.contains(tName),
+               let iName = r.name?.lowercased().trimmingCharacters(in: .whitespacesAndNewlines),
+               !iName.isEmpty, !IgnoreService.genericNames.contains(iName),
+               tName == iName {
+                return true
+            }
         }
-        let info = try await inspectorService.inspect(peripheral: peripheral)
-        if let index = devices.firstIndex(where: { $0.id == id }) {
-            devices[index].applyInspectionInfo(info)
-            storageService.scheduleSave(devices)
-        }
-        return info
+        return false
     }
 
-    // MARK: - CBCentralManager Connection Callbacks
-
-    public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        goveeController.didConnect(peripheral: peripheral)
-        inspectorService.didConnect(peripheral: peripheral)
+    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        onDidConnect?(peripheral)
     }
 
-    public func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
-        goveeController.didFailToConnect(peripheral: peripheral, error: error)
-        inspectorService.didFailToConnect(peripheral: peripheral, error: error)
+    func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
+        onDidFailToConnect?(peripheral, error)
     }
 
-    public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        goveeController.didDisconnect(peripheral: peripheral, error: error)
-        inspectorService.didDisconnect(peripheral: peripheral, error: error)
+    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+        onDidDisconnect?(peripheral, error)
     }
 }
 

@@ -218,14 +218,17 @@ public final class BLEInspectorService: NSObject, @unchecked Sendable, CBPeriphe
     private var pendingInfo = DeviceInspectionInfo()
     private var timeoutWorkItem: DispatchWorkItem?
     private weak var centralManager: CBCentralManager?
+    private var centralQueue: DispatchQueue?
 
-    public init(centralManager: CBCentralManager? = nil) {
+    public init(centralManager: CBCentralManager? = nil, queue: DispatchQueue? = nil) {
         self.centralManager = centralManager
+        self.centralQueue = queue
         super.init()
     }
 
-    public func setCentralManager(_ manager: CBCentralManager) {
+    public func setCentralManager(_ manager: CBCentralManager, queue: DispatchQueue? = nil) {
         self.centralManager = manager
+        self.centralQueue = queue
     }
 
     /// Asynchronously connects to a peripheral, reads standard GATT info, and disconnects immediately
@@ -251,9 +254,16 @@ public final class BLEInspectorService: NSObject, @unchecked Sendable, CBPeriphe
             DispatchQueue.main.asyncAfter(deadline: .now() + timeoutSeconds, execute: item)
 
             self.logger.info("Connecting to peripheral \(peripheral.identifier) for GATT inspection...")
-            central.connect(peripheral, options: [
-                CBConnectPeripheralOptionNotifyOnDisconnectionKey: false
-            ])
+            let connectBlock = {
+                central.connect(peripheral, options: [
+                    CBConnectPeripheralOptionNotifyOnDisconnectionKey: false
+                ])
+            }
+            if let q = self.centralQueue {
+                q.async(execute: connectBlock)
+            } else {
+                connectBlock()
+            }
         }
     }
 

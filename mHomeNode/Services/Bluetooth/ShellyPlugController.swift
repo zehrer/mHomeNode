@@ -113,6 +113,35 @@ public final class ShellyPlugController: NSObject, CBPeripheralDelegate {
         }
     }
 
+    // MARK: - Central Connection Lifecycle Forwarding
+
+    public func didConnect(peripheral: CBPeripheral) {
+        let id = peripheral.identifier
+        guard pendingPackets[id] != nil else { return }
+        logger.info("Connected to Shelly plug \(id)")
+        peripheral.delegate = self
+        peripheral.discoverServices([Self.shellyRpcServiceUUID])
+    }
+
+    public func didFailToConnect(peripheral: CBPeripheral, error: Error?) {
+        let id = peripheral.identifier
+        guard pendingPackets[id] != nil else { return }
+        let msg = error?.localizedDescription ?? "Failed to connect"
+        logger.error("Failed to connect to Shelly plug \(id): \(msg)")
+        isBusy[id] = false
+        lastError[id] = msg
+        pendingPackets[id] = nil
+        timeoutTasks[id]?.cancel()
+    }
+
+    public func didDisconnect(peripheral: CBPeripheral, error: Error?) {
+        let id = peripheral.identifier
+        guard pendingPackets[id] != nil || writeCharacteristics[id] != nil else { return }
+        logger.info("Disconnected from Shelly plug \(id)")
+        writeCharacteristics[id] = nil
+        timeoutTasks[id]?.cancel()
+    }
+
     // MARK: - CBPeripheralDelegate Callbacks
 
     public nonisolated func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: (any Error)?) {

@@ -14,7 +14,7 @@ public final class IgnoreService {
         load()
     }
 
-    private static let genericNames: Set<String> = [
+    public static let genericNames: Set<String> = [
         "unknown", "bluetooth le device", "ble device", "xiaomi sensor",
         "xiaomi mijia", "qingping", "shelly blu", "bthome device", "govee"
     ]
