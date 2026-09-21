@@ -1,5 +1,5 @@
 import Foundation
-@preconcurrency import CoreBluetooth
+import CoreBluetooth
 import OSLog
 import SwiftUI
 
@@ -12,7 +12,7 @@ public protocol BLEConnectionManager: AnyObject {
 
 @Observable
 @MainActor
-public final class GoveeLightController: NSObject, @preconcurrency CBPeripheralDelegate {
+public final class GoveeLightController: NSObject, CBPeripheralDelegate {
     private let logger = Logger(subsystem: "net.zehrer.homenode.mHomeNode", category: "GoveeLightController")
 
     public weak var connectionManager: BLEConnectionManager?

@@ -1,11 +1,11 @@
 import Foundation
-@preconcurrency import CoreBluetooth
+import CoreBluetooth
 import OSLog
 import SwiftUI
 
 @Observable
 @MainActor
-public final class ShellyPlugController: NSObject, @preconcurrency CBPeripheralDelegate {
+public final class ShellyPlugController: NSObject, CBPeripheralDelegate {
     private let logger = Logger(subsystem: "net.zehrer.homenode.mHomeNode", category: "ShellyPlugController")
 
     public weak var connectionManager: BLEConnectionManager?
