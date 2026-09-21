@@ -17,8 +17,10 @@
 		450F341525D90DDF79614BDE /* ServerConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62ADF22AF5C4BCD095F0BBCC /* ServerConfig.swift */; };
 		47657C370771C1387AF25C86 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1F835F417C31916A6DEB41 /* LocationService.swift */; };
 		48F119E0F022213919682D8B /* IgnoreServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1CC85A54D4AA1DC9D533F5 /* IgnoreServiceTests.swift */; };
+		5086CB352F14686818FA9DA2 /* LocationManagementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80E15B3D179863FD2A5F5931 /* LocationManagementService.swift */; };
 		5748CB36FAE3C2360C723527 /* IgnoreService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB9427B3E91D9B66CA962FA8 /* IgnoreService.swift */; };
 		5A7AE268610A598A38416FA1 /* ScanExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40EB68770401B43619967E2A /* ScanExportService.swift */; };
+		5C26C0006CB352A041E96C11 /* LocationsManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9077C4DE29CC3E252C453332 /* LocationsManagementView.swift */; };
 		5D736AD4CF443BE15BB83FA7 /* DeviceRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA9286612E9DB42C2132B18 /* DeviceRowView.swift */; };
 		5E5E235530D2A23BF09AFC3A /* SignalStrengthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF4A32BFA3601546407FDDB4 /* SignalStrengthView.swift */; };
 		5EDF605203126AA977FA6C08 /* DiscoveredDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = E497F7F1F542491CCCC9DD4A /* DiscoveredDevice.swift */; };
@@ -31,11 +33,16 @@
 		778581DDCB5B072E49DE8CD0 /* SensorMetricBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2375A4F98FD49F6FC6D1BB4 /* SensorMetricBadge.swift */; };
 		7B2B266588CD0653E69A3553 /* SavedScansListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4D3FC9F362C72CDFD284493 /* SavedScansListView.swift */; };
 		7E42CE48D7C10D9521B5B9E7 /* AutoLocationScanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EEE96E7109687F5E059E1FF /* AutoLocationScanTests.swift */; };
+		81A00001B001B001B0010001 /* ShellyPlugController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00001F001F001F0010001 /* ShellyPlugController.swift */; };
+		81A00002B002B002B0020002 /* PlugDeviceCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00002F002F002F0020002 /* PlugDeviceCard.swift */; };
+		81A00003B003B003B0030003 /* ShellyPlugTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00003F003F003F0030003 /* ShellyPlugTests.swift */; };
 		84CB017421AD3FF9D930F87D /* ScanExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87A31344B56BC23197338A37 /* ScanExportTests.swift */; };
 		85D513B5C06524ACE29677CF /* RoomsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 615C38F428E29108F0059EF4 /* RoomsView.swift */; };
+		8AC792E73AC3FA8ED37A03FE /* ManagedLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D87EDA90EFAF7DDA9FDEDDF /* ManagedLocation.swift */; };
 		8ACCE02EC240D7854CA42ED6 /* DeviceStorageServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21E0583E340E6E31A23A38D0 /* DeviceStorageServiceTests.swift */; };
 		91EA390C46669265976F1501 /* mHomeNodeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3FFDDE938980A977754E63F /* mHomeNodeApp.swift */; };
 		93F24D55044EF8E9E1D9C0AE /* BLEScannerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86333B2F37318EBA181C25F6 /* BLEScannerService.swift */; };
+		9B334062A697D08493887233 /* LocationDeviceRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BDD6AC3DA2C5A39DE40709E /* LocationDeviceRecord.swift */; };
 		9D4E4EB3A9D52CA47965A154 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A4EBE9981B1D585B74C2C11E /* Assets.xcassets */; };
 		9DD927B6A26F677EBD96EA44 /* DeviceGroupingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1203BD91149EC86BBB5A34 /* DeviceGroupingTests.swift */; };
 		A42CF434A2254B160A6C6EE8 /* DeviceStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 537977C0F10B43B259289AF5 /* DeviceStorageService.swift */; };
@@ -53,6 +60,7 @@
 		C63D34486DA6CFBF0874F0DD /* SavedScanDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9EBA07CDC512BF77FA70287 /* SavedScanDetailView.swift */; };
 		C87997131AD168D86C8A55E7 /* BTHomeParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80446116079B27DB2D104532 /* BTHomeParserTests.swift */; };
 		CABF22E687D1280E0CD6A699 /* SaveScanSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9995201F4DA405349D3D22 /* SaveScanSheet.swift */; };
+		CF999D864EA351BA2C78180A /* LocationManagementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B0AC85397511B6DD713534A /* LocationManagementTests.swift */; };
 		D080D3096ACDC5D57FD1E936 /* IgnoredDevicesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474076F013242B5594ADAA40 /* IgnoredDevicesListView.swift */; };
 		D6D3CF9BA659874224B0AC3D /* DeviceFingerprinterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86DE2B00863F1B5A0AB899B8 /* DeviceFingerprinterTests.swift */; };
 		D905E72278D57E11BE513E9C /* DeviceGrouping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DBD014035DF15A589B4777E /* DeviceGrouping.swift */; };
@@ -65,14 +73,6 @@
 		EF341971B1B640C6F2A4E11C /* SavedScanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5E47E9CB7F6A5E7FF27A58 /* SavedScanTests.swift */; };
 		F77F915E2C1AD3103088A213 /* GoveeCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEB774EBDBA6FA9A1EF2D42F /* GoveeCommand.swift */; };
 		FA19B3792A74D1A68990972D /* MiBeaconParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2798A87DE38639B9F1151C82 /* MiBeaconParserTests.swift */; };
-		9B334062A697D08493887233 /* LocationDeviceRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BDD6AC3DA2C5A39DE40709E /* LocationDeviceRecord.swift */; };
-		8AC792E73AC3FA8ED37A03FE /* ManagedLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D87EDA90EFAF7DDA9FDEDDF /* ManagedLocation.swift */; };
-		5086CB352F14686818FA9DA2 /* LocationManagementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80E15B3D179863FD2A5F5931 /* LocationManagementService.swift */; };
-		5C26C0006CB352A041E96C11 /* LocationsManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9077C4DE29CC3E252C453332 /* LocationsManagementView.swift */; };
-		CF999D864EA351BA2C78180A /* LocationManagementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B0AC85397511B6DD713534A /* LocationManagementTests.swift */; };
-		81A00001B001B001B0010001 /* ShellyPlugController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00001F001F001F0010001 /* ShellyPlugController.swift */; };
-		81A00002B002B002B0020002 /* PlugDeviceCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00002F002F002F0020002 /* PlugDeviceCard.swift */; };
-		81A00003B003B003B0030003 /* ShellyPlugTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00003F003F003F0030003 /* ShellyPlugTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -101,24 +101,32 @@
 		3870044FB35F416735463846 /* mHomeNodeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = mHomeNodeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		40EB68770401B43619967E2A /* ScanExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanExportService.swift; sourceTree = "<group>"; };
 		474076F013242B5594ADAA40 /* IgnoredDevicesListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IgnoredDevicesListView.swift; sourceTree = "<group>"; };
+		4BDD6AC3DA2C5A39DE40709E /* LocationDeviceRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationDeviceRecord.swift; sourceTree = "<group>"; };
 		4C1203BD91149EC86BBB5A34 /* DeviceGroupingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceGroupingTests.swift; sourceTree = "<group>"; };
 		537977C0F10B43B259289AF5 /* DeviceStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceStorageService.swift; sourceTree = "<group>"; };
 		5463559BC99E5E9C526D2557 /* LightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightsView.swift; sourceTree = "<group>"; };
 		55364BCEC06FCE7D7043087C /* ServerStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerStatusView.swift; sourceTree = "<group>"; };
+		5B0AC85397511B6DD713534A /* LocationManagementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManagementTests.swift; sourceTree = "<group>"; };
 		615C38F428E29108F0059EF4 /* RoomsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomsView.swift; sourceTree = "<group>"; };
 		62ADF22AF5C4BCD095F0BBCC /* ServerConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerConfig.swift; sourceTree = "<group>"; };
 		6EEE96E7109687F5E059E1FF /* AutoLocationScanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoLocationScanTests.swift; sourceTree = "<group>"; };
 		783D1084AC7C36D010CAD83B /* SavedScanStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedScanStorageService.swift; sourceTree = "<group>"; };
+		7D87EDA90EFAF7DDA9FDEDDF /* ManagedLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagedLocation.swift; sourceTree = "<group>"; };
 		7E36C363BB6FFDD935C0B16D /* BLEInspectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEInspectorTests.swift; sourceTree = "<group>"; };
 		7E8E401E74736F8B85EC3BE2 /* RoomClimateCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomClimateCard.swift; sourceTree = "<group>"; };
 		7E8E7E074B6C40A842E111E4 /* SensorTelemetryAndDutyCycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorTelemetryAndDutyCycleTests.swift; sourceTree = "<group>"; };
 		80446116079B27DB2D104532 /* BTHomeParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BTHomeParserTests.swift; sourceTree = "<group>"; };
+		80E15B3D179863FD2A5F5931 /* LocationManagementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManagementService.swift; sourceTree = "<group>"; };
+		81A00001F001F001F0010001 /* ShellyPlugController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellyPlugController.swift; sourceTree = "<group>"; };
+		81A00002F002F002F0020002 /* PlugDeviceCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlugDeviceCard.swift; sourceTree = "<group>"; };
+		81A00003F003F003F0030003 /* ShellyPlugTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellyPlugTests.swift; sourceTree = "<group>"; };
 		83FEF1CCAB4E7ECAF2DC08F2 /* QingpingParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QingpingParserTests.swift; sourceTree = "<group>"; };
 		85FBD0516FCDAC06E3F9A1B7 /* DeviceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceDetailView.swift; sourceTree = "<group>"; };
 		86333B2F37318EBA181C25F6 /* BLEScannerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEScannerService.swift; sourceTree = "<group>"; };
 		86DE2B00863F1B5A0AB899B8 /* DeviceFingerprinterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceFingerprinterTests.swift; sourceTree = "<group>"; };
 		879C2CC7F0485C71806D8855 /* mHomeNode.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = mHomeNode.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		87A31344B56BC23197338A37 /* ScanExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanExportTests.swift; sourceTree = "<group>"; };
+		9077C4DE29CC3E252C453332 /* LocationsManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationsManagementView.swift; sourceTree = "<group>"; };
 		97AA53BD5C94ADF64609CE4F /* RoomProximityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomProximityTests.swift; sourceTree = "<group>"; };
 		97D909D933AE031034FC7267 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		A32FA1174EA1EC0A26BD7A3D /* BTHomeData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BTHomeData.swift; sourceTree = "<group>"; };
@@ -147,14 +155,6 @@
 		E497F7F1F542491CCCC9DD4A /* DiscoveredDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveredDevice.swift; sourceTree = "<group>"; };
 		EE71337FF9C0731AF128A4F4 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		FC9995201F4DA405349D3D22 /* SaveScanSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveScanSheet.swift; sourceTree = "<group>"; };
-		4BDD6AC3DA2C5A39DE40709E /* LocationDeviceRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocationDeviceRecord.swift"; sourceTree = "<group>"; };
-		7D87EDA90EFAF7DDA9FDEDDF /* ManagedLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ManagedLocation.swift"; sourceTree = "<group>"; };
-		80E15B3D179863FD2A5F5931 /* LocationManagementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocationManagementService.swift"; sourceTree = "<group>"; };
-		9077C4DE29CC3E252C453332 /* LocationsManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocationsManagementView.swift"; sourceTree = "<group>"; };
-		5B0AC85397511B6DD713534A /* LocationManagementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocationManagementTests.swift"; sourceTree = "<group>"; };
-		81A00001F001F001F0010001 /* ShellyPlugController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ShellyPlugController.swift"; sourceTree = "<group>"; };
-		81A00002F002F002F0020002 /* PlugDeviceCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PlugDeviceCard.swift"; sourceTree = "<group>"; };
-		81A00003F003F003F0030003 /* ShellyPlugTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ShellyPlugTests.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -217,6 +217,14 @@
 				AB9427B3E91D9B66CA962FA8 /* IgnoreService.swift */,
 			);
 			path = Ignore;
+			sourceTree = "<group>";
+		};
+		4FD1C87EAA1779FCE2E18F0E /* Locations */ = {
+			isa = PBXGroup;
+			children = (
+				9077C4DE29CC3E252C453332 /* LocationsManagementView.swift */,
+			);
+			path = Locations;
 			sourceTree = "<group>";
 		};
 		508B330CCDE923938D8FFB64 /* Components */ = {
@@ -402,14 +410,6 @@
 			path = mHomeNodeTests;
 			sourceTree = "<group>";
 		};
-		4FD1C87EAA1779FCE2E18F0E /* Locations */ = {
-			isa = PBXGroup;
-			children = (
-				9077C4DE29CC3E252C453332 /* LocationsManagementView.swift */,
-			);
-			path = Locations;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -454,7 +454,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastUpgradeCheck = 1600;
+				LastUpgradeCheck = 2700;
 				TargetAttributes = {
 					C15F1053C95C439BF64E51FC = {
 						CreatedOnToolsVersion = 16.0;
@@ -632,6 +632,24 @@
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGNING_ALLOWED = YES;
 				CODE_SIGNING_REQUIRED = NO;
 				CODE_SIGN_STYLE = Automatic;
@@ -639,10 +657,18 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
@@ -696,6 +722,24 @@
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGNING_ALLOWED = YES;
 				CODE_SIGNING_REQUIRED = NO;
 				CODE_SIGN_STYLE = Automatic;
@@ -703,17 +747,25 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
 				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
