@@ -335,7 +335,16 @@ public final class BLEScannerService: NSObject, BLEConnectionManager {
                 userInfo: [NSLocalizedDescriptionKey: "Peripheral not currently reachable or out of signal range."]
             )
         }
-        let info = try await inspectorService.inspect(peripheral: peripheral)
+        let wasScanning = self.isScanning
+        if wasScanning {
+            worker.stopScan()
+        }
+        defer {
+            if wasScanning {
+                worker.startScan()
+            }
+        }
+        let info = try await inspectorService.inspect(peripheral: peripheral, timeoutSeconds: 15.0)
         if let index = devices.firstIndex(where: { $0.id == id }) {
             devices[index].applyInspectionInfo(info)
             storageService.scheduleSave(devices)
@@ -529,6 +538,7 @@ private final class BLECentralWorker: NSObject, CBCentralManagerDelegate, @unche
         }
 
         if var dev = existingDev {
+            peripheralMap[dev.id] = peripheral
             dev.rssi = rssiVal
             dev.rssiHistory.append(rssiVal)
             if dev.rssiHistory.count > 20 {

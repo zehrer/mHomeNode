@@ -231,6 +231,8 @@ public final class BLEInspectorService: NSObject, @unchecked Sendable, CBPeriphe
     private var activePeripheral: CBPeripheral?
     private var pendingInfo = DeviceInspectionInfo()
     private var timeoutWorkItem: DispatchWorkItem?
+    private var finishSettleWorkItem: DispatchWorkItem?
+    private var pendingServicesCount: Int = 0
     private weak var centralManager: CBCentralManager?
     private var centralQueue: DispatchQueue?
 
@@ -246,7 +248,7 @@ public final class BLEInspectorService: NSObject, @unchecked Sendable, CBPeriphe
     }
 
     /// Asynchronously connects to a peripheral, reads standard GATT info, and disconnects immediately
-    public func inspect(peripheral: CBPeripheral, timeoutSeconds: TimeInterval = 6.0) async throws -> DeviceInspectionInfo {
+    public func inspect(peripheral: CBPeripheral, timeoutSeconds: TimeInterval = 15.0) async throws -> DeviceInspectionInfo {
         guard let central = centralManager else {
             throw NSError(domain: "BLEInspectorService", code: 1, userInfo: [NSLocalizedDescriptionKey: "CBCentralManager is not set"])
         }
@@ -258,6 +260,7 @@ public final class BLEInspectorService: NSObject, @unchecked Sendable, CBPeriphe
             self.activeContinuation = continuation
             self.activePeripheral = peripheral
             self.pendingInfo = DeviceInspectionInfo()
+            self.pendingServicesCount = 0
             peripheral.delegate = self
 
             // Setup timeout
@@ -286,20 +289,21 @@ public final class BLEInspectorService: NSObject, @unchecked Sendable, CBPeriphe
     // MARK: - Central Manager Events (called from BLEScannerService)
 
     public func didConnect(peripheral: CBPeripheral) {
-        guard peripheral == activePeripheral else { return }
+        guard peripheral.identifier == activePeripheral?.identifier else { return }
+        self.activePeripheral = peripheral
+        peripheral.delegate = self
         logger.info("Connected to \(peripheral.identifier). Discovering all services...")
-        // Discover ALL services (standard and vendor proprietary like Samsung 0xFD5A)
         peripheral.discoverServices(nil)
     }
 
     public func didFailToConnect(peripheral: CBPeripheral, error: Error?) {
-        guard peripheral == activePeripheral else { return }
+        guard peripheral.identifier == activePeripheral?.identifier else { return }
         logger.warning("Failed to connect to \(peripheral.identifier): \(error?.localizedDescription ?? "unknown error")")
         finish(with: .failure(error ?? NSError(domain: "BLEInspectorService", code: 2, userInfo: [NSLocalizedDescriptionKey: "Connection failed. Please move closer to the device."])))
     }
 
     public func didDisconnect(peripheral: CBPeripheral, error: Error?) {
-        guard peripheral == activePeripheral else { return }
+        guard peripheral.identifier == activePeripheral?.identifier else { return }
         logger.info("Disconnected from \(peripheral.identifier).")
         // Conclude with whatever info was gathered
         disconnectAndFinish()
@@ -308,7 +312,7 @@ public final class BLEInspectorService: NSObject, @unchecked Sendable, CBPeriphe
     // MARK: - CBPeripheralDelegate
 
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
-        guard peripheral == activePeripheral else { return }
+        guard peripheral.identifier == activePeripheral?.identifier else { return }
         if let err = error {
             logger.warning("Service discovery failed: \(err.localizedDescription)")
             pendingInfo.statusSummary = "Service discovery failed: \(err.localizedDescription)"
@@ -323,6 +327,7 @@ public final class BLEInspectorService: NSObject, @unchecked Sendable, CBPeriphe
             return
         }
 
+        pendingServicesCount = services.count
         pendingInfo.discoveredServices = services.map { s in
             DiscoveredServiceInfo(
                 uuid: s.uuid.uuidString,
@@ -336,39 +341,79 @@ public final class BLEInspectorService: NSObject, @unchecked Sendable, CBPeriphe
         }
     }
 
-    public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
-        guard peripheral == activePeripheral else { return }
-        if let err = error {
-            logger.warning("Characteristics discovery failed for \(service.uuid): \(err.localizedDescription)")
-            return
+    private func shouldReadCharacteristic(_ char: CBCharacteristic, inService service: CBService) -> Bool {
+        let sUUID = service.uuid.uuidString.uppercased()
+        let cUUID = char.uuid.uuidString.uppercased()
+
+        // Standard SIG Services
+        if sUUID.contains("180A") || sUUID.contains("180F") || sUUID.contains("1800") || sUUID.hasPrefix("0000003E") {
+            return true
         }
 
-        guard let characteristics = service.characteristics, !characteristics.isEmpty else { return }
-        if let sIndex = pendingInfo.discoveredServices.firstIndex(where: { $0.uuid == service.uuid.uuidString }) {
-            for char in characteristics {
-                var props: [String] = []
-                if char.properties.contains(.read) { props.append("Read") }
-                if char.properties.contains(.write) { props.append("Write") }
-                if char.properties.contains(.writeWithoutResponse) { props.append("WriteNoResp") }
-                if char.properties.contains(.notify) { props.append("Notify") }
-                if char.properties.contains(.indicate) { props.append("Indicate") }
+        // Standard Characteristics (Device Info, Battery, Name, Appearance)
+        if cUUID.contains("2A00") || cUUID.contains("2A01") || cUUID.contains("2A19") ||
+           cUUID.contains("2A24") || cUUID.contains("2A25") || cUUID.contains("2A26") ||
+           cUUID.contains("2A27") || cUUID.contains("2A28") || cUUID.contains("2A29") {
+            return true
+        }
 
-                let cInfo = DiscoveredCharacteristicInfo(
-                    uuid: char.uuid.uuidString,
-                    name: KnownGATTCharacteristic.name(for: char.uuid.uuidString),
-                    properties: props
-                )
-                pendingInfo.discoveredServices[sIndex].characteristics.append(cInfo)
+        // HomeKit Accessory Information characteristics (Name, Model, Serial, Manufacturer)
+        if cUUID.hasPrefix("00000021") || cUUID.hasPrefix("00000023") || cUUID.hasPrefix("00000030") || cUUID.hasPrefix("00000053") {
+            return true
+        }
 
-                if char.properties.contains(.read) {
-                    peripheral.readValue(for: char)
+        // Do not spam unauthenticated reads on encrypted HAP sensor data (temp 0011, hum 0010)
+        // or pairing services as it causes accessory to immediately abort BLE connection
+        if sUUID.contains("0026BB765291") {
+            return false
+        }
+
+        return true
+    }
+
+    public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+        guard peripheral.identifier == activePeripheral?.identifier else { return }
+        pendingServicesCount = max(0, pendingServicesCount - 1)
+
+        if let err = error {
+            logger.warning("Characteristics discovery failed for \(service.uuid): \(err.localizedDescription)")
+        } else if let characteristics = service.characteristics, !characteristics.isEmpty {
+            if let sIndex = pendingInfo.discoveredServices.firstIndex(where: { $0.uuid == service.uuid.uuidString }) {
+                for char in characteristics {
+                    var props: [String] = []
+                    if char.properties.contains(.read) { props.append("Read") }
+                    if char.properties.contains(.write) { props.append("Write") }
+                    if char.properties.contains(.writeWithoutResponse) { props.append("WriteNoResp") }
+                    if char.properties.contains(.notify) { props.append("Notify") }
+                    if char.properties.contains(.indicate) { props.append("Indicate") }
+
+                    let cInfo = DiscoveredCharacteristicInfo(
+                        uuid: char.uuid.uuidString,
+                        name: KnownGATTCharacteristic.name(for: char.uuid.uuidString),
+                        properties: props
+                    )
+                    pendingInfo.discoveredServices[sIndex].characteristics.append(cInfo)
+
+                    if char.properties.contains(.read) && shouldReadCharacteristic(char, inService: service) {
+                        peripheral.readValue(for: char)
+                    }
                 }
             }
+        }
+
+        // When all services have completed characteristic discovery, schedule settle timer to conclude
+        if pendingServicesCount == 0 {
+            finishSettleWorkItem?.cancel()
+            let item = DispatchWorkItem { [weak self] in
+                self?.disconnectAndFinish()
+            }
+            finishSettleWorkItem = item
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2, execute: item)
         }
     }
 
     public func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
-        guard peripheral == activePeripheral else { return }
+        guard peripheral.identifier == activePeripheral?.identifier else { return }
 
         // Find characteristic in pendingInfo to record value or error
         for sIdx in 0..<pendingInfo.discoveredServices.count {
@@ -467,6 +512,9 @@ public final class BLEInspectorService: NSObject, @unchecked Sendable, CBPeriphe
     }
 
     private func disconnectAndFinish() {
+        finishSettleWorkItem?.cancel()
+        finishSettleWorkItem = nil
+
         if pendingInfo.statusSummary == nil {
             if pendingInfo.isProtected {
                 pendingInfo.statusSummary = "Protected: Device requires Bluetooth authentication / SmartThings pairing"
@@ -475,7 +523,7 @@ public final class BLEInspectorService: NSObject, @unchecked Sendable, CBPeriphe
             } else if !pendingInfo.discoveredServices.isEmpty {
                 pendingInfo.statusSummary = "Discovered \(pendingInfo.discoveredServices.count) service(s)"
             } else {
-                pendingInfo.statusSummary = "No GATT response received from device"
+                pendingInfo.statusSummary = "No GATT response received (device may be asleep, out of range, or operating via Thread)"
             }
         }
         if let p = activePeripheral, let central = centralManager {
@@ -487,6 +535,8 @@ public final class BLEInspectorService: NSObject, @unchecked Sendable, CBPeriphe
     private func finish(with result: Result<DeviceInspectionInfo, Error>) {
         timeoutWorkItem?.cancel()
         timeoutWorkItem = nil
+        finishSettleWorkItem?.cancel()
+        finishSettleWorkItem = nil
 
         let cont = activeContinuation
         activeContinuation = nil
@@ -503,6 +553,8 @@ public final class BLEInspectorService: NSObject, @unchecked Sendable, CBPeriphe
     private func cancelCurrentInspection() {
         timeoutWorkItem?.cancel()
         timeoutWorkItem = nil
+        finishSettleWorkItem?.cancel()
+        finishSettleWorkItem = nil
         if let p = activePeripheral, let central = centralManager {
             central.cancelPeripheralConnection(p)
         }
