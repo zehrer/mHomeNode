@@ -220,11 +220,19 @@ public struct DeviceDetailView: View {
 
                         Picker("Room", selection: $selectedRoom) {
                             Text("Not Assigned").tag("")
-                            ForEach(scannerVM.serverRooms) { room in
-                                Text("\(room.icon ?? "🏠") \(room.name)\(room.floor.map { " (\($0))" } ?? "")")
+                            ForEach(scannerVM.roomManagementService.rooms) { room in
+                                Label(room.name, systemImage: room.icon)
                                     .tag(room.name)
                             }
-                            if !selectedRoom.isEmpty && !scannerVM.serverRooms.contains(where: { $0.name == selectedRoom }) {
+                            ForEach(scannerVM.serverRooms.filter { sr in
+                                !scannerVM.roomManagementService.rooms.contains(where: { $0.name.lowercased() == sr.name.lowercased() })
+                            }) { sRoom in
+                                Text("\(sRoom.icon ?? "🏠") \(sRoom.name)")
+                                    .tag(sRoom.name)
+                            }
+                            if !selectedRoom.isEmpty &&
+                               !scannerVM.roomManagementService.rooms.contains(where: { $0.name.lowercased() == selectedRoom.lowercased() }) &&
+                               !scannerVM.serverRooms.contains(where: { $0.name.lowercased() == selectedRoom.lowercased() }) {
                                 Text("📍 \(selectedRoom)").tag(selectedRoom)
                             }
                         }

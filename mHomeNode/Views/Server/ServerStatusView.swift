@@ -153,7 +153,23 @@ public struct ServerStatusView: View {
                     .disabled(vm.totalDevicesCount == 0)
                 }
 
-                // MARK: - 5. Ignore List
+                // MARK: - 5. Room Management
+                Section {
+                    NavigationLink(destination: RoomManagementView()) {
+                        HStack {
+                            Label("Room Management", systemImage: "door.left.hand.open")
+                            Spacer()
+                            Text("\(vm.roomManagementService.rooms.count) room\(vm.roomManagementService.rooms.count == 1 ? "" : "s")")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                } header: {
+                    Text("Home Organization")
+                } footer: {
+                    Text("Rooms are saved locally so they remain accessible even when the server is offline. Can be synced with HomeNode Server, Hue, and Apple Home.")
+                }
+
+                // MARK: - 6. Ignore List
                 Section {
                     NavigationLink(destination: IgnoredDevicesListView()) {
                         HStack {

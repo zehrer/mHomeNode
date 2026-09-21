@@ -6,42 +6,52 @@ public struct RoomsView: View {
     @State private var selectedDevice: DiscoveredDevice?
     @State private var showSettingsSheet = false
     @State private var showLocationsSheet = false
+    @State private var showRoomManagementSheet = false
     @State private var detectionToast: String?
     @State private var isDetecting: Bool = false
 
     public init() {}
 
-    /// All distinct rooms: combines server-configured rooms with any custom device-assigned rooms
-    private var availableRooms: [(name: String, serverRoom: ServerRoom?)] {
-        var result: [(name: String, serverRoom: ServerRoom?)] = []
+    /// All distinct rooms: combines persistent roomManagementService rooms with server rooms and any device assignments
+    private var availableRooms: [(name: String, serverRoom: ServerRoom?, managedRoom: ManagedRoom?)] {
+        var result: [(name: String, serverRoom: ServerRoom?, managedRoom: ManagedRoom?)] = []
         var seenNames = Set<String>()
 
-        // 1. Configured Server Rooms
-        for room in viewModel.serverRooms {
-            result.append((name: room.name, serverRoom: room))
+        // 1. Persistent Managed Rooms (always available offline)
+        for room in viewModel.roomManagementService.rooms {
+            let sRoom = viewModel.serverRooms.first(where: { $0.name.lowercased() == room.name.lowercased() })
+            result.append((name: room.name, serverRoom: sRoom ?? room.toServerRoom(), managedRoom: room))
             seenNames.insert(room.name.lowercased())
         }
 
-        // 2. Any rooms from the active location's persistent device registry
+        // 2. Configured Server Rooms not yet merged
+        for room in viewModel.serverRooms {
+            if !seenNames.contains(room.name.lowercased()) {
+                result.append((name: room.name, serverRoom: room, managedRoom: nil))
+                seenNames.insert(room.name.lowercased())
+            }
+        }
+
+        // 3. Any rooms from active location's persistent device registry
         for reg in viewModel.locationManagementService.activeLocation.devices {
             if let assigned = reg.assignedRoom,
                !assigned.isEmpty,
                assigned != "Not Assigned",
                assigned != "Nicht zugeordnet",
                !seenNames.contains(assigned.lowercased()) {
-                result.append((name: assigned, serverRoom: nil))
+                result.append((name: assigned, serverRoom: nil, managedRoom: nil))
                 seenNames.insert(assigned.lowercased())
             }
         }
 
-        // 3. Any additional custom rooms assigned on currently discovered devices
+        // 4. Any additional custom rooms assigned on currently discovered devices
         for dev in viewModel.bleService.devices {
             if let assigned = dev.assignedRoom,
                !assigned.isEmpty,
                assigned != "Not Assigned",
                assigned != "Nicht zugeordnet",
                !seenNames.contains(assigned.lowercased()) {
-                result.append((name: assigned, serverRoom: nil))
+                result.append((name: assigned, serverRoom: nil, managedRoom: nil))
                 seenNames.insert(assigned.lowercased())
             }
         }
@@ -49,7 +59,7 @@ public struct RoomsView: View {
         return result
     }
 
-    private var currentRoomData: (name: String, serverRoom: ServerRoom?)? {
+    private var currentRoomData: (name: String, serverRoom: ServerRoom?, managedRoom: ManagedRoom?)? {
         if let found = availableRooms.first(where: { $0.name == selectedRoomName }) {
             return found
         }
@@ -124,8 +134,14 @@ public struct RoomsView: View {
                                         }
                                     } label: {
                                         HStack(spacing: 6) {
-                                            Text(item.serverRoom?.icon ?? "🏠")
-                                                .font(.subheadline)
+                                            if let m = item.managedRoom {
+                                                Image(systemName: m.icon)
+                                                    .font(.subheadline)
+                                                    .foregroundColor(isSelected ? .white : m.displayColor)
+                                            } else {
+                                                Text(item.serverRoom?.icon ?? "🏠")
+                                                    .font(.subheadline)
+                                            }
                                             Text(item.name)
                                                 .font(.subheadline.weight(isSelected ? .bold : .regular))
 
@@ -167,11 +183,20 @@ public struct RoomsView: View {
                             }
                         )
                     } else {
-                        ContentUnavailableView(
-                            "No Rooms Available",
-                            systemImage: "house",
-                            description: Text("Connect to HomeNode Server or assign devices to rooms to view room details.")
-                        )
+                        VStack(spacing: 14) {
+                            ContentUnavailableView(
+                                "No Rooms Available",
+                                systemImage: "house",
+                                description: Text("Create a room or sync with HomeNode Server to organize your home accessories.")
+                            )
+                            Button {
+                                showRoomManagementSheet = true
+                            } label: {
+                                Label("Manage Rooms", systemImage: "door.left.hand.open")
+                                    .fontWeight(.semibold)
+                            }
+                            .buttonStyle(.borderedProminent)
+                        }
                         .padding(.top, 60)
                     }
                 }
@@ -193,6 +218,16 @@ public struct RoomsView: View {
                             .font(.body.weight(.medium))
                     }
                     .help("Server & Settings")
+                }
+
+                // Room Management Shortcut
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showRoomManagementSheet = true
+                    } label: {
+                        Image(systemName: "door.left.hand.open")
+                    }
+                    .help("Room Management")
                 }
 
                 // Auto-Detect Room Action
@@ -225,6 +260,18 @@ public struct RoomsView: View {
             }
             .sheet(isPresented: $showLocationsSheet) {
                 LocationsManagementView()
+            }
+            .sheet(isPresented: $showRoomManagementSheet) {
+                NavigationStack {
+                    RoomManagementView()
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Done") {
+                                    showRoomManagementSheet = false
+                                }
+                            }
+                        }
+                }
             }
             .sheet(item: $selectedDevice) { dev in
                 NavigationStack {

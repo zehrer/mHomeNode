@@ -40,6 +40,10 @@
 		81A00005B005B005B0050005 /* ShellyLANClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00005F005F005F0050005 /* ShellyLANClient.swift */; };
 		81A00006B006B006B0060006 /* ShellyLANDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00006F006F006F0060006 /* ShellyLANDiscoveryService.swift */; };
 		81A00007B007B007B0070007 /* ShellyMultiPathTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00007F007F007F0070007 /* ShellyMultiPathTests.swift */; };
+		81A00008B008B008B0080008 /* RoomManagementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00008F008F008F0080008 /* RoomManagementService.swift */; };
+		81A00009B009B009B0090009 /* ManagedRoom.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00009F009F009F0090009 /* ManagedRoom.swift */; };
+		81A00010B010B010B0100010 /* RoomManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00010F010F010F0100010 /* RoomManagementView.swift */; };
+		81A00011B011B011B0110011 /* RoomManagementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00011F011F011F0110011 /* RoomManagementTests.swift */; };
 		84CB017421AD3FF9D930F87D /* ScanExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87A31344B56BC23197338A37 /* ScanExportTests.swift */; };
 		85D513B5C06524ACE29677CF /* RoomsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 615C38F428E29108F0059EF4 /* RoomsView.swift */; };
 		8AC792E73AC3FA8ED37A03FE /* ManagedLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D87EDA90EFAF7DDA9FDEDDF /* ManagedLocation.swift */; };
@@ -128,6 +132,10 @@
 		81A00005F005F005F0050005 /* ShellyLANClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellyLANClient.swift; sourceTree = "<group>"; };
 		81A00006F006F006F0060006 /* ShellyLANDiscoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellyLANDiscoveryService.swift; sourceTree = "<group>"; };
 		81A00007F007F007F0070007 /* ShellyMultiPathTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellyMultiPathTests.swift; sourceTree = "<group>"; };
+		81A00008F008F008F0080008 /* RoomManagementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomManagementService.swift; sourceTree = "<group>"; };
+		81A00009F009F009F0090009 /* ManagedRoom.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagedRoom.swift; sourceTree = "<group>"; };
+		81A00010F010F010F0100010 /* RoomManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomManagementView.swift; sourceTree = "<group>"; };
+		81A00011F011F011F0110011 /* RoomManagementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomManagementTests.swift; sourceTree = "<group>"; };
 		83FEF1CCAB4E7ECAF2DC08F2 /* QingpingParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QingpingParserTests.swift; sourceTree = "<group>"; };
 		85FBD0516FCDAC06E3F9A1B7 /* DeviceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceDetailView.swift; sourceTree = "<group>"; };
 		86333B2F37318EBA181C25F6 /* BLEScannerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEScannerService.swift; sourceTree = "<group>"; };
@@ -198,6 +206,7 @@
 				615C38F428E29108F0059EF4 /* RoomsView.swift */,
 				E2090A56BC8B9D42F01B86ED /* RoomDetailView.swift */,
 				81A00002F002F002F0020002 /* PlugDeviceCard.swift */,
+				81A00010F010F010F0100010 /* RoomManagementView.swift */,
 			);
 			path = Rooms;
 			sourceTree = "<group>";
@@ -335,8 +344,17 @@
 				105E5B008E78F40BB4325A0A /* Location */,
 				2224CDC0DFC998777F56180B /* Export */,
 				81A00005G005G005G0050005 /* Shelly */,
+				81A00008G008G008G0080008 /* Room */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		81A00008G008G008G0080008 /* Room */ = {
+			isa = PBXGroup;
+			children = (
+				81A00008F008F008F0080008 /* RoomManagementService.swift */,
+			);
+			path = Room;
 			sourceTree = "<group>";
 		};
 		81A00005G005G005G0050005 /* Shelly */ = {
@@ -383,6 +401,7 @@
 				1DBD014035DF15A589B4777E /* DeviceGrouping.swift */,
 				4BDD6AC3DA2C5A39DE40709E /* LocationDeviceRecord.swift */,
 				7D87EDA90EFAF7DDA9FDEDDF /* ManagedLocation.swift */,
+				81A00009F009F009F0090009 /* ManagedRoom.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -426,6 +445,7 @@
 				81A00003F003F003F0030003 /* ShellyPlugTests.swift */,
 				81A00004F004F004F0040004 /* BLEScannerServiceTests.swift */,
 				81A00007F007F007F0070007 /* ShellyMultiPathTests.swift */,
+				81A00011F011F011F0110011 /* RoomManagementTests.swift */,
 			);
 			path = mHomeNodeTests;
 			sourceTree = "<group>";
@@ -540,6 +560,7 @@
 				81A00003B003B003B0030003 /* ShellyPlugTests.swift in Sources */,
 				81A00004B004B004B0040004 /* BLEScannerServiceTests.swift in Sources */,
 				81A00007B007B007B0070007 /* ShellyMultiPathTests.swift in Sources */,
+				81A00011B011B011B0110011 /* RoomManagementTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -596,6 +617,9 @@
 				81A00002B002B002B0020002 /* PlugDeviceCard.swift in Sources */,
 				81A00005B005B005B0050005 /* ShellyLANClient.swift in Sources */,
 				81A00006B006B006B0060006 /* ShellyLANDiscoveryService.swift in Sources */,
+				81A00008B008B008B0080008 /* RoomManagementService.swift in Sources */,
+				81A00009B009B009B0090009 /* ManagedRoom.swift in Sources */,
+				81A00010B010B010B0100010 /* RoomManagementView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

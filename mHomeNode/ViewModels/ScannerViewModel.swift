@@ -59,6 +59,7 @@ public final class ScannerViewModel {
     public let locationService: LocationService
     public let savedScanStorage: SavedScanStorageService
     public let locationManagementService: LocationManagementService
+    public let roomManagementService: RoomManagementService
 
     public var serverConfig: ServerConfig = ServerConfig()
     public var serverRooms: [ServerRoom] = []
@@ -136,7 +137,8 @@ public final class ScannerViewModel {
         serverClient: HomeNodeServerClientProtocol = LiveHomeNodeServerClient(),
         locationService: LocationService? = nil,
         savedScanStorage: SavedScanStorageService? = nil,
-        locationManagementService: LocationManagementService? = nil
+        locationManagementService: LocationManagementService? = nil,
+        roomManagementService: RoomManagementService? = nil
     ) {
         let ign = ignoreService ?? .shared
         self.ignoreService = ign
@@ -152,6 +154,15 @@ public final class ScannerViewModel {
         self.savedScans = storage.loadSessions()
         let locMgr = locationManagementService ?? .shared
         self.locationManagementService = locMgr
+        let roomMgr = roomManagementService ?? .shared
+        self.roomManagementService = roomMgr
+
+        // Import any existing device rooms to room management
+        for reg in locMgr.activeLocation.devices {
+            if let assigned = reg.assignedRoom, !assigned.isEmpty, assigned != "Not Assigned", assigned != "Nicht zugeordnet" {
+                roomMgr.addRoom(name: assigned)
+            }
+        }
 
         // Load persisted auto-scan settings
         let storedAuto = UserDefaults.standard.bool(forKey: "isAutoLocationScanEnabled")
@@ -345,8 +356,9 @@ public final class ScannerViewModel {
         do {
             let rooms = try await serverClient.fetchRooms(config: serverConfig)
             self.serverRooms = rooms
+            self.roomManagementService.syncWithServerRooms(rooms)
         } catch {
-            // Server may be unavailable, keep existing or fallback
+            // Server may be unavailable, persisted rooms in roomManagementService remain active
         }
     }
 
