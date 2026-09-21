@@ -199,72 +199,76 @@ public final class GoveeLightController: NSObject, CBPeripheralDelegate {
 
     // MARK: - CBPeripheralDelegate
 
-    public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
-        let deviceId = peripheral.identifier
-        if let error = error {
-            logger.error("Discover services error for \(deviceId): \(error.localizedDescription)")
-            isBusy[deviceId] = false
-            lastError[deviceId] = error.localizedDescription
-            return
-        }
+    public nonisolated func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: (any Error)?) {
+        Task { @MainActor in
+            let deviceId = peripheral.identifier
+            if let error = error {
+                self.logger.error("Discover services error for \(deviceId): \(error.localizedDescription)")
+                self.isBusy[deviceId] = false
+                self.lastError[deviceId] = error.localizedDescription
+                return
+            }
 
-        guard let services = peripheral.services, !services.isEmpty else {
-            logger.warning("No services found on \(deviceId)")
-            isBusy[deviceId] = false
-            lastError[deviceId] = "Govee service not found"
-            return
-        }
+            guard let services = peripheral.services, !services.isEmpty else {
+                self.logger.warning("No services found on \(deviceId)")
+                self.isBusy[deviceId] = false
+                self.lastError[deviceId] = "Govee service not found"
+                return
+            }
 
-        // Find standard Govee service or inspect first custom service
-        let goveeService = services.first(where: { $0.uuid == GoveeCommand.serviceUUID }) ?? services.first
-        if let service = goveeService {
-            peripheral.discoverCharacteristics([
-                GoveeCommand.writeCharacteristicUUID,
-                GoveeCommand.notifyCharacteristicUUID
-            ], for: service)
+            // Find standard Govee service or inspect first custom service
+            let goveeService = services.first(where: { $0.uuid == GoveeCommand.serviceUUID }) ?? services.first
+            if let service = goveeService {
+                peripheral.discoverCharacteristics([
+                    GoveeCommand.writeCharacteristicUUID,
+                    GoveeCommand.notifyCharacteristicUUID
+                ], for: service)
+            }
         }
     }
 
-    public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
-        let deviceId = peripheral.identifier
-        timeoutTasks[deviceId]?.cancel()
+    public nonisolated func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: (any Error)?) {
+        Task { @MainActor in
+            let deviceId = peripheral.identifier
+            self.timeoutTasks[deviceId]?.cancel()
 
-        if let error = error {
-            logger.error("Discover characteristics error for \(deviceId): \(error.localizedDescription)")
-            isBusy[deviceId] = false
-            lastError[deviceId] = error.localizedDescription
-            return
-        }
-
-        guard let characteristics = service.characteristics else {
-            isBusy[deviceId] = false
-            lastError[deviceId] = "No characteristics discovered"
-            return
-        }
-
-        // Find write characteristic
-        let writeChar = characteristics.first(where: { $0.uuid == GoveeCommand.writeCharacteristicUUID })
-            ?? characteristics.first(where: { $0.properties.contains(.writeWithoutResponse) || $0.properties.contains(.write) })
-
-        guard let targetChar = writeChar else {
-            logger.error("Write characteristic not found for \(deviceId)")
-            isBusy[deviceId] = false
-            lastError[deviceId] = "Control characteristic not found"
-            return
-        }
-
-        writeCharacteristics[deviceId] = targetChar
-
-        // Flush queued packets
-        if let packets = pendingPackets[deviceId], !packets.isEmpty {
-            for packet in packets {
-                writePacket(packet, to: targetChar, on: peripheral)
+            if let error = error {
+                self.logger.error("Discover characteristics error for \(deviceId): \(error.localizedDescription)")
+                self.isBusy[deviceId] = false
+                self.lastError[deviceId] = error.localizedDescription
+                return
             }
-            pendingPackets[deviceId] = nil
-        }
 
-        isBusy[deviceId] = false
-        scheduleIdleDisconnect(for: deviceId, peripheral: peripheral)
+            guard let characteristics = service.characteristics else {
+                self.isBusy[deviceId] = false
+                self.lastError[deviceId] = "No characteristics discovered"
+                return
+            }
+
+            // Find write characteristic
+            let writeChar = characteristics.first(where: { $0.uuid == GoveeCommand.writeCharacteristicUUID })
+                ?? characteristics.first(where: { $0.properties.contains(.writeWithoutResponse) || $0.properties.contains(.write) })
+
+            guard let targetChar = writeChar else {
+                self.logger.error("Write characteristic not found for \(deviceId)")
+                self.isBusy[deviceId] = false
+                self.lastError[deviceId] = "Control characteristic not found"
+                return
+            }
+
+            self.writeCharacteristics[deviceId] = targetChar
+
+            // Flush queued packets
+            if let packets = self.pendingPackets[deviceId], !packets.isEmpty {
+                for packet in packets {
+                    self.writePacket(packet, to: targetChar, on: peripheral)
+                }
+                self.pendingPackets[deviceId] = nil
+            }
+
+            self.isBusy[deviceId] = false
+            self.scheduleIdleDisconnect(for: deviceId, peripheral: peripheral)
+        }
     }
 
     // MARK: - Persistence
