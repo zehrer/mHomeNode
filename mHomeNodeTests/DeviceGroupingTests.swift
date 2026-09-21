@@ -25,6 +25,12 @@ final class DeviceGroupingTests: XCTestCase {
         let shelly = DiscoveredDevice(id: UUID(), name: "Shelly BLU Door", rssi: -70, family: .shellyBlu)
         XCTAssertEqual(DeviceGroupingHelper.category(for: shelly), .climateAndSensors)
 
+        let shellyPlug = DiscoveredDevice(id: UUID(), name: "ShellyPlugSG3-543204689994", rssi: -60, family: .shellyBlu)
+        XCTAssertEqual(DeviceGroupingHelper.category(for: shellyPlug), .plugsAndSockets)
+
+        let smartSocket = DiscoveredDevice(id: UUID(), name: "Living Room Socket", rssi: -65, family: .standardBLE)
+        XCTAssertEqual(DeviceGroupingHelper.category(for: smartSocket), .plugsAndSockets)
+
         let ruuvi = DiscoveredDevice(id: UUID(), name: "RuuviTag", rssi: -75, family: .ruuvi)
         XCTAssertEqual(DeviceGroupingHelper.category(for: ruuvi), .climateAndSensors)
 
@@ -83,11 +89,13 @@ final class DeviceGroupingTests: XCTestCase {
 
     func testGroupingCategorySections() {
         let sensor = DiscoveredDevice(id: UUID(), name: "Temp Sensor", rssi: -60, family: .shellyBlu)
+        let plug = DiscoveredDevice(id: UUID(), name: "Living Room Plug", rssi: -65, family: .shellyBlu)
         let light = DiscoveredDevice(id: UUID(), name: "Smart Bulb", rssi: -70, family: .smartLight)
 
-        let sections = DeviceGroupingHelper.group(devices: [sensor, light], mode: .category)
-        XCTAssertEqual(sections.count, 2)
+        let sections = DeviceGroupingHelper.group(devices: [sensor, plug, light], mode: .category)
+        XCTAssertEqual(sections.count, 3)
         XCTAssertTrue(sections.contains(where: { $0.title == DeviceCategory.climateAndSensors.rawValue }))
+        XCTAssertTrue(sections.contains(where: { $0.title == DeviceCategory.plugsAndSockets.rawValue }))
         XCTAssertTrue(sections.contains(where: { $0.title == DeviceCategory.lighting.rawValue }))
     }
 

@@ -5,7 +5,6 @@ public struct RoomsView: View {
     @State private var selectedRoomName: String = ""
     @State private var selectedDevice: DiscoveredDevice?
     @State private var showSettingsSheet = false
-    @State private var showLocationsSheet = false
     @State private var showRoomManagementSheet = false
     @State private var detectionToast: String?
     @State private var isDetecting: Bool = false
@@ -64,30 +63,109 @@ public struct RoomsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                    // MARK: - Location Presence Pill Banner
-                    Button {
-                        showLocationsSheet = true
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: viewModel.activeLocationState.iconName)
-                                .foregroundColor(viewModel.activeLocationState.isAtHome ? .green : .blue)
-                            Text(viewModel.activeLocation.name)
-                                .font(.subheadline.bold())
-                                .foregroundColor(.primary)
-                            Text("• \(viewModel.activeLocationState.title)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                    // MARK: - Room Selector Dropdown
+                    if !availableRooms.isEmpty {
+                        HStack {
+                            Menu {
+                                let distinctFloors = Array(Set(availableRooms.compactMap { $0.managedRoom?.floor ?? $0.serverRoom?.floor })).sorted()
+                                if distinctFloors.count > 1 {
+                                    ForEach(distinctFloors, id: \.self) { floor in
+                                        Section(floor) {
+                                            ForEach(availableRooms.filter { ($0.managedRoom?.floor ?? $0.serverRoom?.floor) == floor }, id: \.name) { item in
+                                                Button {
+                                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                                        selectedRoomName = item.name
+                                                    }
+                                                } label: {
+                                                    HStack {
+                                                        if let m = item.managedRoom {
+                                                            Label(item.name, systemImage: m.icon)
+                                                        } else {
+                                                            Label(item.name, systemImage: item.serverRoom?.icon ?? "house.fill")
+                                                        }
+                                                        if currentRoomData?.name == item.name {
+                                                            Image(systemName: "checkmark")
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    let noFloorRooms = availableRooms.filter { ($0.managedRoom?.floor ?? $0.serverRoom?.floor) == nil || ($0.managedRoom?.floor ?? $0.serverRoom?.floor)?.isEmpty == true }
+                                    if !noFloorRooms.isEmpty {
+                                        Section("Other") {
+                                            ForEach(noFloorRooms, id: \.name) { item in
+                                                Button {
+                                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                                        selectedRoomName = item.name
+                                                    }
+                                                } label: {
+                                                    HStack {
+                                                        if let m = item.managedRoom {
+                                                            Label(item.name, systemImage: m.icon)
+                                                        } else {
+                                                            Label(item.name, systemImage: item.serverRoom?.icon ?? "house.fill")
+                                                        }
+                                                        if currentRoomData?.name == item.name {
+                                                            Image(systemName: "checkmark")
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    ForEach(availableRooms, id: \.name) { item in
+                                        Button {
+                                            withAnimation(.easeInOut(duration: 0.2)) {
+                                                selectedRoomName = item.name
+                                            }
+                                        } label: {
+                                            HStack {
+                                                if let m = item.managedRoom {
+                                                    Label(item.name, systemImage: m.icon)
+                                                } else {
+                                                    Label(item.name, systemImage: item.serverRoom?.icon ?? "house.fill")
+                                                }
+                                                if currentRoomData?.name == item.name {
+                                                    Image(systemName: "checkmark")
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            } label: {
+                                HStack(spacing: 8) {
+                                    if let current = currentRoomData {
+                                        if let m = current.managedRoom {
+                                            RoomIconView(m.icon, size: 16, color: m.displayColor)
+                                        } else {
+                                            RoomIconView(current.serverRoom?.icon ?? "house.fill", size: 16, color: .primary)
+                                        }
+                                        Text(current.name)
+                                            .font(.headline.weight(.semibold))
+                                            .foregroundColor(.primary)
+                                    } else {
+                                        Text("Select Room")
+                                            .font(.headline)
+                                            .foregroundColor(.secondary)
+                                    }
+
+                                    Image(systemName: "chevron.up.chevron.down")
+                                        .font(.caption.weight(.bold))
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(Color(.secondarySystemGroupedBackground))
+                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                .shadow(color: Color.black.opacity(0.04), radius: 3, x: 0, y: 1)
+                            }
+
                             Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(Color(.secondarySystemGroupedBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .padding(.horizontal)
                     }
-                    .padding(.horizontal)
 
                     // MARK: - Proximity Detection Toast Banner
                     if let toast = detectionToast {
@@ -113,54 +191,6 @@ public struct RoomsView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                         .padding(.horizontal)
                         .transition(.move(edge: .top).combined(with: .opacity))
-                    }
-
-                    // MARK: - Horizontal Room Carousel
-                    if !availableRooms.isEmpty {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 10) {
-                                ForEach(availableRooms, id: \.name) { item in
-                                    let isSelected = (currentRoomData?.name == item.name)
-
-                                    Button {
-                                        withAnimation(.easeInOut(duration: 0.2)) {
-                                            selectedRoomName = item.name
-                                        }
-                                    } label: {
-                                        HStack(spacing: 6) {
-                                            if let m = item.managedRoom {
-                                                RoomIconView(m.icon, size: 14, color: isSelected ? .white : m.displayColor)
-                                            } else {
-                                                RoomIconView(item.serverRoom?.icon ?? "house.fill", size: 14, color: isSelected ? .white : .primary)
-                                            }
-                                            Text(item.name)
-                                                .font(.subheadline.weight(isSelected ? .bold : .regular))
-
-                                            let count = viewModel.bleService.devices.filter {
-                                                !$0.isIgnored && $0.assignedRoom == item.name
-                                            }.count
-                                            if count > 0 {
-                                                Text("\(count)")
-                                                    .font(.caption2.bold())
-                                                    .padding(.horizontal, 6)
-                                                    .padding(.vertical, 2)
-                                                    .background(isSelected ? Color.white.opacity(0.25) : Color(.tertiarySystemFill))
-                                                    .clipShape(Capsule())
-                                            }
-                                        }
-                                        .padding(.horizontal, 14)
-                                        .padding(.vertical, 10)
-                                        .background(isSelected ? Color.blue : Color(.secondarySystemGroupedBackground))
-                                        .foregroundColor(isSelected ? .white : .primary)
-                                        .clipShape(Capsule())
-                                        .shadow(color: isSelected ? Color.blue.opacity(0.3) : Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                            .padding(.horizontal)
-                            .padding(.vertical, 4)
-                        }
                     }
 
                     // MARK: - Selected Room Detail Content
@@ -195,7 +225,8 @@ public struct RoomsView: View {
                 .padding(.bottom, 24)
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("Rooms")
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
             .refreshable {
                 await viewModel.loadServerRooms()
             }
@@ -209,16 +240,6 @@ public struct RoomsView: View {
                             .font(.body.weight(.medium))
                     }
                     .help("Server & Settings")
-                }
-
-                // Room Management Shortcut
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showRoomManagementSheet = true
-                    } label: {
-                        Image(systemName: "door.left.hand.open")
-                    }
-                    .help("Room Management")
                 }
 
                 // Auto-Detect Room Action
@@ -248,9 +269,6 @@ public struct RoomsView: View {
             }
             .sheet(isPresented: $showSettingsSheet) {
                 ServerStatusView()
-            }
-            .sheet(isPresented: $showLocationsSheet) {
-                LocationsManagementView()
             }
             .sheet(isPresented: $showRoomManagementSheet) {
                 NavigationStack {

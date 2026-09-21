@@ -19,6 +19,7 @@ public enum DeviceGroupingMode: String, CaseIterable, Sendable, Identifiable, Co
 
 public enum DeviceCategory: String, CaseIterable, Sendable, Identifiable {
     case climateAndSensors = "Climate & Sensors"
+    case plugsAndSockets = "Plugs & Sockets"
     case lighting = "Lighting & Switches"
     case appliancesAndTV = "Home Appliances & TVs"
     case computersAndPhones = "Computers & Mobile"
@@ -30,6 +31,7 @@ public enum DeviceCategory: String, CaseIterable, Sendable, Identifiable {
     public var systemImage: String {
         switch self {
         case .climateAndSensors: return "thermometer.medium"
+        case .plugsAndSockets: return "powerplug.fill"
         case .lighting: return "lightbulb.fill"
         case .appliancesAndTV: return "tv.fill"
         case .computersAndPhones: return "laptopcomputer.and.iphone"
@@ -93,6 +95,11 @@ public enum DeviceGroupingHelper {
             lowName.contains("airpod") || lowName.contains("earbuds") || lowName.contains("headphone") ||
             lowName.contains("speaker") || lowName.contains("sound") {
             return .audio
+        }
+
+        // Plugs & Sockets (Shelly plugs, smart sockets, switchable relays)
+        if device.isSwitchablePlug {
+            return .plugsAndSockets
         }
 
         // Climate & environmental sensors
