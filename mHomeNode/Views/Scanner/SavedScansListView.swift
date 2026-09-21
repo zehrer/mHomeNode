@@ -27,7 +27,7 @@ public struct SavedScansListView: View {
                         searchText.isEmpty ? "No Saved Scans" : "No Matching Scans",
                         systemImage: "archivebox",
                         description: Text(searchText.isEmpty
-                            ? "Save scan snapshots in BLE Scout to review device signals and telemetry later."
+                            ? "Save scan snapshots in BLE to review device signals and telemetry later."
                             : "No scans found matching \"\(searchText)\".")
                     )
                     .listRowBackground(Color.clear)

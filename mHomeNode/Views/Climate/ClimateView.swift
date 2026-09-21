@@ -91,7 +91,7 @@ public struct ClimateView: View {
                         ContentUnavailableView(
                             "No Climate Sensors Discovered",
                             systemImage: "thermometer.snowflake",
-                            description: Text("BTHome and Qingping sensors periodically broadcast temperature and humidity.\nBLE Scout scans continuously in the background.")
+                            description: Text("BTHome and Qingping sensors periodically broadcast temperature and humidity.\nBLE scans continuously in the background.")
                         )
                         .padding(.top, 60)
                     }

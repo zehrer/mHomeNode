@@ -5,7 +5,6 @@ public struct ScannerView: View {
     @State private var showSettingsSheet = false
     @State private var showSaveScanSheet = false
     @State private var showSavedScansList = false
-    @State private var showLocationsSheet = false
 
     public init() {}
 
@@ -14,37 +13,6 @@ public struct ScannerView: View {
 
         NavigationStack {
             List {
-                // MARK: - Active Managed Location Banner
-                Section {
-                    Button {
-                        showLocationsSheet = true
-                    } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: vm.activeLocationState.iconName)
-                                .font(.headline)
-                                .foregroundColor(vm.activeLocationState.isAtHome ? .green : .blue)
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                HStack(spacing: 6) {
-                                    Text(vm.activeLocation.name)
-                                        .font(.subheadline.bold())
-                                        .foregroundColor(.primary)
-                                    Text("• \(vm.activeLocationState.title)")
-                                        .font(.caption2)
-                                        .foregroundColor(.secondary)
-                                }
-                                Text("\(vm.activeLocation.devices.count) registered room device(s) configured")
-                                    .font(.caption2)
-                                    .foregroundColor(.secondary)
-                            }
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(.vertical, 2)
-                    }
-                }
 
                 if let error = vm.bleService.errorMessage {
                     Section {
@@ -210,7 +178,8 @@ public struct ScannerView: View {
             .navigationDestination(for: UUID.self) { deviceId in
                 DeviceDetailView(scannerVM: vm, deviceId: deviceId)
             }
-            .navigationTitle("BLE Scout")
+            .navigationTitle("BLE")
+            .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $vm.searchText, prompt: "Search by name, room, MAC, or UUID")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -348,13 +317,10 @@ public struct ScannerView: View {
             .sheet(isPresented: $showSavedScansList) {
                 SavedScansListView()
             }
-            .sheet(isPresented: $showLocationsSheet) {
-                LocationsManagementView()
-            }
             .overlay {
                 if vm.filteredDevices.isEmpty {
                     ContentUnavailableView(
-                        vm.isScanning ? "Searching for BLE devices..." : "BLE Scout Ready",
+                        vm.isScanning ? "Searching for BLE devices..." : "BLE Ready",
                         systemImage: "antenna.radiowaves.left.and.right",
                         description: Text(vm.isScanning ? "Move your device close to accessories to discover them." : "Tap Scan to start discovering nearby Bluetooth devices.")
                     )

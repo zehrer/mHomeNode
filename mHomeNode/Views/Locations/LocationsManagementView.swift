@@ -4,84 +4,95 @@ public struct LocationsManagementView: View {
     @Environment(ScannerViewModel.self) private var viewModel
     @Environment(\.dismiss) private var dismiss
 
+    public var isSheet: Bool
     @State private var showAddSheet = false
     @State private var locationToEdit: ManagedLocation?
 
-    public init() {}
+    public init(isSheet: Bool = true) {
+        self.isSheet = isSheet
+    }
 
     public var body: some View {
-        NavigationStack {
-            List {
-                // Current Live Detection Banner
-                Section {
-                    HStack(spacing: 12) {
-                        Image(systemName: viewModel.activeLocationState.iconName)
-                            .font(.title2)
-                            .foregroundColor(viewModel.activeLocationState.isAtHome ? .green : .blue)
-
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("Current Presence")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text(viewModel.activeLocationState.title)
-                                .font(.headline)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                } header: {
-                    Text("Live Detection")
-                } footer: {
-                    Text("mHomeNode automatically detects when you are at Home via Bonjour discovery of your HomeNode server in WLAN and your GPS coordinates.")
-                }
-
-                // Configured Locations List
-                Section {
-                    ForEach(viewModel.locationManagementService.locations) { loc in
-                        LocationRowView(
-                            location: loc,
-                            isActive: (viewModel.activeLocation.id == loc.id),
-                            onTap: {
-                                locationToEdit = loc
+        if isSheet {
+            NavigationStack {
+                contentList
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") {
+                                dismiss()
                             }
-                        )
-                    }
-                    .onDelete { indexSet in
-                        for idx in indexSet {
-                            let loc = viewModel.locationManagementService.locations[idx]
-                            viewModel.locationManagementService.deleteLocation(id: loc.id)
                         }
                     }
-                } header: {
-                    HStack {
-                        Text("Configured Locations")
-                        Spacer()
-                        Button {
-                            showAddSheet = true
-                        } label: {
-                            Label("Add", systemImage: "plus")
-                                .font(.caption.bold())
+            }
+        } else {
+            contentList
+        }
+    }
+
+    private var contentList: some View {
+        List {
+            // Current Live Detection Banner
+            Section {
+                HStack(spacing: 12) {
+                    Image(systemName: viewModel.activeLocationState.iconName)
+                        .font(.title2)
+                        .foregroundColor(viewModel.activeLocationState.isAtHome ? .green : .blue)
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Current Presence")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text(viewModel.activeLocationState.title)
+                            .font(.headline)
+                    }
+                }
+                .padding(.vertical, 4)
+            } header: {
+                Text("Live Detection")
+            } footer: {
+                Text("mHomeNode automatically detects when you are at Home via Bonjour discovery of your HomeNode server in WLAN and your GPS coordinates.")
+            }
+
+            // Configured Locations List
+            Section {
+                ForEach(viewModel.locationManagementService.locations) { loc in
+                    LocationRowView(
+                        location: loc,
+                        isActive: (viewModel.activeLocation.id == loc.id),
+                        onTap: {
+                            locationToEdit = loc
                         }
+                    )
+                }
+                .onDelete { indexSet in
+                    for idx in indexSet {
+                        let loc = viewModel.locationManagementService.locations[idx]
+                        viewModel.locationManagementService.deleteLocation(id: loc.id)
+                    }
+                }
+            } header: {
+                HStack {
+                    Text("Configured Locations")
+                    Spacer()
+                    Button {
+                        showAddSheet = true
+                    } label: {
+                        Label("Add", systemImage: "plus")
+                            .font(.caption.bold())
                     }
                 }
             }
-            .navigationTitle("Locations & Home")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
+        }
+        .navigationTitle("Locations & Home")
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showAddSheet) {
+            EditLocationSheet(location: ManagedLocation(id: UUID(), name: "New Location", radiusMeters: 150.0)) { newLoc in
+                viewModel.locationManagementService.saveLocation(newLoc)
             }
-            .sheet(isPresented: $showAddSheet) {
-                EditLocationSheet(location: ManagedLocation(id: UUID(), name: "New Location", radiusMeters: 150.0)) { newLoc in
-                    viewModel.locationManagementService.saveLocation(newLoc)
-                }
-            }
-            .sheet(item: $locationToEdit) { loc in
-                EditLocationSheet(location: loc) { updatedLoc in
-                    viewModel.locationManagementService.saveLocation(updatedLoc)
-                }
+        }
+        .sheet(item: $locationToEdit) { loc in
+            EditLocationSheet(location: loc) { updatedLoc in
+                viewModel.locationManagementService.saveLocation(updatedLoc)
             }
         }
     }

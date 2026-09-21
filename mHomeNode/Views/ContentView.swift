@@ -22,7 +22,7 @@ public struct ContentView: View {
 
             ScannerView()
                 .tabItem {
-                    Label("Scout", systemImage: "antenna.radiowaves.left.and.right")
+                    Label("BLE", systemImage: "antenna.radiowaves.left.and.right")
                 }
         }
     }

@@ -153,8 +153,22 @@ public struct ServerStatusView: View {
                     .disabled(vm.totalDevicesCount == 0)
                 }
 
-                // MARK: - 5. Room Management
+                // MARK: - 5. Home Organization (Locations & Rooms)
                 Section {
+                    NavigationLink(destination: LocationsManagementView(isSheet: false)) {
+                        HStack {
+                            Label("Locations & Geofences", systemImage: "location.fill")
+                            Spacer()
+                            HStack(spacing: 4) {
+                                Image(systemName: vm.activeLocationState.iconName)
+                                    .font(.caption2)
+                                    .foregroundColor(vm.activeLocationState.isAtHome ? .green : .blue)
+                                Text(vm.activeLocation.name)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+
                     NavigationLink(destination: RoomManagementView()) {
                         HStack {
                             Label("Room Management", systemImage: "door.left.hand.open")
@@ -166,7 +180,7 @@ public struct ServerStatusView: View {
                 } header: {
                     Text("Home Organization")
                 } footer: {
-                    Text("Rooms are saved locally so they remain accessible even when the server is offline. Can be synced with HomeNode Server, Hue, and Apple Home.")
+                    Text("Manage locations (Home, Office, GPS radius and server linking) and configure persistent rooms for offline access.")
                 }
 
                 // MARK: - 6. Ignore List

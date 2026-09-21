@@ -406,7 +406,7 @@ public struct RoomDetailView: View {
                 ContentUnavailableView(
                     "No Devices Assigned",
                     systemImage: "house.circle",
-                    description: Text("Assign Bluetooth sensors and lights to \(roomName) from the Scout or Lights tabs.")
+                    description: Text("Assign Bluetooth sensors and lights to \(roomName) from the BLE or Lights tabs.")
                 )
                 .padding(.top, 40)
             }
