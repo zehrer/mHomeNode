@@ -175,6 +175,7 @@ public final class GoveeLightController: NSObject, CBPeripheralDelegate {
 
     public func didConnect(peripheral: CBPeripheral) {
         let deviceId = peripheral.identifier
+        guard pendingPackets[deviceId] != nil else { return }
         logger.info("Connected to Govee peripheral \(deviceId)")
         peripheral.delegate = self
         peripheral.discoverServices([GoveeCommand.serviceUUID])
@@ -182,6 +183,7 @@ public final class GoveeLightController: NSObject, CBPeripheralDelegate {
 
     public func didFailToConnect(peripheral: CBPeripheral, error: Error?) {
         let deviceId = peripheral.identifier
+        guard pendingPackets[deviceId] != nil else { return }
         let msg = error?.localizedDescription ?? "Failed to connect"
         logger.error("Failed to connect to \(deviceId): \(msg)")
         isBusy[deviceId] = false
@@ -192,7 +194,8 @@ public final class GoveeLightController: NSObject, CBPeripheralDelegate {
 
     public func didDisconnect(peripheral: CBPeripheral, error: Error?) {
         let deviceId = peripheral.identifier
-        logger.info("Disconnected from \(deviceId)")
+        guard pendingPackets[deviceId] != nil || writeCharacteristics[deviceId] != nil else { return }
+        logger.info("Disconnected from Govee light \(deviceId)")
         writeCharacteristics[deviceId] = nil
         timeoutTasks[deviceId]?.cancel()
     }
