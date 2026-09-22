@@ -120,12 +120,6 @@ public final class HomeKitService: NSObject, HMHomeManagerDelegate, HMAccessoryD
         }
     }
 
-    public nonisolated func homeManagerDidUpdatePrimaryHome(_ manager: HMHomeManager) {
-        Task { @MainActor in
-            self.handlePrimaryHomeUpdated(manager)
-        }
-    }
-
     public nonisolated func homeManager(_ manager: HMHomeManager, didAdd home: HMHome) {
         Task { @MainActor in
             self.handleHomeAdded(manager, home: home)
@@ -143,17 +137,9 @@ public final class HomeKitService: NSObject, HMHomeManagerDelegate, HMAccessoryD
         updateAuthStatus()
         self.homes = manager.homes
         if selectedHome == nil || !manager.homes.contains(where: { $0.uniqueIdentifier == selectedHome?.uniqueIdentifier }) {
-            self.selectedHome = manager.primaryHome ?? manager.homes.first
+            self.selectedHome = manager.homes.first
         }
         refreshHomeAccessories()
-    }
-
-    private func handlePrimaryHomeUpdated(_ manager: HMHomeManager) {
-        logger.info("HMHomeManager did update primary home: \(manager.primaryHome?.name ?? "none")")
-        if selectedHome == nil {
-            self.selectedHome = manager.primaryHome
-            refreshHomeAccessories()
-        }
     }
 
     private func handleHomeAdded(_ manager: HMHomeManager, home: HMHome) {
@@ -167,7 +153,7 @@ public final class HomeKitService: NSObject, HMHomeManagerDelegate, HMAccessoryD
     private func handleHomeRemoved(_ manager: HMHomeManager, home: HMHome) {
         self.homes = manager.homes
         if selectedHome?.uniqueIdentifier == home.uniqueIdentifier {
-            selectedHome = manager.primaryHome ?? manager.homes.first
+            selectedHome = manager.homes.first
             refreshHomeAccessories()
         }
     }
