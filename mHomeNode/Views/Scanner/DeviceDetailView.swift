@@ -208,8 +208,9 @@ public struct DeviceDetailView: View {
                         }
                     }
 
-                    // MARK: - Apple HomeKit Status
-                    if device.isHomeKitAccessory {
+                    // MARK: - Apple HomeKit Status & Live Telemetry
+                    let homeKitData = scannerVM.findHomeKitData(for: device)
+                    if device.isHomeKitAccessory || homeKitData != nil {
                         Section {
                             VStack(alignment: .leading, spacing: 10) {
                                 HStack(spacing: 8) {
@@ -217,35 +218,157 @@ public struct DeviceDetailView: View {
                                         .font(.title3)
                                         .foregroundColor(.orange)
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text("Apple HomeKit Zubehör")
+                                        Text(homeKitData?.name ?? "Apple HomeKit Zubehör")
                                             .font(.headline)
-                                        Text(device.isHomeKitPaired ? "In Apple Home eingebunden (HAP over BLE)" : "Bereit für Apple Home Kopplung")
+                                        Text(homeKitData != nil ? "Verbunden via Apple HomeKit Framework" : (device.isHomeKitPaired ? "In Apple Home eingebunden (HAP over BLE)" : "Bereit für Apple Home Kopplung"))
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                     }
                                 }
 
-                                Text("Dieses Gerät kommuniziert über das verschlüsselte Apple HomeKit Accessory Protocol (HAP). Die Sensorwerte (Temperatur & Feuchtigkeit) werden kryptografisch geschützt übertragen.")
-                                    .font(.footnote)
-                                    .foregroundColor(.secondary)
+                                if let hk = homeKitData {
+                                    if let room = hk.roomName {
+                                        HStack {
+                                            Label("Apple Home Raum", systemImage: "door.left.hand.open")
+                                                .font(.subheadline)
+                                                .foregroundColor(.secondary)
+                                            Spacer()
+                                            Text(room)
+                                                .font(.subheadline.weight(.medium))
+                                        }
+                                    }
 
-                                Divider()
+                                    if let floor = hk.floorName {
+                                        HStack {
+                                            Label("Etage / Zone", systemImage: "stairs")
+                                                .font(.subheadline)
+                                                .foregroundColor(.secondary)
+                                            Spacer()
+                                            Text(floor)
+                                                .font(.subheadline.weight(.medium))
+                                        }
+                                    }
 
-                                HStack {
-                                    Label("Verschlüsselung", systemImage: device.isHomeKitPaired ? "lock.fill" : "lock.open.fill")
-                                        .font(.subheadline)
+                                    HStack {
+                                        Label("Status", systemImage: hk.isReachable ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                                            .font(.subheadline)
+                                            .foregroundColor(hk.isReachable ? .green : .secondary)
+                                        Spacer()
+                                        Text(hk.isReachable ? "Erreichbar" : "Nicht erreichbar")
+                                            .font(.subheadline.weight(.medium))
+                                            .foregroundColor(hk.isReachable ? .green : .secondary)
+                                    }
+
+                                    // Decrypted live measurements from Apple HomeKit
+                                    if hk.temperature != nil || hk.humidity != nil || hk.batteryLevel != nil {
+                                        Divider()
+
+                                        Text("Entschlüsselte Live-Messwerte (Apple Home):")
+                                            .font(.caption.bold())
+                                            .foregroundColor(.secondary)
+
+                                        HStack(spacing: 8) {
+                                            if let t = hk.temperature {
+                                                HStack(spacing: 6) {
+                                                    Image(systemName: "thermometer.medium")
+                                                        .foregroundColor(.orange)
+                                                    VStack(alignment: .leading, spacing: 1) {
+                                                        Text("TEMP")
+                                                            .font(.system(size: 8, weight: .bold))
+                                                            .foregroundColor(.secondary)
+                                                        Text(String(format: "%.1f °C", t))
+                                                            .font(.subheadline.bold())
+                                                    }
+                                                }
+                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                                .padding(8)
+                                                .background(Color(.tertiarySystemFill))
+                                                .cornerRadius(8)
+                                            }
+
+                                            if let h = hk.humidity {
+                                                HStack(spacing: 6) {
+                                                    Image(systemName: "humidity.fill")
+                                                        .foregroundColor(.teal)
+                                                    VStack(alignment: .leading, spacing: 1) {
+                                                        Text("FEUCHTE")
+                                                            .font(.system(size: 8, weight: .bold))
+                                                            .foregroundColor(.secondary)
+                                                        Text(String(format: "%.0f %%", h))
+                                                            .font(.subheadline.bold())
+                                                    }
+                                                }
+                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                                .padding(8)
+                                                .background(Color(.tertiarySystemFill))
+                                                .cornerRadius(8)
+                                            }
+
+                                            if let b = hk.batteryLevel {
+                                                HStack(spacing: 6) {
+                                                    Image(systemName: b > 20 ? "battery.100" : "battery.25")
+                                                        .foregroundColor(b > 20 ? .green : .red)
+                                                    VStack(alignment: .leading, spacing: 1) {
+                                                        Text("BATTERIE")
+                                                            .font(.system(size: 8, weight: .bold))
+                                                            .foregroundColor(.secondary)
+                                                        Text("\(b) %")
+                                                            .font(.subheadline.bold())
+                                                    }
+                                                }
+                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                                .padding(8)
+                                                .background(Color(.tertiarySystemFill))
+                                                .cornerRadius(8)
+                                            }
+                                        }
+                                    }
+
+                                    if hk.isSwitchable {
+                                        Divider()
+
+                                        HStack {
+                                            Label("Schaltzustand", systemImage: hk.isPowerOn == true ? "power.circle.fill" : "power.circle")
+                                                .font(.subheadline)
+                                                .foregroundColor(hk.isPowerOn == true ? .green : .secondary)
+                                            Spacer()
+                                            Button(hk.isPowerOn == true ? "Ausschalten" : "Einschalten") {
+                                                Task {
+                                                    await scannerVM.toggleHomeKitPower(for: hk.id)
+                                                }
+                                            }
+                                            .buttonStyle(.borderedProminent)
+                                            .tint(hk.isPowerOn == true ? .red : .green)
+                                            .controlSize(.small)
+                                        }
+                                    }
+                                } else {
+                                    Text("Dieses Gerät kommuniziert über das verschlüsselte Apple HomeKit Accessory Protocol (HAP). Die Sensorwerte (Temperatur & Feuchtigkeit) werden kryptografisch geschützt übertragen.")
+                                        .font(.footnote)
                                         .foregroundColor(.secondary)
-                                    Spacer()
-                                    Text(device.isHomeKitPaired ? "Aktiv (ChaCha20-Poly1305)" : "Keine")
-                                        .font(.subheadline.weight(.semibold))
-                                        .foregroundColor(device.isHomeKitPaired ? .orange : .blue)
+
+                                    Divider()
+
+                                    HStack {
+                                        Label("Verschlüsselung", systemImage: device.isHomeKitPaired ? "lock.fill" : "lock.open.fill")
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary)
+                                        Spacer()
+                                        Text(device.isHomeKitPaired ? "Aktiv (ChaCha20-Poly1305)" : "Keine")
+                                            .font(.subheadline.weight(.semibold))
+                                            .foregroundColor(device.isHomeKitPaired ? .orange : .blue)
+                                    }
                                 }
                             }
                             .padding(.vertical, 4)
                         } header: {
                             Text("Apple Home")
                         } footer: {
-                            Text("Über die Apple HomeKit Integration kann mHomeNode die Live-Messwerte direkt und entschlüsselt über das HomeKit-Framework (HMHomeManager) von iOS synchronisieren.")
+                            if homeKitData != nil {
+                                Text("Messwerte werden live über das Apple HomeKit Framework (HMHomeManager) von iOS synchronisiert und entschlüsselt.")
+                            } else {
+                                Text("Über die Apple HomeKit Integration kann mHomeNode die Live-Messwerte direkt und entschlüsselt über das HomeKit-Framework (HMHomeManager) von iOS synchronisieren.")
+                            }
                         }
                     }
 
@@ -433,6 +556,19 @@ public struct DeviceDetailView: View {
                                 LabeledContent("Packet Counter", value: "\(packetId)")
                             }
                             LabeledContent("Encryption", value: btHome.isEncrypted ? "Yes" : "No (Plaintext)")
+                        }
+                    } else if let hk = homeKitData, (hk.temperature != nil || hk.humidity != nil || hk.batteryLevel != nil) {
+                        Section("Sensor Telemetry (Apple HomeKit)") {
+                            if let temp = hk.temperature {
+                                LabeledContent("Temperature", value: String(format: "%.2f °C", temp))
+                            }
+                            if let hum = hk.humidity {
+                                LabeledContent("Humidity", value: String(format: "%.1f %%", hum))
+                            }
+                            if let battery = hk.batteryLevel {
+                                LabeledContent("Battery", value: "\(battery) %")
+                            }
+                            LabeledContent("Source", value: "Apple HomeKit (Decrypted HAP)")
                         }
                     }
 

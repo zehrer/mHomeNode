@@ -274,9 +274,10 @@ public struct RoomManagementView: View {
 
         Task {
             await viewModel.loadServerRooms()
+            viewModel.syncAppleHomeRooms()
             await MainActor.run {
                 self.isSyncing = false
-                self.syncToast = "Rooms synchronized with HomeNode Server."
+                self.syncToast = "Rooms synchronized with HomeNode Server & Apple Home."
             }
         }
     }

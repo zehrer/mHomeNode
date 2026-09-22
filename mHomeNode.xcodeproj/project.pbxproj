@@ -44,6 +44,9 @@
 		81A00009B009B009B0090009 /* ManagedRoom.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00009F009F009F0090009 /* ManagedRoom.swift */; };
 		81A00010B010B010B0100010 /* RoomManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00010F010F010F0100010 /* RoomManagementView.swift */; };
 		81A00011B011B011B0110011 /* RoomManagementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00011F011F011F0110011 /* RoomManagementTests.swift */; };
+		81A00012B012B012B0120012 /* HomeKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00012F012F012F0120012 /* HomeKitService.swift */; };
+		81A00014B014B014B0140014 /* HomeKitAccessoryCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00014F014F014F0140014 /* HomeKitAccessoryCard.swift */; };
+		81A00015B015B015B0150015 /* HomeKitServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A00015F015F015F0150015 /* HomeKitServiceTests.swift */; };
 		84CB017421AD3FF9D930F87D /* ScanExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87A31344B56BC23197338A37 /* ScanExportTests.swift */; };
 		85D513B5C06524ACE29677CF /* RoomsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 615C38F428E29108F0059EF4 /* RoomsView.swift */; };
 		8AC792E73AC3FA8ED37A03FE /* ManagedLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D87EDA90EFAF7DDA9FDEDDF /* ManagedLocation.swift */; };
@@ -136,6 +139,10 @@
 		81A00009F009F009F0090009 /* ManagedRoom.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagedRoom.swift; sourceTree = "<group>"; };
 		81A00010F010F010F0100010 /* RoomManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomManagementView.swift; sourceTree = "<group>"; };
 		81A00011F011F011F0110011 /* RoomManagementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomManagementTests.swift; sourceTree = "<group>"; };
+		81A00012F012F012F0120012 /* HomeKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeKitService.swift; sourceTree = "<group>"; };
+		81A00013F013F013F0130013 /* mHomeNode.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = mHomeNode.entitlements; sourceTree = "<group>"; };
+		81A00014F014F014F0140014 /* HomeKitAccessoryCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeKitAccessoryCard.swift; sourceTree = "<group>"; };
+		81A00015F015F015F0150015 /* HomeKitServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeKitServiceTests.swift; sourceTree = "<group>"; };
 		83FEF1CCAB4E7ECAF2DC08F2 /* QingpingParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QingpingParserTests.swift; sourceTree = "<group>"; };
 		85FBD0516FCDAC06E3F9A1B7 /* DeviceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceDetailView.swift; sourceTree = "<group>"; };
 		86333B2F37318EBA181C25F6 /* BLEScannerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEScannerService.swift; sourceTree = "<group>"; };
@@ -207,6 +214,7 @@
 				E2090A56BC8B9D42F01B86ED /* RoomDetailView.swift */,
 				81A00002F002F002F0020002 /* PlugDeviceCard.swift */,
 				81A00010F010F010F0100010 /* RoomManagementView.swift */,
+				81A00014F014F014F0140014 /* HomeKitAccessoryCard.swift */,
 			);
 			path = Rooms;
 			sourceTree = "<group>";
@@ -315,6 +323,7 @@
 				A4EBE9981B1D585B74C2C11E /* Assets.xcassets */,
 				97D909D933AE031034FC7267 /* AppIcon.icon */,
 				CA6194BF56B4ADE59A75223D /* Info.plist */,
+				81A00013F013F013F0130013 /* mHomeNode.entitlements */,
 			);
 			path = mHomeNode;
 			sourceTree = "<group>";
@@ -345,8 +354,17 @@
 				2224CDC0DFC998777F56180B /* Export */,
 				81A00005G005G005G0050005 /* Shelly */,
 				81A00008G008G008G0080008 /* Room */,
+				81A00014G014G014G0140014 /* HomeKit */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		81A00014G014G014G0140014 /* HomeKit */ = {
+			isa = PBXGroup;
+			children = (
+				81A00012F012F012F0120012 /* HomeKitService.swift */,
+			);
+			path = HomeKit;
 			sourceTree = "<group>";
 		};
 		81A00008G008G008G0080008 /* Room */ = {
@@ -446,6 +464,7 @@
 				81A00004F004F004F0040004 /* BLEScannerServiceTests.swift */,
 				81A00007F007F007F0070007 /* ShellyMultiPathTests.swift */,
 				81A00011F011F011F0110011 /* RoomManagementTests.swift */,
+				81A00015F015F015F0150015 /* HomeKitServiceTests.swift */,
 			);
 			path = mHomeNodeTests;
 			sourceTree = "<group>";
@@ -561,6 +580,7 @@
 				81A00004B004B004B0040004 /* BLEScannerServiceTests.swift in Sources */,
 				81A00007B007B007B0070007 /* ShellyMultiPathTests.swift in Sources */,
 				81A00011B011B011B0110011 /* RoomManagementTests.swift in Sources */,
+				81A00015B015B015B0150015 /* HomeKitServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -620,6 +640,8 @@
 				81A00008B008B008B0080008 /* RoomManagementService.swift in Sources */,
 				81A00009B009B009B0090009 /* ManagedRoom.swift in Sources */,
 				81A00010B010B010B0100010 /* RoomManagementView.swift in Sources */,
+				81A00012B012B012B0120012 /* HomeKitService.swift in Sources */,
+				81A00014B014B014B0140014 /* HomeKitAccessoryCard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -640,6 +662,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = mHomeNode/mHomeNode.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = NV9LC295QZ;
 				ENABLE_PREVIEWS = YES;
@@ -746,6 +769,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = mHomeNode/mHomeNode.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = NV9LC295QZ;
 				ENABLE_PREVIEWS = YES;

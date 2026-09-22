@@ -60,6 +60,7 @@ public final class ScannerViewModel {
     public let savedScanStorage: SavedScanStorageService
     public let locationManagementService: LocationManagementService
     public let roomManagementService: RoomManagementService
+    public let homeKitService: HomeKitService
 
     public var serverConfig: ServerConfig = ServerConfig.load()
     public var serverRooms: [ServerRoom] = []
@@ -138,7 +139,8 @@ public final class ScannerViewModel {
         locationService: LocationService? = nil,
         savedScanStorage: SavedScanStorageService? = nil,
         locationManagementService: LocationManagementService? = nil,
-        roomManagementService: RoomManagementService? = nil
+        roomManagementService: RoomManagementService? = nil,
+        homeKitService: HomeKitService? = nil
     ) {
         let ign = ignoreService ?? .shared
         self.ignoreService = ign
@@ -156,6 +158,9 @@ public final class ScannerViewModel {
         self.locationManagementService = locMgr
         let roomMgr = roomManagementService ?? .shared
         self.roomManagementService = roomMgr
+        let hk = homeKitService ?? .shared
+        self.homeKitService = hk
+        hk.syncWithRoomManagementService(roomMgr)
 
         // Import any existing device rooms to room management
         for reg in locMgr.activeLocation.devices {
@@ -660,6 +665,31 @@ public final class ScannerViewModel {
             inspectionError = error.localizedDescription
             return false
         }
+    }
+
+    // MARK: - Apple HomeKit Integration
+
+    public func syncAppleHomeRooms() {
+        homeKitService.syncWithRoomManagementService(roomManagementService)
+    }
+
+    public func homeKitAccessories(for roomName: String) -> [HomeKitAccessoryData] {
+        let clean = roomName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return homeKitService.accessories.filter { acc in
+            acc.roomName?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == clean
+        }
+    }
+
+    public func findHomeKitData(for device: DiscoveredDevice) -> HomeKitAccessoryData? {
+        homeKitService.findMatchingAccessory(for: device)
+    }
+
+    public func toggleHomeKitPower(for accessoryId: UUID) async {
+        try? await homeKitService.togglePower(for: accessoryId)
+    }
+
+    public func setHomeKitPower(for accessoryId: UUID, isOn: Bool) async {
+        try? await homeKitService.setPower(for: accessoryId, isOn: isOn)
     }
 
     // MARK: - Managed Locations & Presence

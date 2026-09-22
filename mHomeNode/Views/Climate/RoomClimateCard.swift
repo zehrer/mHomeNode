@@ -1,6 +1,7 @@
 import SwiftUI
 
 public struct RoomClimateCard: View {
+    @Environment(ScannerViewModel.self) private var viewModel
     public let roomName: String
     public let serverRoom: ServerRoom?
     public let devices: [DiscoveredDevice]
@@ -22,14 +23,32 @@ public struct RoomClimateCard: View {
         devices.filter { !$0.isSignalLost }
     }
 
+    private func deviceTemperature(for device: DiscoveredDevice) -> Double? {
+        device.btHomeData?.temperature ?? viewModel.findHomeKitData(for: device)?.temperature
+    }
+
+    private func deviceHumidity(for device: DiscoveredDevice) -> Double? {
+        device.btHomeData?.humidity ?? viewModel.findHomeKitData(for: device)?.humidity
+    }
+
+    private func deviceBattery(for device: DiscoveredDevice) -> UInt8? {
+        if let b = device.btHomeData?.battery {
+            return b
+        }
+        if let b = viewModel.findHomeKitData(for: device)?.batteryLevel {
+            return UInt8(clamping: b)
+        }
+        return nil
+    }
+
     private var averageTemperature: Double? {
-        let temps = activeDevices.compactMap { $0.btHomeData?.temperature }
+        let temps = activeDevices.compactMap { deviceTemperature(for: $0) }
         guard !temps.isEmpty else { return nil }
         return temps.reduce(0, +) / Double(temps.count)
     }
 
     private var averageHumidity: Double? {
-        let hums = activeDevices.compactMap { $0.btHomeData?.humidity }
+        let hums = activeDevices.compactMap { deviceHumidity(for: $0) }
         guard !hums.isEmpty else { return nil }
         return hums.reduce(0, +) / Double(hums.count)
     }
@@ -176,7 +195,7 @@ public struct RoomClimateCard: View {
                                         .foregroundColor(.secondary)
                                     }
 
-                                    if let battery = device.btHomeData?.battery {
+                                    if let battery = deviceBattery(for: device) {
                                         Text("•")
                                             .font(.caption2)
                                             .foregroundColor(.secondary)
@@ -200,12 +219,12 @@ public struct RoomClimateCard: View {
                                         .foregroundColor(.secondary)
                                 } else {
                                     HStack(spacing: 8) {
-                                        if let t = device.btHomeData?.temperature {
+                                        if let t = deviceTemperature(for: device) {
                                             Text(String(format: "%.1f°C", t))
                                                 .font(.caption.bold().monospacedDigit())
                                                 .foregroundColor(.primary)
                                         }
-                                        if let h = device.btHomeData?.humidity {
+                                        if let h = deviceHumidity(for: device) {
                                             Text(String(format: "%.0f%%", h))
                                                 .font(.caption.monospacedDigit())
                                                 .foregroundColor(.blue)

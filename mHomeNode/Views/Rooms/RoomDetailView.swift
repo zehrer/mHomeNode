@@ -34,8 +34,34 @@ public struct RoomDetailView: View {
         }
     }
 
+    private var homeKitAccessoriesInRoom: [HomeKitAccessoryData] {
+        scannerVM.homeKitAccessories(for: roomName)
+    }
+
+    private var homeKitPlugs: [HomeKitAccessoryData] {
+        homeKitAccessoriesInRoom.filter { $0.isSwitchable && !$0.isLight }
+    }
+
+    private var homeKitLights: [HomeKitAccessoryData] {
+        homeKitAccessoriesInRoom.filter { $0.isLight }
+    }
+
     private var climateDevices: [DiscoveredDevice] {
-        roomDevices.filter { $0.btHomeData?.temperature != nil || $0.btHomeData?.humidity != nil }
+        roomDevices.filter { dev in
+            dev.btHomeData?.temperature != nil || dev.btHomeData?.humidity != nil ||
+            scannerVM.findHomeKitData(for: dev)?.temperature != nil || scannerVM.findHomeKitData(for: dev)?.humidity != nil
+        }
+    }
+
+    private var standaloneHKClimateAccessories: [HomeKitAccessoryData] {
+        homeKitAccessoriesInRoom.filter { hk in
+            (hk.temperature != nil || hk.humidity != nil) &&
+            !climateDevices.contains(where: { scannerVM.findHomeKitData(for: $0)?.id == hk.id })
+        }
+    }
+
+    private var totalClimateSensorsCount: Int {
+        climateDevices.count + standaloneHKClimateAccessories.count
     }
 
     private var lightDevices: [DiscoveredDevice] {
@@ -48,7 +74,9 @@ public struct RoomDetailView: View {
 
     private var otherDevices: [DiscoveredDevice] {
         roomDevices.filter { dev in
-            !dev.isLightingDevice && !dev.isSwitchablePlug && dev.btHomeData?.temperature == nil && dev.btHomeData?.humidity == nil
+            !dev.isLightingDevice && !dev.isSwitchablePlug &&
+            dev.btHomeData?.temperature == nil && dev.btHomeData?.humidity == nil &&
+            scannerVM.findHomeKitData(for: dev)?.temperature == nil && scannerVM.findHomeKitData(for: dev)?.humidity == nil
         }
     }
 
@@ -57,13 +85,33 @@ public struct RoomDetailView: View {
     }
 
     private var avgTemp: Double? {
-        let temps = activeClimateDevices.compactMap { $0.btHomeData?.temperature }
+        var temps: [Double] = []
+        for dev in activeClimateDevices {
+            if let t = dev.btHomeData?.temperature ?? scannerVM.findHomeKitData(for: dev)?.temperature {
+                temps.append(t)
+            }
+        }
+        for hk in standaloneHKClimateAccessories {
+            if let t = hk.temperature {
+                temps.append(t)
+            }
+        }
         guard !temps.isEmpty else { return nil }
         return temps.reduce(0, +) / Double(temps.count)
     }
 
     private var avgHumidity: Double? {
-        let hums = activeClimateDevices.compactMap { $0.btHomeData?.humidity }
+        var hums: [Double] = []
+        for dev in activeClimateDevices {
+            if let h = dev.btHomeData?.humidity ?? scannerVM.findHomeKitData(for: dev)?.humidity {
+                hums.append(h)
+            }
+        }
+        for hk in standaloneHKClimateAccessories {
+            if let h = hk.humidity {
+                hums.append(h)
+            }
+        }
         guard !hums.isEmpty else { return nil }
         return hums.reduce(0, +) / Double(hums.count)
     }
@@ -204,7 +252,7 @@ public struct RoomDetailView: View {
                         HStack(spacing: 4) {
                             Image(systemName: "sensor.tag.radiowaves.forward.fill")
                                 .font(.caption2)
-                            Text("\(climateDevices.count)")
+                            Text("\(totalClimateSensorsCount)")
                                 .font(.caption2.bold())
                             Image(systemName: showSensorsDetail ? "chevron.up" : "chevron.down")
                                 .font(.caption2.bold())
@@ -222,10 +270,10 @@ public struct RoomDetailView: View {
             }
 
             // MARK: - Climate Sensors Individual Cards (Toggled by Climate Bar)
-            if showSensorsDetail && !climateDevices.isEmpty {
+            if showSensorsDetail && totalClimateSensorsCount > 0 {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Label("Sensors in \(roomName) (\(climateDevices.count))", systemImage: "sensor.tag.radiowaves.forward.fill")
+                        Label("Sensors in \(roomName) (\(totalClimateSensorsCount))", systemImage: "sensor.tag.radiowaves.forward.fill")
                             .font(.caption.bold())
                             .foregroundColor(.secondary)
                         Spacer()
@@ -284,6 +332,34 @@ public struct RoomDetailView: View {
                                                         .font(.caption2)
                                                         .foregroundColor(.secondary)
                                                 }
+                                            } else if let hk = scannerVM.findHomeKitData(for: device) {
+                                                HStack(spacing: 2) {
+                                                    Image(systemName: "house.fill")
+                                                        .font(.caption2)
+                                                        .foregroundColor(.orange)
+                                                    Text("Apple Home")
+                                                }
+                                                .font(.caption2)
+                                                .foregroundColor(.secondary)
+
+                                                if let t = hk.temperature {
+                                                    Text("•")
+                                                        .font(.caption2)
+                                                        .foregroundColor(.secondary)
+                                                    Text(String(format: "%.1f°C", t))
+                                                        .font(.caption.bold())
+                                                        .foregroundColor(.primary)
+                                                }
+                                                if let h = hk.humidity {
+                                                    Text(String(format: "%.0f%%", h))
+                                                        .font(.caption)
+                                                        .foregroundColor(.secondary)
+                                                }
+                                                if let bat = hk.batteryLevel {
+                                                    Text("🔋 \(bat)%")
+                                                        .font(.caption2)
+                                                        .foregroundColor(.secondary)
+                                                }
                                             }
                                         }
                                     }
@@ -302,26 +378,84 @@ public struct RoomDetailView: View {
                         }
                         .buttonStyle(.plain)
                     }
+
+                    ForEach(standaloneHKClimateAccessories) { hk in
+                        HStack(spacing: 12) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(Color.orange.opacity(0.12))
+                                    .frame(width: 38, height: 38)
+                                Image(systemName: "thermometer.sun")
+                                    .foregroundColor(.orange)
+                            }
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(hk.name)
+                                    .font(.subheadline.bold())
+                                    .foregroundColor(.primary)
+
+                                HStack(spacing: 6) {
+                                    HStack(spacing: 2) {
+                                        Image(systemName: "house.fill")
+                                            .font(.caption2)
+                                            .foregroundColor(.orange)
+                                        Text("Apple Home")
+                                    }
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+
+                                    if let t = hk.temperature {
+                                        Text("•")
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                        Text(String(format: "%.1f°C", t))
+                                            .font(.caption.bold())
+                                            .foregroundColor(.primary)
+                                    }
+                                    if let h = hk.humidity {
+                                        Text(String(format: "%.0f%%", h))
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    if let bat = hk.batteryLevel {
+                                        Text("🔋 \(bat)%")
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                            }
+
+                            Spacer()
+                        }
+                        .padding(10)
+                        .background(Color(.secondarySystemGroupedBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .shadow(color: Color.black.opacity(0.03), radius: 3, x: 0, y: 1)
+                    }
                 }
                 .padding(.horizontal)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
 
-            // MARK: - Smart Plugs / Switches Section (Shelly Plugs)
-            if !plugDevices.isEmpty {
+            // MARK: - Smart Plugs / Switches Section (Shelly Plugs + Apple HomeKit)
+            let totalPlugsCount = plugDevices.count + homeKitPlugs.count
+            if totalPlugsCount > 0 {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
-                        Label("Plugs & Sockets (\(plugDevices.count))", systemImage: "powerplug.fill")
+                        Label("Plugs & Sockets (\(totalPlugsCount))", systemImage: "powerplug.fill")
                             .font(.headline)
                             .foregroundColor(.primary)
 
                         Spacer()
 
-                        if plugDevices.count > 1 {
+                        if totalPlugsCount > 1 {
                             HStack(spacing: 8) {
                                 Button("On") {
                                     for dev in plugDevices {
                                         scannerVM.setPlugPower(for: dev, isOn: true)
+                                    }
+                                    for hk in homeKitPlugs {
+                                        Task { await scannerVM.setHomeKitPower(for: hk.id, isOn: true) }
                                     }
                                 }
                                 .font(.caption.weight(.semibold))
@@ -331,6 +465,9 @@ public struct RoomDetailView: View {
                                 Button("Off") {
                                     for dev in plugDevices {
                                         scannerVM.setPlugPower(for: dev, isOn: false)
+                                    }
+                                    for hk in homeKitPlugs {
+                                        Task { await scannerVM.setHomeKitPower(for: hk.id, isOn: false) }
                                     }
                                 }
                                 .font(.caption.weight(.semibold))
@@ -349,39 +486,56 @@ public struct RoomDetailView: View {
                             }
                         )
                     }
+
+                    ForEach(homeKitPlugs) { hk in
+                        HomeKitAccessoryCard(accessory: hk) {
+                            Task {
+                                await scannerVM.toggleHomeKitPower(for: hk.id)
+                            }
+                        }
+                    }
                 }
                 .padding(.horizontal)
             }
 
-            // MARK: - Lights Section
-            if !lightDevices.isEmpty {
+            // MARK: - Lights Section (Govee + Apple HomeKit)
+            let totalLightsCount = lightDevices.count + homeKitLights.count
+            if totalLightsCount > 0 {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
-                        Label("Lights (\(lightDevices.count))", systemImage: "lightbulb.fill")
+                        Label("Lights (\(totalLightsCount))", systemImage: "lightbulb.fill")
                             .font(.headline)
                             .foregroundColor(.primary)
 
                         Spacer()
 
                         // Room-level Quick Actions
-                        HStack(spacing: 8) {
-                            Button("On") {
-                                for dev in lightDevices {
-                                    scannerVM.setLightPower(for: dev, isOn: true)
+                        if totalLightsCount > 1 {
+                            HStack(spacing: 8) {
+                                Button("On") {
+                                    for dev in lightDevices {
+                                        scannerVM.setLightPower(for: dev, isOn: true)
+                                    }
+                                    for hk in homeKitLights {
+                                        Task { await scannerVM.setHomeKitPower(for: hk.id, isOn: true) }
+                                    }
                                 }
-                            }
-                            .font(.caption.weight(.semibold))
-                            .buttonStyle(.bordered)
-                            .tint(.yellow)
+                                .font(.caption.weight(.semibold))
+                                .buttonStyle(.bordered)
+                                .tint(.yellow)
 
-                            Button("Off") {
-                                for dev in lightDevices {
-                                    scannerVM.setLightPower(for: dev, isOn: false)
+                                Button("Off") {
+                                    for dev in lightDevices {
+                                        scannerVM.setLightPower(for: dev, isOn: false)
+                                    }
+                                    for hk in homeKitLights {
+                                        Task { await scannerVM.setHomeKitPower(for: hk.id, isOn: false) }
+                                    }
                                 }
+                                .font(.caption.weight(.semibold))
+                                .buttonStyle(.bordered)
+                                .tint(.secondary)
                             }
-                            .font(.caption.weight(.semibold))
-                            .buttonStyle(.bordered)
-                            .tint(.secondary)
                         }
                     }
 
@@ -394,6 +548,14 @@ public struct RoomDetailView: View {
                                 onSelectDevice?(device)
                             }
                         )
+                    }
+
+                    ForEach(homeKitLights) { hk in
+                        HomeKitAccessoryCard(accessory: hk) {
+                            Task {
+                                await scannerVM.toggleHomeKitPower(for: hk.id)
+                            }
+                        }
                     }
                 }
                 .padding(.horizontal)
@@ -435,11 +597,11 @@ public struct RoomDetailView: View {
             }
 
             // Empty state if room has no devices
-            if roomDevices.isEmpty {
+            if roomDevices.isEmpty && homeKitAccessoriesInRoom.isEmpty {
                 ContentUnavailableView(
                     "No Devices Assigned",
                     systemImage: "house.circle",
-                    description: Text("Assign Bluetooth sensors and lights to \(roomName) from the BLE or Lights tabs.")
+                    description: Text("Assign Bluetooth sensors and lights to \(roomName) from the BLE or Lights tabs, or sync accessories from Apple Home.")
                 )
                 .padding(.top, 40)
             }

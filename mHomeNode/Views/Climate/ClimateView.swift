@@ -10,7 +10,8 @@ public struct ClimateView: View {
     private var climateDevices: [DiscoveredDevice] {
         viewModel.bleService.devices.filter { device in
             !device.isIgnored &&
-            (device.btHomeData?.temperature != nil || device.btHomeData?.humidity != nil)
+            (device.btHomeData?.temperature != nil || device.btHomeData?.humidity != nil ||
+             viewModel.findHomeKitData(for: device)?.temperature != nil || viewModel.findHomeKitData(for: device)?.humidity != nil)
         }
     }
 
@@ -52,13 +53,17 @@ public struct ClimateView: View {
     }
 
     private var overallAverageTemperature: Double? {
-        let temps = activeClimateDevices.compactMap { $0.btHomeData?.temperature }
+        let temps = activeClimateDevices.compactMap { dev in
+            dev.btHomeData?.temperature ?? viewModel.findHomeKitData(for: dev)?.temperature
+        }
         guard !temps.isEmpty else { return nil }
         return temps.reduce(0, +) / Double(temps.count)
     }
 
     private var overallAverageHumidity: Double? {
-        let hums = activeClimateDevices.compactMap { $0.btHomeData?.humidity }
+        let hums = activeClimateDevices.compactMap { dev in
+            dev.btHomeData?.humidity ?? viewModel.findHomeKitData(for: dev)?.humidity
+        }
         guard !hums.isEmpty else { return nil }
         return hums.reduce(0, +) / Double(hums.count)
     }

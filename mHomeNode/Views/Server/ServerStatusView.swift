@@ -10,6 +10,8 @@ public struct ServerStatusView: View {
     @State private var lastSyncResult: String?
     @State private var showManualConfig = false
     @State private var showClearConfirm = false
+    @State private var isSyncingAppleHome = false
+    @State private var appleHomeSyncResult: String?
 
     public var body: some View {
         @Bindable var vm = viewModel
@@ -183,7 +185,57 @@ public struct ServerStatusView: View {
                     Text("Manage locations (Home, Office, GPS radius and server linking) and configure persistent rooms for offline access.")
                 }
 
-                // MARK: - 6. Ignore List
+                // MARK: - 6. Apple HomeKit Integration
+                Section {
+                    LabeledContent("HomeKit Authorization", value: vm.homeKitService.authorizationStatusString)
+
+                    if let home = vm.homeKitService.selectedHome {
+                        LabeledContent("Apple Home Name", value: home.name)
+                        LabeledContent("Rooms in Apple Home", value: "\(home.rooms.count)")
+                        LabeledContent("Zones / Floors", value: "\(home.zones.count)")
+                        LabeledContent("Synced Accessories", value: "\(vm.homeKitService.accessories.count)")
+                    } else {
+                        LabeledContent("Apple Home Name", value: "None Detected")
+                    }
+
+                    Button {
+                        isSyncingAppleHome = true
+                        vm.syncAppleHomeRooms()
+                        let count = vm.homeKitService.accessories.count
+                        let roomCount = vm.homeKitService.selectedHome?.rooms.count ?? 0
+                        appleHomeSyncResult = "Synchronized \(roomCount) room(s) and \(count) accessory(ies) from Apple Home."
+                        Task {
+                            try? await Task.sleep(nanoseconds: 1_500_000_000)
+                            await MainActor.run {
+                                isSyncingAppleHome = false
+                            }
+                        }
+                    } label: {
+                        HStack {
+                            Text("Sync Rooms & Accessories from Apple Home")
+                            Spacer()
+                            if isSyncingAppleHome {
+                                ProgressView()
+                                    .controlSize(.small)
+                            } else {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                            }
+                        }
+                    }
+                    .disabled(isSyncingAppleHome)
+
+                    if let res = appleHomeSyncResult {
+                        Text(res)
+                            .font(.caption)
+                            .foregroundStyle(.green)
+                    }
+                } header: {
+                    Text("Apple HomeKit Integration")
+                } footer: {
+                    Text("Synchronizes rooms, floors (zones), and live decrypted sensor readings (such as Qingping sensors, Apple Home plugs, and lights) directly from iOS.")
+                }
+
+                // MARK: - 7. Ignore List
                 Section {
                     NavigationLink(destination: IgnoredDevicesListView()) {
                         HStack {

@@ -225,15 +225,22 @@ public final class RoomManagementService {
         saveRoomsToDisk()
     }
 
-    /// Prepares for Apple Home (HomeKit) synchronization
-    public func syncWithAppleHome(homeKitRooms: [(id: String, name: String)]) {
-        for hk in homeKitRooms {
+    /// Synchronizes rooms and zones (floors) from Apple Home (HomeKit)
+    public func syncWithAppleHome(homeKitRoomsWithFloor: [(id: String, name: String, floor: String?)]) {
+        for hk in homeKitRoomsWithFloor {
             let hkName = hk.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            let cleanFloor = hk.floor?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let resolvedFloor = (cleanFloor?.isEmpty == true) ? nil : cleanFloor
+
             if let index = rooms.firstIndex(where: { $0.name.lowercased() == hkName.lowercased() }) {
                 rooms[index].externalId = hk.id
+                if rooms[index].floor == nil && resolvedFloor != nil {
+                    rooms[index].floor = resolvedFloor
+                }
             } else {
                 let newRoom = ManagedRoom(
                     name: hkName,
+                    floor: resolvedFloor,
                     icon: "homekit",
                     source: .appleHome,
                     externalId: hk.id
@@ -242,6 +249,11 @@ public final class RoomManagementService {
             }
         }
         saveRoomsToDisk()
+    }
+
+    /// Backwards compatibility for homeKitRooms without floor
+    public func syncWithAppleHome(homeKitRooms: [(id: String, name: String)]) {
+        syncWithAppleHome(homeKitRoomsWithFloor: homeKitRooms.map { ($0.id, $0.name, nil) })
     }
 
     // MARK: - Persistence
