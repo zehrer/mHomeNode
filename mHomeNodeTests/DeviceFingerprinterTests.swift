@@ -14,6 +14,21 @@ final class DeviceFingerprinterTests: XCTestCase {
         XCTAssertEqual(family, .shellyBlu)
     }
 
+    func testIdentifyShellyBLUButtonByModelCodeAndMfgData() {
+        // Manufacturer data captured live from SBBT-002C:
+        // A9 0B 01 01 00 0B 01 00 0A 76 B2 E5 F6 EF 0C
+        let mfgData = Data([0xA9, 0x0B, 0x01, 0x01, 0x00, 0x0B, 0x01, 0x00, 0x0A, 0x76, 0xB2, 0xE5, 0xF6, 0xEF, 0x0C])
+        let res = DeviceFingerprinter.identifyDetails(
+            advertisedName: "SBBT-002C-b276",
+            serviceUUIDs: nil,
+            serviceData: nil,
+            manufacturerData: mfgData
+        )
+        XCTAssertEqual(res.family, .shellyBlu)
+        XCTAssertEqual(res.resolvedName, "Shelly BLU Button 1 (b276)")
+        XCTAssertEqual(res.macAddress, "0C:EF:F6:E5:B2:76")
+    }
+
     func testIdentifyQingping() {
         let (family, _) = DeviceFingerprinter.identify(
             advertisedName: "Qingping Temp RH Baro",

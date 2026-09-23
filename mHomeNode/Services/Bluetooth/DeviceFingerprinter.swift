@@ -99,17 +99,42 @@ public enum DeviceFingerprinter {
                     let macSlice = Array(mfg[2...7].reversed())
                     resolvedMac = macSlice.map { String(format: "%02X", $0) }.joined(separator: ":")
                 }
+            } else if mfgId == 0x0BA9 {
+                // Allterco Robotics / Shelly manufacturer ID
+                family = .shellyBlu
+                if mfg.count >= 15 {
+                    let macSlice = Array(mfg[9...14].reversed())
+                    resolvedMac = macSlice.map { String(format: "%02X", $0) }.joined(separator: ":")
+                }
             }
         }
 
-        // 4. Identify Shelly BLU devices by name
+        // 4. Identify Shelly BLU devices by name or prefix (e.g. SBBT, SBDW, SBMW, SBHT, SBRC)
         let lowerName = name.lowercased()
-        if lowerName.starts(with: "shelly") || lowerName.contains("blu") {
+        if lowerName.starts(with: "shelly") || lowerName.contains("blu") ||
+           lowerName.starts(with: "sbbt") || lowerName.starts(with: "sbdw") ||
+           lowerName.starts(with: "sbmw") || lowerName.starts(with: "sbht") ||
+           lowerName.starts(with: "sbrc") || family == .shellyBlu {
+
+            var modelName = name.isEmpty ? "Shelly BLU" : name
+            let suffix = name.contains("-") ? " (\(name.split(separator: "-").last ?? ""))" : ""
+            if lowerName.starts(with: "sbbt") {
+                modelName = "Shelly BLU Button 1\(suffix.count > 2 ? suffix : "")"
+            } else if lowerName.starts(with: "sbdw") {
+                modelName = "Shelly BLU Door/Window\(suffix.count > 2 ? suffix : "")"
+            } else if lowerName.starts(with: "sbmw") {
+                modelName = "Shelly BLU Motion\(suffix.count > 2 ? suffix : "")"
+            } else if lowerName.starts(with: "sbht") {
+                modelName = "Shelly BLU H&T\(suffix.count > 2 ? suffix : "")"
+            } else if lowerName.starts(with: "sbrc") {
+                modelName = "Shelly BLU RC Button 4\(suffix.count > 2 ? suffix : "")"
+            }
+
             return DeviceIdentificationResult(
                 family: .shellyBlu,
                 btHomeData: parsedBTHome,
-                resolvedName: name.isEmpty ? "Shelly BLU" : name,
-                macAddress: nil
+                resolvedName: modelName,
+                macAddress: resolvedMac
             )
         }
 
