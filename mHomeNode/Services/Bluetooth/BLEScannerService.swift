@@ -186,6 +186,8 @@ public final class BLEScannerService: NSObject, BLEConnectionManager {
         burstTimer = nil
         worker.stopScan()
         isScanning = false
+        activeAutoInspectDeviceName = nil
+        isAutoGATTInFlight = false
         storageService.saveDevicesSync(devices)
         logger.info("Stopped BLE scan.")
     }
@@ -271,6 +273,10 @@ public final class BLEScannerService: NSObject, BLEConnectionManager {
             self.peripheralMap[k] = v
         }
         self.storageService.scheduleSave(merged)
+
+        if isAutoGATTEnabled {
+            triggerAutoGATTCheck()
+        }
     }
 
     private func handleStateChanged(_ state: CBManagerState) {
@@ -325,9 +331,86 @@ public final class BLEScannerService: NSObject, BLEConnectionManager {
         return worker.getPeripheral(id: id)
     }
 
+    // MARK: - Auto GATT Deep Inspection
+
+    public var isAutoGATTEnabled: Bool = false {
+        didSet {
+            if isAutoGATTEnabled {
+                triggerAutoGATTCheck()
+            } else {
+                activeAutoInspectDeviceName = nil
+            }
+        }
+    }
+    public var autoGATTRSSIThreshold: Int = -70
+    public private(set) var activeAutoInspectDeviceName: String?
+    private var autoGATTAttemptCooldowns: [UUID: Date] = [:]
+    private var isAutoGATTInFlight: Bool = false
+    private let autoGATTCooldownInterval: TimeInterval = 300.0 // 5 minutes cooldown after attempt
+
+    public func triggerAutoGATTCheck() {
+        guard isAutoGATTEnabled,
+              bluetoothState == .poweredOn,
+              (isScanning || isBurstScanning),
+              !isAutoGATTInFlight else { return }
+
+        let now = Date()
+
+        // Find candidate devices:
+        // 1. Must be connectable
+        // 2. Must not be ignored
+        // 3. Must have RSSI >= autoGATTRSSIThreshold
+        // 4. Must not have completed inspectionInfo already (modelNumber, manufacturerName, or discoveredServices)
+        // 5. Must not be in cooldown from a recent attempt (< 5 minutes)
+        // 6. Must have an active peripheral in peripheralMap
+        let candidate = devices
+            .filter { dev in
+                guard dev.isConnectable, !dev.isIgnored else { return false }
+                guard dev.rssi >= autoGATTRSSIThreshold else { return false }
+
+                let isAlreadyInspected = dev.inspectionInfo != nil &&
+                    (!dev.inspectionInfo!.discoveredServices.isEmpty || dev.inspectionInfo!.modelNumber != nil || dev.inspectionInfo!.manufacturerName != nil)
+                guard !isAlreadyInspected else { return false }
+
+                if let lastAttempt = autoGATTAttemptCooldowns[dev.id] {
+                    if now.timeIntervalSince(lastAttempt) < autoGATTCooldownInterval {
+                        return false
+                    }
+                }
+                return getPeripheral(id: dev.id) != nil
+            }
+            .sorted { $0.rssi > $1.rssi } // Closest / strongest RSSI first
+            .first
+
+        guard let target = candidate else { return }
+
+        isAutoGATTInFlight = true
+        activeAutoInspectDeviceName = target.displayTitle
+        autoGATTAttemptCooldowns[target.id] = now
+        logger.info("Starting automatic GATT deep probe for candidate '\(target.displayTitle)' (RSSI: \(target.rssi) dBm)...")
+
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            do {
+                _ = try await self.inspectDevice(id: target.id, timeoutSeconds: 8.0)
+                self.logger.info("Automatic GATT deep probe completed for '\(target.displayTitle)'.")
+            } catch {
+                self.logger.warning("Automatic GATT deep probe ended with error for '\(target.displayTitle)': \(error.localizedDescription)")
+            }
+            self.isAutoGATTInFlight = false
+            self.activeAutoInspectDeviceName = nil
+
+            // Check next candidate after brief pause
+            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            if self.isAutoGATTEnabled {
+                self.triggerAutoGATTCheck()
+            }
+        }
+    }
+
     // MARK: - Active GATT Inspection
 
-    public func inspectDevice(id: UUID) async throws -> DeviceInspectionInfo {
+    public func inspectDevice(id: UUID, timeoutSeconds: TimeInterval = 15.0) async throws -> DeviceInspectionInfo {
         guard let peripheral = getPeripheral(id: id) else {
             throw NSError(
                 domain: "BLEScannerService",
@@ -347,7 +430,7 @@ public final class BLEScannerService: NSObject, BLEConnectionManager {
                 startScan()
             }
         }
-        let info = try await inspectorService.inspect(peripheral: peripheral, timeoutSeconds: 15.0)
+        let info = try await inspectorService.inspect(peripheral: peripheral, timeoutSeconds: timeoutSeconds)
         if let index = devices.firstIndex(where: { $0.id == id }) {
             devices[index].applyInspectionInfo(info)
             storageService.scheduleSave(devices)

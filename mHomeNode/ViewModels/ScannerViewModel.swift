@@ -131,6 +131,22 @@ public final class ScannerViewModel {
     public var autoScanBanner: String?
     public var lastAutoScanLocation: ScanLocation?
 
+    public var isAutoGATTEnabled: Bool {
+        get { bleService.isAutoGATTEnabled }
+        set {
+            bleService.isAutoGATTEnabled = newValue
+            UserDefaults.standard.set(newValue, forKey: "isAutoGATTEnabled")
+        }
+    }
+
+    public var autoGATTRSSIThreshold: Int {
+        get { bleService.autoGATTRSSIThreshold }
+        set {
+            bleService.autoGATTRSSIThreshold = newValue
+            UserDefaults.standard.set(newValue, forKey: "autoGATTRSSIThreshold")
+        }
+    }
+
     public init(
         bleService: BLEScannerService? = nil,
         ignoreService: IgnoreService? = nil,
@@ -187,6 +203,14 @@ public final class ScannerViewModel {
             self.proximityFilter = filter
         } else {
             self.proximityFilter = .nearby
+        }
+
+        if UserDefaults.standard.object(forKey: "isAutoGATTEnabled") != nil {
+            self.bleService.isAutoGATTEnabled = UserDefaults.standard.bool(forKey: "isAutoGATTEnabled")
+        }
+        let storedThreshold = UserDefaults.standard.integer(forKey: "autoGATTRSSIThreshold")
+        if storedThreshold != 0 {
+            self.bleService.autoGATTRSSIThreshold = storedThreshold
         }
 
         disc.onServerDiscovered = { [weak self] server in

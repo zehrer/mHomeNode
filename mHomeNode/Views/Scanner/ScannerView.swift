@@ -74,6 +74,26 @@ public struct ScannerView: View {
                     }
                 }
 
+                if let targetName = vm.bleService.activeAutoInspectDeviceName {
+                    Section {
+                        HStack(spacing: 10) {
+                            ProgressView()
+                                .controlSize(.small)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Auto-Inspecting Device...")
+                                    .font(.subheadline.bold())
+                                Text("Reading GATT services & software info for \(targetName)")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "sparkles")
+                                .foregroundColor(.accentColor)
+                        }
+                        .padding(.vertical, 2)
+                    }
+                }
+
                 // MARK: - Proximity Filter & Grouping Quick Bar
                 Section {
                     HStack(spacing: 8) {
@@ -241,6 +261,17 @@ public struct ScannerView: View {
                         .help("View saved scan archive")
 
                         Menu {
+                            Section("Auto-Inspect (GATT)") {
+                                Toggle("Auto-Inspect Nearby", isOn: $vm.isAutoGATTEnabled)
+                                if vm.isAutoGATTEnabled {
+                                    Picker("Distance / Signal", selection: $vm.autoGATTRSSIThreshold) {
+                                        Text("Very Close (≥ -60 dBm)").tag(-60)
+                                        Text("Nearby (≥ -70 dBm)").tag(-70)
+                                        Text("Extended (≥ -80 dBm)").tag(-80)
+                                    }
+                                }
+                            }
+
                             Section("Location Auto-Scan") {
                                 Toggle("Auto-Scan on Move", isOn: $vm.isAutoLocationScanEnabled)
                                 if vm.isAutoLocationScanEnabled {
@@ -291,7 +322,7 @@ public struct ScannerView: View {
                                 }
                             }
                         } label: {
-                            Image(systemName: vm.isAutoLocationScanEnabled ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                            Image(systemName: (vm.isAutoLocationScanEnabled || vm.isAutoGATTEnabled) ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
                         }
                     }
                 }

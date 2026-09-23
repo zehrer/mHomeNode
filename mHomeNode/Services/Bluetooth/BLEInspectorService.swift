@@ -127,6 +127,7 @@ public struct DeviceInspectionInfo: Sendable, Codable, Equatable {
     public var serialNumber: String?
     public var firmwareRevision: String?
     public var hardwareRevision: String?
+    public var softwareRevision: String?
     public var appearance: UInt16?
     public var appearanceCategory: String?
     public var batteryLevel: UInt8?
@@ -142,6 +143,7 @@ public struct DeviceInspectionInfo: Sendable, Codable, Equatable {
         serialNumber: String? = nil,
         firmwareRevision: String? = nil,
         hardwareRevision: String? = nil,
+        softwareRevision: String? = nil,
         appearance: UInt16? = nil,
         appearanceCategory: String? = nil,
         batteryLevel: UInt8? = nil,
@@ -156,6 +158,7 @@ public struct DeviceInspectionInfo: Sendable, Codable, Equatable {
         self.serialNumber = serialNumber
         self.firmwareRevision = firmwareRevision
         self.hardwareRevision = hardwareRevision
+        self.softwareRevision = softwareRevision
         self.appearance = appearance
         self.appearanceCategory = appearanceCategory
         self.batteryLevel = batteryLevel
@@ -484,6 +487,12 @@ public final class BLEInspectorService: NSObject, @unchecked Sendable, CBPeriphe
         case StandardGATTUUID.hardwareRevisionString:
             if let str = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines), !str.isEmpty {
                 pendingInfo.hardwareRevision = str
+            }
+
+        case StandardGATTUUID.softwareRevisionString:
+            if let str = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines), !str.isEmpty {
+                pendingInfo.softwareRevision = str
+                logger.debug("Read Software Revision: \(str)")
             }
 
         case StandardGATTUUID.appearance:

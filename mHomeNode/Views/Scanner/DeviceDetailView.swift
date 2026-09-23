@@ -640,6 +640,9 @@ public struct DeviceDetailView: View {
                                 if let hw = info.hardwareRevision {
                                     LabeledContent("Hardware Revision", value: hw)
                                 }
+                                if let sw = info.softwareRevision {
+                                    LabeledContent("Software Revision", value: sw)
+                                }
                                 if let serial = info.serialNumber {
                                     LabeledContent("Serial Number", value: serial)
                                 }

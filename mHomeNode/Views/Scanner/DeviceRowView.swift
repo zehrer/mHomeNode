@@ -64,6 +64,12 @@ public struct DeviceRowView: View {
                                 .foregroundStyle(.secondary)
                         }
 
+                        if let fw = device.inspectionInfo?.firmwareRevision ?? device.inspectionInfo?.softwareRevision, !fw.isEmpty {
+                            Text("• v\(fw)")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+
                         if let room = device.assignedRoom, !room.isEmpty {
                             Text("• 📍 " + room)
                                 .font(.caption2)
@@ -162,6 +168,33 @@ public struct DeviceRowView: View {
                     .background(Color(.tertiarySystemFill))
                     .clipShape(Capsule())
 
+                    Spacer()
+                }
+                .padding(.top, 2)
+            } else if let info = device.inspectionInfo, !device.isIgnored,
+                      (info.modelNumber != nil || info.firmwareRevision != nil || info.softwareRevision != nil || info.batteryLevel != nil) {
+                HStack(spacing: 6) {
+                    if let model = info.modelNumber, !model.isEmpty {
+                        SensorMetricBadge(
+                            icon: "cpu",
+                            text: model,
+                            color: .blue
+                        )
+                    }
+                    if let fw = info.firmwareRevision ?? info.softwareRevision, !fw.isEmpty {
+                        SensorMetricBadge(
+                            icon: "tag",
+                            text: "v\(fw)",
+                            color: .secondary
+                        )
+                    }
+                    if let bat = info.batteryLevel {
+                        SensorMetricBadge(
+                            icon: "battery.100",
+                            text: "\(bat)%",
+                            color: bat < 20 ? .red : .green
+                        )
+                    }
                     Spacer()
                 }
                 .padding(.top, 2)

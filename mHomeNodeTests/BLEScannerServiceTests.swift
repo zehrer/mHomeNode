@@ -69,4 +69,36 @@ final class BLEScannerServiceTests: XCTestCase {
         scanner.updateRoom(for: devId, room: "Living Room")
         XCTAssertEqual(scanner.devices.first?.assignedRoom, "Living Room")
     }
+
+    @MainActor
+    func testAutoGATTDefaultsAndConfiguration() {
+        let scanner = BLEScannerService()
+        XCTAssertFalse(scanner.isAutoGATTEnabled)
+        XCTAssertEqual(scanner.autoGATTRSSIThreshold, -70)
+        XCTAssertNil(scanner.activeAutoInspectDeviceName)
+
+        scanner.autoGATTRSSIThreshold = -60
+        XCTAssertEqual(scanner.autoGATTRSSIThreshold, -60)
+
+        scanner.isAutoGATTEnabled = true
+        XCTAssertTrue(scanner.isAutoGATTEnabled)
+    }
+
+    @MainActor
+    func testAutoGATTCheckDoesNotRunWhenNotScanning() {
+        let scanner = BLEScannerService()
+        scanner.isAutoGATTEnabled = true
+        let devId = UUID()
+        let device = DiscoveredDevice(
+            id: devId,
+            name: "Connectable Bulb",
+            rssi: -50,
+            isConnectable: true
+        )
+        scanner.devices = [device]
+
+        // When not scanning or not powered on, triggerAutoGATTCheck should do nothing
+        scanner.triggerAutoGATTCheck()
+        XCTAssertNil(scanner.activeAutoInspectDeviceName)
+    }
 }

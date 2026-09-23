@@ -37,6 +37,7 @@ final class BLEInspectorTests: XCTestCase {
             serialNumber: "SN123456",
             firmwareRevision: "1.104.2",
             hardwareRevision: "HW2.0",
+            softwareRevision: "SW3.4.1",
             appearance: 1408,
             appearanceCategory: "Light Fixture",
             batteryLevel: 85
@@ -54,6 +55,8 @@ final class BLEInspectorTests: XCTestCase {
         XCTAssertEqual(decoded.manufacturerName, "Signify Netherlands B.V.")
         XCTAssertEqual(decoded.modelNumber, "7602031P7")
         XCTAssertEqual(decoded.firmwareRevision, "1.104.2")
+        XCTAssertEqual(decoded.hardwareRevision, "HW2.0")
+        XCTAssertEqual(decoded.softwareRevision, "SW3.4.1")
         XCTAssertEqual(decoded.appearance, 1408)
         XCTAssertEqual(decoded.batteryLevel, 85)
     }
