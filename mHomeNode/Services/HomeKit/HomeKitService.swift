@@ -56,6 +56,41 @@ public struct HomeKitAccessoryData: Identifiable, Sendable, Equatable {
     }
 }
 
+/// Snapshot of an Apple HomeKit service group (grouped accessories/lights in Apple Home)
+public struct HomeKitServiceGroupData: Identifiable, Sendable, Equatable {
+    public let id: UUID
+    public let name: String
+    public let roomName: String?
+    public let isLight: Bool
+    public let isSwitchable: Bool
+    public let isPowerOn: Bool?
+    public let brightness: Int?
+    public let accessoryIds: [UUID]
+    public let serviceCount: Int
+
+    public init(
+        id: UUID,
+        name: String,
+        roomName: String? = nil,
+        isLight: Bool = true,
+        isSwitchable: Bool = true,
+        isPowerOn: Bool? = nil,
+        brightness: Int? = nil,
+        accessoryIds: [UUID] = [],
+        serviceCount: Int = 0
+    ) {
+        self.id = id
+        self.name = name
+        self.roomName = roomName
+        self.isLight = isLight
+        self.isSwitchable = isSwitchable
+        self.isPowerOn = isPowerOn
+        self.brightness = brightness
+        self.accessoryIds = accessoryIds
+        self.serviceCount = serviceCount
+    }
+}
+
 /// Manages integration with Apple HomeKit (HMHomeManager)
 @Observable
 @MainActor
@@ -72,6 +107,7 @@ public final class HomeKitService: NSObject, HMHomeManagerDelegate, HMAccessoryD
     public var homes: [HMHome] = []
     public var selectedHome: HMHome?
     public var accessories: [HomeKitAccessoryData] = []
+    public var serviceGroups: [HomeKitServiceGroupData] = []
     public var lastSyncDate: Date?
     public var isSyncing: Bool = false
     public var errorMessage: String?
@@ -302,9 +338,70 @@ public final class HomeKitService: NSObject, HMHomeManagerDelegate, HMAccessoryD
         }
 
         self.accessories = snapshots
+
+        // Scan HMServiceGroups in selected home
+        var groupSnapshots: [HomeKitServiceGroupData] = []
+        for sg in home.serviceGroups {
+            var isLight = false
+            var isSwitchable = false
+            var powerOn: Bool? = nil
+            var brightness: Int? = nil
+            var accIds = Set<UUID>()
+            var roomName: String? = nil
+
+            for service in sg.services {
+                if let acc = service.accessory {
+                    accIds.insert(acc.uniqueIdentifier)
+                    if roomName == nil {
+                        roomName = acc.room?.name
+                    }
+                }
+
+                let st = service.serviceType
+                if st == HMServiceTypeLightbulb || service.associatedServiceType == HMServiceTypeLightbulb {
+                    isLight = true
+                    isSwitchable = true
+                } else if st == HMServiceTypeOutlet || st == HMServiceTypeSwitch {
+                    isSwitchable = true
+                }
+
+                for char in service.characteristics {
+                    if char.characteristicType == HMCharacteristicTypePowerState {
+                        char.enableNotification(true) { _ in }
+                        char.readValue { _ in }
+                        if let b = char.value as? Bool {
+                            if powerOn == nil || b {
+                                powerOn = b
+                            }
+                        }
+                    } else if char.characteristicType == HMCharacteristicTypeBrightness {
+                        char.enableNotification(true) { _ in }
+                        char.readValue { _ in }
+                        if let num = char.value as? NSNumber {
+                            brightness = num.intValue
+                        }
+                    }
+                }
+            }
+
+            let gData = HomeKitServiceGroupData(
+                id: sg.uniqueIdentifier,
+                name: sg.name,
+                roomName: roomName,
+                isLight: isLight,
+                isSwitchable: isSwitchable,
+                isPowerOn: powerOn,
+                brightness: brightness,
+                accessoryIds: Array(accIds),
+                serviceCount: sg.services.count
+            )
+            groupSnapshots.append(gData)
+        }
+        self.serviceGroups = groupSnapshots
+
         self.lastSyncDate = Date()
         self.isSyncing = false
-        logger.info("Loaded \(snapshots.count) accessory snapshot(s) for home '\(home.name)'")
+        logger.info("Loaded \(snapshots.count) accessory snapshot(s) and \(groupSnapshots.count) service group(s) for home '\(home.name)'")
     }
 
     // MARK: - HMAccessoryDelegate
@@ -533,9 +630,42 @@ public final class HomeKitService: NSObject, HMHomeManagerDelegate, HMAccessoryD
         }
     }
 
+    // MARK: - Service Group Control
+
+    public func toggleServiceGroup(groupId: UUID) async throws {
+        guard let home = selectedHome,
+              let sg = home.serviceGroups.first(where: { $0.uniqueIdentifier == groupId }) else {
+            return
+        }
+
+        let currentPower = serviceGroups.first(where: { $0.id == groupId })?.isPowerOn ?? false
+        let target = !currentPower
+
+        for service in sg.services {
+            for char in service.characteristics where char.characteristicType == HMCharacteristicTypePowerState {
+                try await char.writeValue(NSNumber(value: target))
+            }
+        }
+        refreshHomeAccessories()
+    }
+
+    public func setServiceGroupPower(groupId: UUID, isOn: Bool) async throws {
+        guard let home = selectedHome,
+              let sg = home.serviceGroups.first(where: { $0.uniqueIdentifier == groupId }) else {
+            return
+        }
+
+        for service in sg.services {
+            for char in service.characteristics where char.characteristicType == HMCharacteristicTypePowerState {
+                try await char.writeValue(NSNumber(value: isOn))
+            }
+        }
+        refreshHomeAccessories()
+    }
+
     // MARK: - Correlate BLE Device with HomeKit Accessory
 
-    /// Attempts to find a matching Apple HomeKit accessory for a BLE discovered device (e.g. Qingping sensor)
+    /// Attempts to find a matching Apple HomeKit accessory for a BLE discovered device
     public func findMatchingAccessory(for device: DiscoveredDevice) -> HomeKitAccessoryData? {
         // 1. Direct name match
         let devName = device.name.lowercased()
@@ -548,7 +678,39 @@ public final class HomeKitService: NSObject, HMHomeManagerDelegate, HMAccessoryD
             }
         }
 
-        // 2. Family match for Qingping sensors
+        // 2. Room + Model Smart Match (e.g. Govee H70B3, H70B5, Shelly Plugs)
+        if let devRoom = device.assignedRoom?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+           !devRoom.isEmpty, devRoom != "not assigned", devRoom != "nicht zugeordnet" {
+
+            let devOriginal = device.originalName?.lowercased() ?? ""
+            let devCombined = "\(devName) \(customName ?? "") \(devOriginal)"
+
+            for acc in accessories {
+                guard let accRoom = acc.roomName?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+                      accRoom == devRoom else { continue }
+
+                if let model = acc.model?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+                   model.count >= 3 {
+                    // Check if BLE device advertises or is identified with this model code (e.g. "h70b3", "h70b5")
+                    if devCombined.contains(model) {
+                        // If both have side distinctions (e.g. "L" vs "R" / "Links" vs "Rechts")
+                        let accName = acc.name.lowercased()
+                        let devHasL = devCombined.contains(" l") || devCombined.contains("links") || devCombined.contains("left") || devCombined.contains("_l")
+                        let devHasR = devCombined.contains(" r") || devCombined.contains("rechts") || devCombined.contains("right") || devCombined.contains("_r")
+                        let accHasL = accName.contains(" l") || accName.contains("links") || accName.contains("left")
+                        let accHasR = accName.contains(" r") || accName.contains("rechts") || accName.contains("right")
+
+                        if (devHasL && accHasR) || (devHasR && accHasL) {
+                            // Conflicting side indicators, skip
+                            continue
+                        }
+                        return acc
+                    }
+                }
+            }
+        }
+
+        // 3. Family match for Qingping sensors
         if device.family == .qingping || device.isHomeKitAccessory {
             for acc in accessories {
                 let mfg = acc.manufacturer?.lowercased() ?? ""

@@ -42,12 +42,55 @@ public struct RoomDetailView: View {
         scannerVM.homeKitAccessories(for: roomName)
     }
 
+    private var homeKitGroupsInRoom: [HomeKitServiceGroupData] {
+        let clean = roomName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return scannerVM.homeKitService.serviceGroups.filter { group in
+            group.roomName?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == clean
+        }
+    }
+
+    private var homeKitLightGroups: [HomeKitServiceGroupData] {
+        homeKitGroupsInRoom.filter { $0.isLight }
+    }
+
+    private var homeKitPlugGroups: [HomeKitServiceGroupData] {
+        homeKitGroupsInRoom.filter { !$0.isLight && $0.isSwitchable }
+    }
+
+    private var matchedHomeKitIds: Set<UUID> {
+        var ids = Set<UUID>()
+        for dev in roomDevices {
+            if let matched = scannerVM.findHomeKitData(for: dev) {
+                ids.insert(matched.id)
+            }
+        }
+        return ids
+    }
+
+    private var groupedAccessoryIds: Set<UUID> {
+        var ids = Set<UUID>()
+        for g in homeKitGroupsInRoom {
+            for id in g.accessoryIds {
+                ids.insert(id)
+            }
+        }
+        return ids
+    }
+
     private var homeKitPlugs: [HomeKitAccessoryData] {
-        homeKitAccessoriesInRoom.filter { $0.isSwitchable && !$0.isLight }
+        homeKitAccessoriesInRoom.filter {
+            $0.isSwitchable && !$0.isLight &&
+            !matchedHomeKitIds.contains($0.id) &&
+            !groupedAccessoryIds.contains($0.id)
+        }
     }
 
     private var homeKitLights: [HomeKitAccessoryData] {
-        homeKitAccessoriesInRoom.filter { $0.isLight }
+        homeKitAccessoriesInRoom.filter {
+            $0.isLight &&
+            !matchedHomeKitIds.contains($0.id) &&
+            !groupedAccessoryIds.contains($0.id)
+        }
     }
 
     private var climateDevices: [DiscoveredDevice] {
@@ -449,7 +492,7 @@ public struct RoomDetailView: View {
             }
 
             // MARK: - Smart Plugs / Switches Section (Shelly Plugs + Apple HomeKit)
-            let totalPlugsCount = plugDevices.count + homeKitPlugs.count
+            let totalPlugsCount = plugDevices.count + homeKitPlugs.count + homeKitPlugGroups.count
             if totalPlugsCount > 0 {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
@@ -468,6 +511,9 @@ public struct RoomDetailView: View {
                                     for hk in homeKitPlugs {
                                         Task { await scannerVM.setHomeKitPower(for: hk.id, isOn: true) }
                                     }
+                                    for g in homeKitPlugGroups {
+                                        Task { await scannerVM.setHomeKitServiceGroupPower(for: g.id, isOn: true) }
+                                    }
                                 }
                                 .font(.caption.weight(.semibold))
                                 .buttonStyle(.bordered)
@@ -480,6 +526,9 @@ public struct RoomDetailView: View {
                                     for hk in homeKitPlugs {
                                         Task { await scannerVM.setHomeKitPower(for: hk.id, isOn: false) }
                                     }
+                                    for g in homeKitPlugGroups {
+                                        Task { await scannerVM.setHomeKitServiceGroupPower(for: g.id, isOn: false) }
+                                    }
                                 }
                                 .font(.caption.weight(.semibold))
                                 .buttonStyle(.bordered)
@@ -489,12 +538,24 @@ public struct RoomDetailView: View {
                     }
 
                     LazyVGrid(columns: twoColumnGrid, spacing: 10) {
+                        ForEach(homeKitPlugGroups) { group in
+                            HomeKitGroupCard(group: group) {
+                                Task {
+                                    await scannerVM.toggleHomeKitServiceGroup(for: group.id)
+                                }
+                            }
+                        }
+
                         ForEach(plugDevices) { device in
                             PlugDeviceCard(
                                 device: device,
                                 controller: scannerVM.shellyController,
+                                homeKitData: scannerVM.findHomeKitData(for: device),
                                 onSelect: {
                                     onSelectDevice?(device)
+                                },
+                                onToggleHybrid: {
+                                    scannerVM.toggleHybridPlugPower(for: device)
                                 }
                             )
                         }
@@ -512,7 +573,7 @@ public struct RoomDetailView: View {
             }
 
             // MARK: - Lights Section (Govee + Apple HomeKit)
-            let totalLightsCount = lightDevices.count + homeKitLights.count
+            let totalLightsCount = lightDevices.count + homeKitLights.count + homeKitLightGroups.count
             if totalLightsCount > 0 {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
@@ -532,6 +593,9 @@ public struct RoomDetailView: View {
                                     for hk in homeKitLights {
                                         Task { await scannerVM.setHomeKitPower(for: hk.id, isOn: true) }
                                     }
+                                    for g in homeKitLightGroups {
+                                        Task { await scannerVM.setHomeKitServiceGroupPower(for: g.id, isOn: true) }
+                                    }
                                 }
                                 .font(.caption.weight(.semibold))
                                 .buttonStyle(.bordered)
@@ -544,6 +608,9 @@ public struct RoomDetailView: View {
                                     for hk in homeKitLights {
                                         Task { await scannerVM.setHomeKitPower(for: hk.id, isOn: false) }
                                     }
+                                    for g in homeKitLightGroups {
+                                        Task { await scannerVM.setHomeKitServiceGroupPower(for: g.id, isOn: false) }
+                                    }
                                 }
                                 .font(.caption.weight(.semibold))
                                 .buttonStyle(.bordered)
@@ -553,13 +620,25 @@ public struct RoomDetailView: View {
                     }
 
                     LazyVGrid(columns: twoColumnGrid, spacing: 10) {
+                        ForEach(homeKitLightGroups) { group in
+                            HomeKitGroupCard(group: group) {
+                                Task {
+                                    await scannerVM.toggleHomeKitServiceGroup(for: group.id)
+                                }
+                            }
+                        }
+
                         ForEach(lightDevices) { device in
                             LightDeviceCard(
                                 device: device,
                                 serverRoom: serverRoom,
                                 controller: scannerVM.lightController,
+                                homeKitData: scannerVM.findHomeKitData(for: device),
                                 onSelect: {
                                     onSelectDevice?(device)
+                                },
+                                onToggleHybrid: {
+                                    scannerVM.toggleHybridLightPower(for: device)
                                 }
                             )
                         }

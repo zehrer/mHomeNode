@@ -3,20 +3,29 @@ import SwiftUI
 public struct PlugDeviceCard: View {
     public let device: DiscoveredDevice
     public let controller: ShellyPlugController
+    public let homeKitData: HomeKitAccessoryData?
     public var onSelect: (() -> Void)?
+    public var onToggleHybrid: (() -> Void)?
 
     public init(
         device: DiscoveredDevice,
         controller: ShellyPlugController,
-        onSelect: (() -> Void)? = nil
+        homeKitData: HomeKitAccessoryData? = nil,
+        onSelect: (() -> Void)? = nil,
+        onToggleHybrid: (() -> Void)? = nil
     ) {
         self.device = device
         self.controller = controller
+        self.homeKitData = homeKitData
         self.onSelect = onSelect
+        self.onToggleHybrid = onToggleHybrid
     }
 
     private var isOn: Bool {
-        controller.isPowerOn(for: device.id)
+        if let hkPower = homeKitData?.isPowerOn {
+            return hkPower
+        }
+        return controller.isPowerOn(for: device.id)
     }
 
     private var isBusy: Bool {
@@ -27,7 +36,11 @@ public struct PlugDeviceCard: View {
         HStack(spacing: 10) {
             // Interactive State Icon / Toggle Button
             Button {
-                controller.togglePower(for: device)
+                if let hybrid = onToggleHybrid {
+                    hybrid()
+                } else {
+                    controller.togglePower(for: device)
+                }
                 #if canImport(UIKit)
                 let generator = UIImpactFeedbackGenerator(style: .light)
                 generator.impactOccurred()
@@ -57,11 +70,20 @@ public struct PlugDeviceCard: View {
                 onSelect?()
             } label: {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(device.displayTitle)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.primary)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
+                    HStack(spacing: 4) {
+                        Text(device.displayTitle)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(.primary)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+
+                        // Dual-Interface Badge
+                        if homeKitData != nil {
+                            Image(systemName: "house.fill")
+                                .font(.caption2)
+                                .foregroundColor(.orange)
+                        }
+                    }
 
                     if let err = controller.lastError[device.id] {
                         Text(err)

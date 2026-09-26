@@ -162,6 +162,71 @@ final class HomeKitServiceTests: XCTestCase {
         XCTAssertEqual(match?.temperature, 20.4)
     }
 
+    @MainActor
+    func testDeviceMatchingByModelAndRoom() {
+        let service = HomeKitService()
+        let h70b3Id = UUID()
+        let h70b5Id = UUID()
+
+        let hkH70B3 = HomeKitAccessoryData(
+            id: h70b3Id,
+            name: "LED Vorhang R",
+            roomName: "Wohnzimmer",
+            model: "H70B3",
+            manufacturer: "Govee",
+            isSwitchable: true,
+            isPowerOn: false,
+            isLight: true
+        )
+        let hkH70B5 = HomeKitAccessoryData(
+            id: h70b5Id,
+            name: "LED Vorhang L",
+            roomName: "Wohnzimmer",
+            model: "H70B5",
+            manufacturer: "Govee",
+            isSwitchable: true,
+            isPowerOn: true,
+            isLight: true
+        )
+        service.accessories = [hkH70B3, hkH70B5]
+
+        // BLE device 1: Govee Curtain Lights 2 (H70B3) in Wohnzimmer with custom name "Govee Vorhang R"
+        var bleCurtainR = DiscoveredDevice(
+            id: UUID(),
+            name: "Govee Outdoor String Lights (H70B3)",
+            originalName: "Govee_H70B3_6190",
+            rssi: -55,
+            family: .govee,
+            assignedRoom: "Wohnzimmer",
+            customName: "Govee Vorhang R",
+            firstSeen: Date(),
+            lastSeen: Date()
+        )
+
+        let matchR = service.findMatchingAccessory(for: bleCurtainR)
+        XCTAssertNotNil(matchR)
+        XCTAssertEqual(matchR?.id, h70b3Id)
+        XCTAssertEqual(matchR?.name, "LED Vorhang R")
+
+        // BLE device 2: Govee Curtain Lights 2 (H70B5) in Wohnzimmer with custom name "Govee Vorhang L"
+        var bleCurtainL = DiscoveredDevice(
+            id: UUID(),
+            name: "Govee Curtain Lights 2 (H70B5)",
+            originalName: "Govee_H70B5_7890",
+            rssi: -50,
+            family: .govee,
+            assignedRoom: "Wohnzimmer",
+            customName: "Govee Vorhang L",
+            firstSeen: Date(),
+            lastSeen: Date()
+        )
+
+        let matchL = service.findMatchingAccessory(for: bleCurtainL)
+        XCTAssertNotNil(matchL)
+        XCTAssertEqual(matchL?.id, h70b5Id)
+        XCTAssertEqual(matchL?.name, "LED Vorhang L")
+    }
+
     // MARK: - 3. Apple Home Room & Floor (Zone) Sync Tests
 
     @MainActor

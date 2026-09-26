@@ -762,6 +762,44 @@ public final class ScannerViewModel {
         try? await homeKitService.setPower(for: accessoryId, isOn: isOn)
     }
 
+    public func toggleHomeKitServiceGroup(for groupId: UUID) async {
+        try? await homeKitService.toggleServiceGroup(groupId: groupId)
+    }
+
+    public func setHomeKitServiceGroupPower(for groupId: UUID, isOn: Bool) async {
+        try? await homeKitService.setServiceGroupPower(groupId: groupId, isOn: isOn)
+    }
+
+    /// Option C: Hybrid control for lights (prefers Matter/HomeKit if reachable, falls back to BLE)
+    public func toggleHybridLightPower(for device: DiscoveredDevice) {
+        if let hk = findHomeKitData(for: device), hk.isReachable {
+            Task {
+                do {
+                    try await homeKitService.togglePower(for: hk.id)
+                } catch {
+                    lightController.togglePower(for: device.id)
+                }
+            }
+        } else {
+            lightController.togglePower(for: device.id)
+        }
+    }
+
+    /// Option C: Hybrid control for smart plugs (prefers Matter/HomeKit if reachable, falls back to BLE)
+    public func toggleHybridPlugPower(for device: DiscoveredDevice) {
+        if let hk = findHomeKitData(for: device), hk.isReachable {
+            Task {
+                do {
+                    try await homeKitService.togglePower(for: hk.id)
+                } catch {
+                    shellyController.togglePower(for: device)
+                }
+            }
+        } else {
+            shellyController.togglePower(for: device)
+        }
+    }
+
     // MARK: - Managed Locations & Presence
 
     public var activeLocationState: ActiveLocationState {
