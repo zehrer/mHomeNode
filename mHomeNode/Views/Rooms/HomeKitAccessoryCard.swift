@@ -26,73 +26,45 @@ public struct HomeKitAccessoryCard: View {
     }
 
     public var body: some View {
-        HStack(spacing: 14) {
-            // Accessory icon badge
-            ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(isOn ? activeColor.opacity(0.22) : Color(.tertiarySystemFill))
-                    .frame(width: 48, height: 48)
+        Button {
+            onToggle()
+            #if canImport(UIKit)
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            #endif
+        } label: {
+            HStack(spacing: 12) {
+                // Interactive State Icon
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(isOn ? activeColor.opacity(0.22) : Color(.tertiarySystemFill))
+                        .frame(width: 40, height: 40)
 
-                Image(systemName: iconName)
-                    .font(.title2)
-                    .foregroundColor(isOn ? activeColor : .secondary)
-                    .shadow(color: isOn ? activeColor.opacity(0.6) : Color.clear, radius: 8)
-            }
+                    Image(systemName: iconName)
+                        .font(.headline)
+                        .foregroundColor(isOn ? activeColor : .secondary)
+                        .shadow(color: isOn ? activeColor.opacity(0.5) : Color.clear, radius: 6)
+                }
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(accessory.name)
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                    .lineLimit(1)
+                HStack(spacing: 6) {
+                    Text(accessory.name)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
 
-                HStack(spacing: 4) {
                     Image(systemName: "house.fill")
                         .font(.caption2)
                         .foregroundColor(.orange)
-                    Text("Apple Home")
-                        .font(.caption2.bold())
-                        .foregroundColor(.secondary)
-
-                    if let model = accessory.model, !model.isEmpty {
-                        Text("• \(model)")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                    }
-
-                    Spacer()
-
-                    Text(isOn ? "On" : "Off")
-                        .font(.subheadline)
-                        .foregroundColor(isOn ? activeColor : .secondary)
                 }
+
+                Spacer(minLength: 8)
             }
-
-            Spacer(minLength: 8)
-
-            // Direct Quick Action Power Button
-            Button {
-                onToggle()
-                #if canImport(UIKit)
-                let generator = UIImpactFeedbackGenerator(style: .light)
-                generator.impactOccurred()
-                #endif
-            } label: {
-                ZStack {
-                    Circle()
-                        .fill(isOn ? activeColor.opacity(0.2) : Color(.tertiarySystemFill))
-                        .frame(width: 46, height: 46)
-
-                    Image(systemName: "power")
-                        .font(.headline.weight(.semibold))
-                        .foregroundColor(isOn ? activeColor : .secondary)
-                }
-            }
-            .buttonStyle(.borderless)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(Color(.secondarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .shadow(color: Color.black.opacity(0.03), radius: 3, x: 0, y: 1)
         }
-        .padding(14)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 2)
+        .buttonStyle(.plain)
     }
 }

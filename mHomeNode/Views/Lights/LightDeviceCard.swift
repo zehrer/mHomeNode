@@ -31,92 +31,77 @@ public struct LightDeviceCard: View {
     }
 
     public var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 12) {
+            // Interactive State Icon / Toggle Button
+            Button {
+                controller?.togglePower(for: device.id)
+                #if canImport(UIKit)
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.impactOccurred()
+                #endif
+            } label: {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(isLightOn ? Color.yellow.opacity(0.22) : Color(.tertiarySystemFill))
+                        .frame(width: 40, height: 40)
+
+                    if isBusy {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: isLightOn ? "lightbulb.fill" : "lightbulb")
+                            .font(.headline)
+                            .foregroundColor(isLightOn ? .yellow : .secondary)
+                            .shadow(color: isLightOn ? Color.yellow.opacity(0.5) : Color.clear, radius: 6)
+                    }
+                }
+            }
+            .buttonStyle(.borderless)
+            .disabled(isBusy)
+
             // Main card body (tappable to view details)
             Button {
                 onSelect?()
             } label: {
-                HStack(spacing: 14) {
-                    // Light bulb visual indicator
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(isLightOn ? Color.yellow.opacity(0.22) : Color(.tertiarySystemFill))
-                            .frame(width: 48, height: 48)
+                HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 6) {
+                            Text(device.displayTitle)
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                                .lineLimit(1)
 
-                        Image(systemName: isLightOn ? "lightbulb.fill" : "lightbulb")
-                            .font(.title2)
-                            .foregroundColor(isLightOn ? .yellow : .secondary)
-                            .shadow(color: isLightOn ? Color.yellow.opacity(0.6) : Color.clear, radius: 8)
-                    }
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(device.displayTitle)
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                            .lineLimit(1)
+                            if isLightOn && currentBrightness < 100 {
+                                Text("\(currentBrightness)%")
+                                    .font(.caption.weight(.medium))
+                                    .foregroundColor(.secondary)
+                            }
+                        }
 
                         if let err = controller?.lastError[device.id] {
                             Text(err)
-                                .font(.caption)
+                                .font(.caption2)
                                 .foregroundColor(.red)
                                 .lineLimit(1)
-                        } else {
-                            HStack(spacing: 6) {
-                                if isLightOn {
-                                    Text("On")
-                                        .font(.subheadline.weight(.medium))
-                                        .foregroundColor(.yellow)
-                                    Text("•")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                    Text("\(currentBrightness)%")
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                } else {
-                                    Text("Off")
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
                         }
                     }
 
                     Spacer(minLength: 8)
-                }
-            }
-            .buttonStyle(.plain)
 
-            // Single Button Power Toggle
-            if let ctrl = controller {
-                Button {
-                    ctrl.togglePower(for: device.id)
-                    #if canImport(UIKit)
-                    let generator = UIImpactFeedbackGenerator(style: .light)
-                    generator.impactOccurred()
-                    #endif
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(isLightOn ? Color.yellow.opacity(0.2) : Color(.tertiarySystemFill))
-                            .frame(width: 46, height: 46)
-
-                        if isBusy {
-                            ProgressView()
-                                .controlSize(.small)
-                        } else {
-                            Image(systemName: "power")
-                                .font(.headline.weight(.semibold))
-                                .foregroundColor(isLightOn ? .yellow : .secondary)
-                        }
+                    if onSelect != nil {
+                        Image(systemName: "chevron.right")
+                            .font(.caption2)
+                            .foregroundColor(Color(.tertiaryLabel))
                     }
                 }
-                .buttonStyle(.borderless)
-                .disabled(isBusy)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
         }
-        .padding(14)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
         .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 2)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .shadow(color: Color.black.opacity(0.03), radius: 3, x: 0, y: 1)
     }
 }
