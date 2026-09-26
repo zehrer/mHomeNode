@@ -381,6 +381,11 @@ public struct DeviceDetailView: View {
                                 }
                         }
 
+                        if let original = device.originalName ?? (device.name != "Unknown" ? device.name : nil), !original.isEmpty {
+                            LabeledContent("Advertised Name", value: original)
+                                .font(.subheadline)
+                        }
+
                         Picker("Room", selection: $selectedRoom) {
                             Text("Not Assigned").tag("")
                             ForEach(scannerVM.roomManagementService.rooms) { room in
@@ -735,6 +740,9 @@ public struct DeviceDetailView: View {
 
                     // MARK: - 6. Technical Details
                     Section("Hardware Metadata") {
+                        if let original = device.originalName ?? (device.name != "Unknown" ? device.name : nil), !original.isEmpty {
+                            LabeledContent("Advertised Name", value: original)
+                        }
                         LabeledContent("Device Family", value: device.family.rawValue)
                         if let mac = device.macAddress {
                             LabeledContent("MAC Address", value: mac)

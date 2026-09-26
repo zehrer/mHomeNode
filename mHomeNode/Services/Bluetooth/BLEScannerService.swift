@@ -287,17 +287,9 @@ public final class BLEScannerService: NSObject, BLEConnectionManager {
 
         // Passively synchronize real-time power state from BLE advertisement packets
         for dev in merged {
-            if dev.family == .govee, let mfgHex = dev.manufacturerDataHex?.uppercased(), mfgHex.count >= 14 {
-                // If manufacturer data contains Intellirocks signature 88EC
-                if mfgHex.contains("88EC") || mfgHex.contains("EC88") {
-                    let startIdx = mfgHex.index(mfgHex.startIndex, offsetBy: 12)
-                    let endIdx = mfgHex.index(startIdx, offsetBy: 2)
-                    let flagHex = String(mfgHex[startIdx..<endIdx])
-                    if flagHex == "01" {
-                        self.goveeController.updatePowerStateFromAdvertisement(deviceId: dev.id, isOn: true)
-                    } else if flagHex == "00" {
-                        self.goveeController.updatePowerStateFromAdvertisement(deviceId: dev.id, isOn: false)
-                    }
+            if dev.family == .govee, let mfgHex = dev.manufacturerDataHex {
+                if let pState = DeviceFingerprinter.parseGoveePowerStateFromHex(mfgHex) {
+                    self.goveeController.updatePowerStateFromAdvertisement(deviceId: dev.id, isOn: pState)
                 }
             }
         }
@@ -690,8 +682,18 @@ private final class BLECentralWorker: NSObject, CBCentralManagerDelegate, @unche
             if dev.rssiHistory.count > 20 {
                 dev.rssiHistory.removeFirst()
             }
-            if resolvedName != "Unknown" && (dev.name == "Unknown" || dev.name.isEmpty || dev.name == "Qin") {
-                dev.name = resolvedName
+            if !rawName.isEmpty && rawName != "Unknown" {
+                dev.originalName = rawName
+            }
+            if dev.customName == nil {
+                if dev.name == "Unknown" || dev.name.isEmpty || dev.name == "Qin" {
+                    dev.name = resolvedName
+                } else if dev.family == .govee, let orig = dev.originalName, !orig.isEmpty {
+                    let suffix = orig.components(separatedBy: "_").last ?? ""
+                    if suffix.count == 4 && !dev.name.contains(suffix) {
+                        dev.name = resolvedName
+                    }
+                }
             }
             if identification.isHomeKitAccessory {
                 dev.isHomeKitAccessory = true
@@ -722,9 +724,7 @@ private final class BLECentralWorker: NSObject, CBCentralManagerDelegate, @unche
                 }
             }
             if let mfg = mfgDataHex, !mfg.isEmpty {
-                if dev.manufacturerDataHex == nil || dev.manufacturerDataHex?.isEmpty == true {
-                    dev.manufacturerDataHex = mfg
-                }
+                dev.manufacturerDataHex = mfg
             }
             if let sdict = serviceDataHexDict {
                 if dev.serviceDataHex == nil {
@@ -744,6 +744,7 @@ private final class BLECentralWorker: NSObject, CBCentralManagerDelegate, @unche
             let newDevice = DiscoveredDevice(
                 id: peripheral.identifier,
                 name: resolvedName,
+                originalName: rawName.isEmpty ? nil : rawName,
                 rssi: rssiVal,
                 rssiHistory: [rssiVal],
                 serviceUUIDs: serviceUUIDStrings,

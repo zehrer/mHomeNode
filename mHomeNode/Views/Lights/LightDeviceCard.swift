@@ -49,11 +49,18 @@ public struct LightDeviceCard: View {
                             .shadow(color: isLightOn ? Color.yellow.opacity(0.6) : Color.clear, radius: 8)
                     }
 
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 2) {
                         Text(device.displayTitle)
                             .font(.headline)
                             .foregroundColor(.primary)
                             .lineLimit(1)
+
+                        if let orig = device.originalName ?? (device.name != "Unknown" ? device.name : nil), orig != device.displayTitle {
+                            Text(orig)
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+                        }
 
                         if let err = controller?.lastError[device.id] {
                             Text(err)

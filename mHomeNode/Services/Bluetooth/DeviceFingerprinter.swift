@@ -200,18 +200,21 @@ public enum DeviceFingerprinter {
         let isGoveeNamed = lowerName.contains("govee") || lowerName.starts(with: "gvh") || lowerName.starts(with: "ihoment") || lowerName.contains("h70b") || lowerName.contains("h60") || lowerName.contains("h61")
         if isGoveeNamed {
             var goveeModel = name.isEmpty ? "Govee Device" : "Govee Device (\(name))"
+            let suffix = name.components(separatedBy: "_").last.flatMap { $0 != name && $0.count <= 6 ? " \($0)" : "" } ?? ""
             if lowerName.contains("h70b5") {
-                goveeModel = "Govee Curtain Lights 2 (H70B5)"
+                goveeModel = "Govee Curtain Lights 2 (H70B5\(suffix))"
             } else if lowerName.contains("h70b3") {
-                goveeModel = "Govee Outdoor String Lights (H70B3)"
+                goveeModel = "Govee Outdoor String Lights (H70B3\(suffix))"
             } else if lowerName.contains("h5075") || lowerName.contains("h5074") {
-                goveeModel = "Govee Thermo-Hygrometer"
+                goveeModel = "Govee Thermo-Hygrometer\(suffix)"
             }
+            let pState = parseGoveePowerState(from: manufacturerData)
             return DeviceIdentificationResult(
                 family: .govee,
                 btHomeData: parsedBTHome,
                 resolvedName: goveeModel,
-                macAddress: resolvedMac
+                macAddress: resolvedMac,
+                goveePowerState: pState
             )
         }
 
@@ -440,17 +443,13 @@ public enum DeviceFingerprinter {
 
             if isGoveeMfg {
                 var goveeModel = name.isEmpty ? "Govee Smart Device" : name
+                let suffix = name.components(separatedBy: "_").last.flatMap { $0 != name && $0.count <= 6 ? " \($0)" : "" } ?? ""
                 if lowerName.contains("h70b5") {
-                    goveeModel = "Govee Curtain Lights 2 (H70B5)"
+                    goveeModel = "Govee Curtain Lights 2 (H70B5\(suffix))"
                 } else if lowerName.contains("h70b3") {
-                    goveeModel = "Govee Outdoor String Lights (H70B3)"
+                    goveeModel = "Govee Outdoor String Lights (H70B3\(suffix))"
                 }
-                var pState: Bool? = nil
-                if mfg.count >= 7 {
-                    let flag = mfg[6]
-                    if flag == 0x01 { pState = true }
-                    else if flag == 0x00 { pState = false }
-                }
+                let pState = parseGoveePowerState(from: mfg)
                 return DeviceIdentificationResult(
                     family: .govee,
                     btHomeData: parsedBTHome,
@@ -586,5 +585,43 @@ public enum DeviceFingerprinter {
             manufacturerData: manufacturerData
         )
         return (result.family, result.btHomeData)
+    }
+
+    /// Robust parser for Govee BLE manufacturer advertisement payloads
+    /// Supports company ID 0x88EC / 0xEC88 at offset 0 or offset 1 (e.g. 0x03 0x88 0xEC ...)
+    public static func parseGoveePowerState(from mfg: Data?) -> Bool? {
+        guard let mfg = mfg, mfg.count >= 6 else { return nil }
+        for i in 0..<(mfg.count - 5) {
+            let isSignature = (mfg[i] == 0x88 && mfg[i+1] == 0xEC) ||
+                              (mfg[i] == 0xEC && mfg[i+1] == 0x88)
+            if isSignature {
+                // Signature is 2 bytes, followed by 1 byte subheader and 2 bytes model ID
+                // Power status flag is at offset i + 2 + 1 + 2 = i + 5
+                let powerIdx = i + 5
+                if powerIdx < mfg.count {
+                    let flag = mfg[powerIdx]
+                    if flag == 0x01 { return true }
+                    if flag == 0x00 { return false }
+                }
+            }
+        }
+        return nil
+    }
+
+    /// Decodes Govee power state directly from a hex string representation of manufacturerData
+    public static func parseGoveePowerStateFromHex(_ hex: String) -> Bool? {
+        let clean = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        guard clean.count >= 12 else { return nil }
+        var data = Data()
+        var index = clean.startIndex
+        while index < clean.endIndex {
+            guard let nextIndex = clean.index(index, offsetBy: 2, limitedBy: clean.endIndex) else { break }
+            let byteStr = clean[index..<nextIndex]
+            if let byte = UInt8(byteStr, radix: 16) {
+                data.append(byte)
+            }
+            index = nextIndex
+        }
+        return parseGoveePowerState(from: data)
     }
 }

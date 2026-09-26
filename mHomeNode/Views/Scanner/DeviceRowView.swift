@@ -58,6 +58,10 @@ public struct DeviceRowView: View {
                                 .font(.caption2)
                                 .monospaced()
                                 .foregroundStyle(.secondary)
+                        } else if let orig = device.originalName ?? (device.name != "Unknown" ? device.name : nil), orig != device.displayTitle {
+                            Text(orig)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
                         } else {
                             Text(device.family.rawValue)
                                 .font(.caption2)

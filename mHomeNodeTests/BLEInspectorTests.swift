@@ -102,4 +102,45 @@ final class BLEInspectorTests: XCTestCase {
         XCTAssertEqual(dev.name, "MacBookPro18,1")
         XCTAssertEqual(dev.family, .apple)
     }
+
+    func testGoveeIdentificationPreservesSuffix() {
+        let h70b3_6190 = DeviceFingerprinter.identifyDetails(
+            advertisedName: "Govee_H70B3_6190",
+            serviceUUIDs: nil,
+            serviceData: nil,
+            manufacturerData: Data([0x43, 0x88, 0xEC, 0x00, 0x02, 0x02, 0x00])
+        )
+        XCTAssertEqual(h70b3_6190.resolvedName, "Govee Outdoor String Lights (H70B3 6190)")
+        XCTAssertEqual(h70b3_6190.family, .govee)
+        XCTAssertEqual(h70b3_6190.goveePowerState, false)
+
+        let h70b3_2b93 = DeviceFingerprinter.identifyDetails(
+            advertisedName: "Govee_H70B3_2B93",
+            serviceUUIDs: nil,
+            serviceData: nil,
+            manufacturerData: Data([0x03, 0x88, 0xEC, 0x00, 0x01, 0x02, 0x01])
+        )
+        XCTAssertEqual(h70b3_2b93.resolvedName, "Govee Outdoor String Lights (H70B3 2B93)")
+        XCTAssertEqual(h70b3_2b93.family, .govee)
+        XCTAssertEqual(h70b3_2b93.goveePowerState, true)
+
+        let h70b5_5870 = DeviceFingerprinter.identifyDetails(
+            advertisedName: "Govee_H70B5_5870",
+            serviceUUIDs: nil,
+            serviceData: nil,
+            manufacturerData: Data([0x43, 0x88, 0xEC, 0x00, 0x02, 0x01, 0x00])
+        )
+        XCTAssertEqual(h70b5_5870.resolvedName, "Govee Curtain Lights 2 (H70B5 5870)")
+        XCTAssertEqual(h70b5_5870.family, .govee)
+        XCTAssertEqual(h70b5_5870.goveePowerState, false)
+    }
+
+    func testGoveePowerStateParsingFromHex() {
+        XCTAssertEqual(DeviceFingerprinter.parseGoveePowerStateFromHex("0388EC00010201"), true)
+        XCTAssertEqual(DeviceFingerprinter.parseGoveePowerStateFromHex("4388EC00020200"), false)
+        XCTAssertEqual(DeviceFingerprinter.parseGoveePowerStateFromHex("4388EC00020100"), false)
+        XCTAssertEqual(DeviceFingerprinter.parseGoveePowerStateFromHex("88EC00010201"), true)
+        XCTAssertEqual(DeviceFingerprinter.parseGoveePowerStateFromHex("88EC00010200"), false)
+        XCTAssertNil(DeviceFingerprinter.parseGoveePowerStateFromHex("1234"))
+    }
 }

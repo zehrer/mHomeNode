@@ -34,6 +34,7 @@ public enum ControlInterface: String, Codable, Sendable {
 public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
     public let id: UUID
     public var name: String
+    public var originalName: String?
     public var rssi: Int
     public var rssiHistory: [Int]
     public var serviceUUIDs: [String]
@@ -58,6 +59,7 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
     public init(
         id: UUID,
         name: String,
+        originalName: String? = nil,
         rssi: Int,
         rssiHistory: [Int] = [],
         serviceUUIDs: [String] = [],
@@ -81,6 +83,7 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
     ) {
         self.id = id
         self.name = name
+        self.originalName = originalName
         self.rssi = rssi
         self.rssiHistory = rssiHistory.isEmpty ? [rssi] : rssiHistory
         self.serviceUUIDs = serviceUUIDs
