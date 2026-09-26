@@ -2,6 +2,8 @@ import SwiftUI
 
 public struct RoomsView: View {
     @Environment(ScannerViewModel.self) private var viewModel
+    @Environment(\.scenePhase) private var scenePhase
+    @AppStorage("mHomeNode.lastSelectedRoom") private var persistedRoomName: String = ""
     @State private var selectedRoomName: String = ""
     @State private var selectedDevice: DiscoveredDevice?
     @State private var showSettingsSheet = false
@@ -53,6 +55,10 @@ public struct RoomsView: View {
     }
 
     private var currentRoomData: (name: String, serverRoom: ServerRoom?, managedRoom: ManagedRoom?)? {
+        let activeName = !selectedRoomName.isEmpty ? selectedRoomName : persistedRoomName
+        if !activeName.isEmpty, let found = availableRooms.first(where: { $0.name == activeName }) {
+            return found
+        }
         if let found = availableRooms.first(where: { $0.name == selectedRoomName }) {
             return found
         }
@@ -99,6 +105,7 @@ public struct RoomsView: View {
                             onSelectRoom: { newName in
                                 withAnimation(.easeInOut(duration: 0.2)) {
                                     selectedRoomName = newName
+                                    persistedRoomName = newName
                                 }
                             },
                             onSelectDevice: { dev in
@@ -147,7 +154,7 @@ public struct RoomsView: View {
                 // Auto-Detect Room Action
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        detectRoom()
+                        detectRoom(isAuto: false)
                     } label: {
                         HStack(spacing: 5) {
                             if isDetecting {
@@ -197,38 +204,81 @@ public struct RoomsView: View {
                 }
             }
             .onAppear {
-                if selectedRoomName.isEmpty, let first = availableRooms.first {
-                    selectedRoomName = first.name
+                restoreLastSelectedRoom()
+                scheduleAutoRoomDetection()
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                if newPhase == .active {
+                    scheduleAutoRoomDetection()
+                }
+            }
+            .onChange(of: selectedRoomName) { _, newName in
+                if !newName.isEmpty && persistedRoomName != newName {
+                    persistedRoomName = newName
+                }
+            }
+            .onChange(of: availableRooms.map(\.name)) { _, newRoomNames in
+                if selectedRoomName.isEmpty || !newRoomNames.contains(selectedRoomName) {
+                    restoreLastSelectedRoom()
                 }
             }
         }
     }
 
-    private func detectRoom() {
-        isDetecting = true
+    private func restoreLastSelectedRoom() {
+        if !persistedRoomName.isEmpty && availableRooms.contains(where: { $0.name == persistedRoomName }) {
+            selectedRoomName = persistedRoomName
+        } else if selectedRoomName.isEmpty, let first = availableRooms.first {
+            selectedRoomName = first.name
+            persistedRoomName = first.name
+        }
+    }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            isDetecting = false
+    private func scheduleAutoRoomDetection() {
+        // Wait 1.5s for initial BLE scan bursts to populate live RSSI
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            detectRoom(isAuto: true)
+        }
+    }
+
+    private func detectRoom(isAuto: Bool = false) {
+        if !isAuto {
+            isDetecting = true
+        }
+
+        let delay = isAuto ? 0.0 : 0.3
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            if !isAuto {
+                isDetecting = false
+            }
             if let result = viewModel.detectNearestRoom() {
+                let currentActive = selectedRoomName.isEmpty ? persistedRoomName : selectedRoomName
+                if isAuto && result.roomName == currentActive {
+                    // Already in detected nearest room, stay silently without toast
+                    return
+                }
                 withAnimation {
                     selectedRoomName = result.roomName
+                    persistedRoomName = result.roomName
                     detectionToast = "Switched to \(result.roomName) (via \(result.strongestDevice.displayTitle) at \(result.rssi) dBm)"
                 }
                 #if canImport(UIKit)
                 let generator = UIImpactFeedbackGenerator(style: .medium)
                 generator.impactOccurred()
                 #endif
-            } else {
+            } else if !isAuto {
                 withAnimation {
                     detectionToast = "No active room devices nearby"
                 }
             }
 
             // Auto-hide toast after 5 seconds
-            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
-                withAnimation {
-                    if detectionToast != nil {
-                        detectionToast = nil
+            if detectionToast != nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+                    withAnimation {
+                        if detectionToast != nil {
+                            detectionToast = nil
+                        }
                     }
                 }
             }
