@@ -101,4 +101,14 @@ final class BLEScannerServiceTests: XCTestCase {
         scanner.triggerAutoGATTCheck()
         XCTAssertNil(scanner.activeAutoInspectDeviceName)
     }
+
+    @MainActor
+    func testPeriodicSyncConfiguration() {
+        let vm = ScannerViewModel()
+        XCTAssertTrue(vm.isPeriodicSyncEnabled)
+        XCTAssertEqual(vm.periodicSyncInterval, 180.0)
+
+        vm.isPeriodicSyncEnabled = false
+        XCTAssertFalse(vm.isPeriodicSyncEnabled)
+    }
 }

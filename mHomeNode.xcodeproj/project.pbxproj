@@ -328,6 +328,31 @@
 			path = mHomeNode;
 			sourceTree = "<group>";
 		};
+		81A00005G005G005G0050005 /* Shelly */ = {
+			isa = PBXGroup;
+			children = (
+				81A00005F005F005F0050005 /* ShellyLANClient.swift */,
+				81A00006F006F006F0060006 /* ShellyLANDiscoveryService.swift */,
+			);
+			path = Shelly;
+			sourceTree = "<group>";
+		};
+		81A00008G008G008G0080008 /* Room */ = {
+			isa = PBXGroup;
+			children = (
+				81A00008F008F008F0080008 /* RoomManagementService.swift */,
+			);
+			path = Room;
+			sourceTree = "<group>";
+		};
+		81A00014G014G014G0140014 /* HomeKit */ = {
+			isa = PBXGroup;
+			children = (
+				81A00012F012F012F0120012 /* HomeKitService.swift */,
+			);
+			path = HomeKit;
+			sourceTree = "<group>";
+		};
 		918DA749BF06CE26CE0A8ABD /* Bluetooth */ = {
 			isa = PBXGroup;
 			children = (
@@ -357,31 +382,6 @@
 				81A00014G014G014G0140014 /* HomeKit */,
 			);
 			path = Services;
-			sourceTree = "<group>";
-		};
-		81A00014G014G014G0140014 /* HomeKit */ = {
-			isa = PBXGroup;
-			children = (
-				81A00012F012F012F0120012 /* HomeKitService.swift */,
-			);
-			path = HomeKit;
-			sourceTree = "<group>";
-		};
-		81A00008G008G008G0080008 /* Room */ = {
-			isa = PBXGroup;
-			children = (
-				81A00008F008F008F0080008 /* RoomManagementService.swift */,
-			);
-			path = Room;
-			sourceTree = "<group>";
-		};
-		81A00005G005G005G0050005 /* Shelly */ = {
-			isa = PBXGroup;
-			children = (
-				81A00005F005F005F0050005 /* ShellyLANClient.swift */,
-				81A00006F006F006F0060006 /* ShellyLANDiscoveryService.swift */,
-			);
-			path = Shelly;
 			sourceTree = "<group>";
 		};
 		ADEB32716AD1CE1BE264CB57 /* Scanner */ = {
@@ -661,8 +661,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
 				CODE_SIGN_ENTITLEMENTS = mHomeNode/mHomeNode.entitlements;
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = NV9LC295QZ;
 				ENABLE_PREVIEWS = YES;
@@ -673,7 +673,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = net.zehrer.homenode.mHomeNode;
+				PRODUCT_BUNDLE_IDENTIFIER = net.zehrer.mHomeNode;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -768,8 +768,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
 				CODE_SIGN_ENTITLEMENTS = mHomeNode/mHomeNode.entitlements;
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = NV9LC295QZ;
 				ENABLE_PREVIEWS = YES;
@@ -780,7 +780,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = net.zehrer.homenode.mHomeNode;
+				PRODUCT_BUNDLE_IDENTIFIER = net.zehrer.mHomeNode;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";

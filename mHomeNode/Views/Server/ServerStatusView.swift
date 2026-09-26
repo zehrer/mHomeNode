@@ -138,6 +138,18 @@ public struct ServerStatusView: View {
                             .foregroundStyle(.secondary)
                     }
 
+                    Toggle("Periodic Auto-Sync (Every 3 min)", isOn: $vm.isPeriodicSyncEnabled)
+
+                    if let lastSync = vm.lastBackgroundSyncDate {
+                        HStack {
+                            Text("Last auto-sync")
+                            Spacer()
+                            Text(lastSync.formatted(date: .omitted, time: .standard))
+                                .foregroundStyle(.secondary)
+                        }
+                        .font(.caption2)
+                    }
+
                     Text("Uploads all discovered BLE and BTHome sensors to HomeNode Server (POST /api/v1/mobile/ble).")
                         .font(.footnote)
                         .foregroundStyle(.secondary)

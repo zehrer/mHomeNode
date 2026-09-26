@@ -213,6 +213,11 @@ public final class ScannerViewModel {
             self.bleService.autoGATTRSSIThreshold = storedThreshold
         }
 
+        if UserDefaults.standard.object(forKey: "isPeriodicSyncEnabled") != nil {
+            self.isPeriodicSyncEnabled = UserDefaults.standard.bool(forKey: "isPeriodicSyncEnabled")
+        }
+        setupPeriodicSyncTimer()
+
         disc.onServerDiscovered = { [weak self] server in
             guard let self = self else { return }
             self.serverConfig.host = server.preferredHost
@@ -515,6 +520,47 @@ public final class ScannerViewModel {
             syncMessage = "Sync error: \(error.localizedDescription)"
         }
         isSyncing = false
+    }
+
+    // MARK: - Periodic Background Server Sync
+
+    public var isPeriodicSyncEnabled: Bool = true {
+        didSet {
+            UserDefaults.standard.set(isPeriodicSyncEnabled, forKey: "isPeriodicSyncEnabled")
+            setupPeriodicSyncTimer()
+        }
+    }
+    public var periodicSyncInterval: TimeInterval = 180.0 // 3 minutes
+    private var periodicSyncTimer: Timer?
+    public private(set) var lastBackgroundSyncDate: Date?
+
+    public func setupPeriodicSyncTimer() {
+        periodicSyncTimer?.invalidate()
+        periodicSyncTimer = nil
+        guard isPeriodicSyncEnabled else { return }
+
+        periodicSyncTimer = Timer.scheduledTimer(withTimeInterval: periodicSyncInterval, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                await self?.performBackgroundSync()
+            }
+        }
+    }
+
+    public func performBackgroundSync() async {
+        guard !serverConfig.host.isEmpty, !isSyncing else { return }
+
+        let activeItems = bleService.devices
+            .filter { !$0.isIgnored }
+            .map { $0.toMobileBleScanItem() }
+
+        guard !activeItems.isEmpty else { return }
+
+        do {
+            _ = try await serverClient.sendMobileBleScan(config: serverConfig, items: activeItems)
+            lastBackgroundSyncDate = Date()
+        } catch {
+            // Silently ignore background sync errors to avoid disturbing the user
+        }
     }
 
     // MARK: - Light Control

@@ -33,10 +33,10 @@
 	<array>
 		<string>_homenode._tcp</string>
 	</array>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>mHomeNode verwendet das lokale Netzwerk, um HomeNode Server im WLAN automatisch per Bonjour zu finden.</string>
 	<key>NSHomeKitUsageDescription</key>
 	<string>mHomeNode synchronisiert Räume und liest Sensordaten (Temperatur, Feuchtigkeit) sowie Geräte verschlüsselt aus Apple Home aus.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>mHomeNode verwendet das lokale Netzwerk, um HomeNode Server im WLAN automatisch per Bonjour zu finden.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>mHomeNode uses your location to tag saved BLE scan snapshots with your geographic position.</string>
 	<key>UIApplicationSceneManifest</key>

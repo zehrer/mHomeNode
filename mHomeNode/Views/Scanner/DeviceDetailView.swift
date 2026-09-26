@@ -6,11 +6,7 @@ public struct DeviceDetailView: View {
 
     @State private var customNameInput = ""
     @State private var selectedRoom = ""
-    @State private var isCustomRoom = false
-    @State private var customRoomInput = ""
     @State private var showingIgnoreAlert = false
-    @State private var isSaving = false
-    @State private var syncStatusMessage: String?
     @State private var lanAddressInput = ""
     @State private var isTestingLAN = false
     @State private var lanTestResult: String?
@@ -380,6 +376,9 @@ public struct DeviceDetailView: View {
                             TextField("z.B. Wohnzimmer Thermometer", text: $customNameInput)
                                 .textFieldStyle(.plain)
                                 .multilineTextAlignment(.trailing)
+                                .onSubmit {
+                                    autoSave()
+                                }
                         }
 
                         Picker("Room", selection: $selectedRoom) {
@@ -405,31 +404,15 @@ public struct DeviceDetailView: View {
                                 Text("📍 \(selectedRoom)").tag(selectedRoom)
                             }
                         }
-
-                        Button {
-                            saveAndSync(device: device)
-                        } label: {
-                            HStack {
-                                Label("Save & Sync to Server", systemImage: "arrow.triangle.2.circlepath")
-                                    .fontWeight(.medium)
-                                Spacer()
-                                if isSaving {
-                                    ProgressView()
-                                        .controlSize(.small)
-                                }
-                            }
-                        }
-                        .disabled(isSaving)
-
-                        if let msg = syncStatusMessage {
-                            Text(msg)
-                                .font(.caption)
-                                .foregroundStyle(msg.contains("Successfully") ? Color.green : Color.secondary)
-                        }
                     } header: {
                         Text("Device Name & Room Assignment")
                     } footer: {
-                        Text("Assign a friendly name and link this device to a room. Changes are saved locally and synced directly to HomeNode Server.")
+                        HStack(spacing: 4) {
+                            Image(systemName: "checkmark.circle")
+                            Text("Änderungen an Name und Raum werden automatisch gespeichert.")
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     }
 
                     // MARK: - Wi-Fi & LAN Settings (for Shellys & Network Plugs)
@@ -808,6 +791,12 @@ public struct DeviceDetailView: View {
                     selectedRoom = device.assignedRoom ?? ""
                     lanAddressInput = device.lanAddress ?? ""
                 }
+                .onDisappear {
+                    autoSave()
+                }
+                .onChange(of: selectedRoom) { _, _ in
+                    autoSave()
+                }
             } else {
                 ContentUnavailableView("Device Not Found", systemImage: "antenna.radiowaves.left.and.right.slash")
             }
@@ -848,9 +837,8 @@ public struct DeviceDetailView: View {
         }
     }
 
-    private func saveAndSync(device: DiscoveredDevice) {
-        isSaving = true
-        syncStatusMessage = nil
+    private func autoSave() {
+        guard let device = scannerVM.bleService.devices.first(where: { $0.id == deviceId }) else { return }
 
         let trimmedName = customNameInput.trimmingCharacters(in: .whitespacesAndNewlines)
         let newName = trimmedName.isEmpty ? nil : trimmedName
@@ -858,16 +846,31 @@ public struct DeviceDetailView: View {
         let trimmedLan = lanAddressInput.trimmingCharacters(in: .whitespacesAndNewlines)
         let newLan = trimmedLan.isEmpty ? nil : trimmedLan
 
-        scannerVM.updateDeviceLANAddress(id: device.id, lanAddress: newLan)
+        let hasNameChanged = (device.customName ?? "") != (newName ?? "")
+        let hasRoomChanged = (device.assignedRoom ?? "") != (newRoom ?? "")
+        let hasLanChanged = (device.lanAddress ?? "") != (newLan ?? "")
 
+        guard hasNameChanged || hasRoomChanged || hasLanChanged else { return }
+
+        if hasLanChanged {
+            scannerVM.updateDeviceLANAddress(id: device.id, lanAddress: newLan)
+        }
+        if hasNameChanged {
+            scannerVM.bleService.updateDeviceName(id: device.id, customName: newName)
+        }
+        if hasRoomChanged {
+            scannerVM.bleService.updateRoom(for: device.id, room: newRoom)
+        }
+
+        // Fire-and-forget asynchronous background sync to server
         Task {
-            let success = await scannerVM.renameAndClaimDevice(device, newName: newName, newRoom: newRoom)
-            await MainActor.run {
-                self.isSaving = false
-                self.syncStatusMessage = success
-                    ? "Successfully saved and synced with HomeNode Server."
-                    : "Saved locally (Server currently unreachable)."
-            }
+            _ = try? await scannerVM.serverClient.claimDevice(
+                config: scannerVM.serverConfig,
+                id: device.macAddress ?? device.id.uuidString,
+                name: newName,
+                room: newRoom,
+                family: device.family.rawValue
+            )
         }
     }
 }
