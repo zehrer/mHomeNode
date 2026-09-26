@@ -86,7 +86,7 @@ public struct LightDeviceCard: View {
             }
             .buttonStyle(.plain)
 
-            // Direct Quick Action Power Button
+            // Single Button Power Toggle
             if let ctrl = controller {
                 Button {
                     ctrl.togglePower(for: device.id)
@@ -100,8 +100,8 @@ public struct LightDeviceCard: View {
                             ProgressView()
                                 .controlSize(.small)
                         } else {
-                            Image(systemName: "power")
-                                .font(.headline.weight(.semibold))
+                            Image(systemName: isLightOn ? "power.circle.fill" : "power")
+                                .font(.system(size: 24, weight: .semibold))
                                 .foregroundColor(isLightOn ? .yellow : .secondary)
                         }
                     }

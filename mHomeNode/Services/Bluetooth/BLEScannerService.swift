@@ -66,27 +66,39 @@ public final class BLEScannerService: NSObject, BLEConnectionManager {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.peripheralMap[peripheral.identifier] = peripheral
-                self.goveeController.didConnect(peripheral: peripheral)
-                self.shellyController.didConnect(peripheral: peripheral)
-                self.inspectorService.didConnect(peripheral: peripheral)
+                if self.goveeController.isDeviceBusy(peripheral.identifier) || self.goveeController.hasPendingPackets(for: peripheral.identifier) {
+                    self.goveeController.didConnect(peripheral: peripheral)
+                } else if self.shellyController.isDeviceBusy(peripheral.identifier) {
+                    self.shellyController.didConnect(peripheral: peripheral)
+                } else {
+                    self.inspectorService.didConnect(peripheral: peripheral)
+                }
             }
         }
 
         worker.onDidFailToConnect = { [weak self] peripheral, error in
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                self.goveeController.didFailToConnect(peripheral: peripheral, error: error)
-                self.shellyController.didFailToConnect(peripheral: peripheral, error: error)
-                self.inspectorService.didFailToConnect(peripheral: peripheral, error: error)
+                if self.goveeController.isDeviceBusy(peripheral.identifier) || self.goveeController.hasPendingPackets(for: peripheral.identifier) {
+                    self.goveeController.didFailToConnect(peripheral: peripheral, error: error)
+                } else if self.shellyController.isDeviceBusy(peripheral.identifier) {
+                    self.shellyController.didFailToConnect(peripheral: peripheral, error: error)
+                } else {
+                    self.inspectorService.didFailToConnect(peripheral: peripheral, error: error)
+                }
             }
         }
 
         worker.onDidDisconnect = { [weak self] peripheral, error in
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                self.goveeController.didDisconnect(peripheral: peripheral, error: error)
-                self.shellyController.didDisconnect(peripheral: peripheral, error: error)
-                self.inspectorService.didDisconnect(peripheral: peripheral, error: error)
+                if self.goveeController.isDeviceBusy(peripheral.identifier) || self.goveeController.hasPendingPackets(for: peripheral.identifier) {
+                    self.goveeController.didDisconnect(peripheral: peripheral, error: error)
+                } else if self.shellyController.isDeviceBusy(peripheral.identifier) {
+                    self.shellyController.didDisconnect(peripheral: peripheral, error: error)
+                } else {
+                    self.inspectorService.didDisconnect(peripheral: peripheral, error: error)
+                }
             }
         }
     }
@@ -272,6 +284,24 @@ public final class BLEScannerService: NSObject, BLEConnectionManager {
         for (k, v) in peripherals {
             self.peripheralMap[k] = v
         }
+
+        // Passively synchronize real-time power state from BLE advertisement packets
+        for dev in merged {
+            if dev.family == .govee, let mfgHex = dev.manufacturerDataHex?.uppercased(), mfgHex.count >= 14 {
+                // If manufacturer data contains Intellirocks signature 88EC
+                if mfgHex.contains("88EC") || mfgHex.contains("EC88") {
+                    let startIdx = mfgHex.index(mfgHex.startIndex, offsetBy: 12)
+                    let endIdx = mfgHex.index(startIdx, offsetBy: 2)
+                    let flagHex = String(mfgHex[startIdx..<endIdx])
+                    if flagHex == "01" {
+                        self.goveeController.updatePowerStateFromAdvertisement(deviceId: dev.id, isOn: true)
+                    } else if flagHex == "00" {
+                        self.goveeController.updatePowerStateFromAdvertisement(deviceId: dev.id, isOn: false)
+                    }
+                }
+            }
+        }
+
         self.storageService.scheduleSave(merged)
 
         if isAutoGATTEnabled {
@@ -331,6 +361,19 @@ public final class BLEScannerService: NSObject, BLEConnectionManager {
         return worker.getPeripheral(id: id)
     }
 
+    public func cancelAutoGATT(for targetId: UUID? = nil) {
+        if let targetId = targetId {
+            autoGATTAttemptCooldowns[targetId] = Date.distantFuture
+        }
+        if isAutoGATTInFlight {
+            logger.info("Preempting background auto-GATT inspection for target \(targetId?.uuidString ?? "all")...")
+            isAutoGATTInFlight = false
+            activeAutoInspectDeviceName = nil
+            // If targetId is provided, detach delegate without terminating the physical connection
+            inspectorService.cancelCurrentInspection(disconnect: targetId == nil)
+        }
+    }
+
     // MARK: - Auto GATT Deep Inspection
 
     public var isAutoGATTEnabled: Bool = false {
@@ -354,6 +397,9 @@ public final class BLEScannerService: NSObject, BLEConnectionManager {
               (isScanning || isBurstScanning),
               !isAutoGATTInFlight else { return }
 
+        // Never start auto-GATT if any light controller has active operations or packets queued
+        guard !goveeController.hasActiveOperations else { return }
+
         let now = Date()
 
         // Find candidate devices:
@@ -363,10 +409,24 @@ public final class BLEScannerService: NSObject, BLEConnectionManager {
         // 4. Must not have completed inspectionInfo already (modelNumber, manufacturerName, or discoveredServices)
         // 5. Must not be in cooldown from a recent attempt (< 5 minutes)
         // 6. Must have an active peripheral in peripheralMap
+        // 7. MUST NOT be a controllable light, curtain, plug, or active Govee/Shelly device
         let candidate = devices
             .filter { dev in
                 guard dev.isConnectable, !dev.isIgnored else { return false }
                 guard dev.rssi >= autoGATTRSSIThreshold else { return false }
+
+                // Exclude actively controlled families and devices
+                guard dev.family != .govee && dev.family != .shellyBlu && dev.family != .smartLight else { return false }
+                guard !dev.isLightingDevice && !dev.isSwitchablePlug else { return false }
+                guard !goveeController.isDeviceBusy(dev.id) && !goveeController.hasPendingPackets(for: dev.id) else { return false }
+
+                let low = (dev.displayTitle + " " + dev.name).lowercased()
+                if low.contains("govee") || low.contains("curtain") || low.contains("vorhang") || low.contains("h70b") || low.starts(with: "gvh") || low.starts(with: "ihoment") {
+                    return false
+                }
+                if let mfg = dev.manufacturerDataHex?.lowercased(), mfg.contains("88ec") || mfg.contains("ec88") {
+                    return false
+                }
 
                 let isAlreadyInspected = dev.inspectionInfo != nil &&
                     (!dev.inspectionInfo!.discoveredServices.isEmpty || dev.inspectionInfo!.modelNumber != nil || dev.inspectionInfo!.manufacturerName != nil)

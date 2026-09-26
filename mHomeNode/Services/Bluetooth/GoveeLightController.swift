@@ -8,6 +8,7 @@ public protocol BLEConnectionManager: AnyObject {
     func connect(peripheral: CBPeripheral)
     func cancelConnection(peripheral: CBPeripheral)
     func getPeripheral(id: UUID) -> CBPeripheral?
+    func cancelAutoGATT(for targetId: UUID?)
 }
 
 @Observable
@@ -30,6 +31,15 @@ public final class GoveeLightController: NSObject, CBPeripheralDelegate {
     private var disconnectTimers: [UUID: Task<Void, Never>] = [:]
     private var timeoutTasks: [UUID: Task<Void, Never>] = [:]
 
+    public var hasActiveOperations: Bool {
+        isBusy.values.contains(true) || !pendingPackets.isEmpty
+    }
+
+    public func hasPendingPackets(for deviceId: UUID) -> Bool {
+        if let list = pendingPackets[deviceId], !list.isEmpty { return true }
+        return false
+    }
+
     public override init() {
         super.init()
         loadPersistedState()
@@ -47,6 +57,16 @@ public final class GoveeLightController: NSObject, CBPeripheralDelegate {
 
     public func isDeviceBusy(_ deviceId: UUID) -> Bool {
         isBusy[deviceId] ?? false
+    }
+
+    public func updatePowerStateFromAdvertisement(deviceId: UUID, isOn: Bool) {
+        // Do not overwrite optimistic state while an active command is in-flight
+        guard isBusy[deviceId] != true else { return }
+        if powerState[deviceId] != isOn {
+            logger.info("Govee power state updated via advertisement for \(deviceId): \(isOn ? "ON" : "OFF")")
+            powerState[deviceId] = isOn
+            savePersistedState()
+        }
     }
 
     public func togglePower(for deviceId: UUID) {
@@ -102,14 +122,16 @@ public final class GoveeLightController: NSObject, CBPeripheralDelegate {
         disconnectTimers[deviceId]?.cancel()
         disconnectTimers[deviceId] = nil
 
+        // Preempt any background auto-GATT inspection immediately
+        mgr.cancelAutoGATT(for: deviceId)
+
         isBusy[deviceId] = true
         lastError[deviceId] = nil
 
         // If peripheral is already connected and characteristic is known, write immediately
         if peripheral.state == .connected, let char = writeCharacteristics[deviceId] {
+            peripheral.delegate = self
             writePacket(packet, to: char, on: peripheral)
-            isBusy[deviceId] = false
-            scheduleIdleDisconnect(for: deviceId, peripheral: peripheral)
             return
         }
 
@@ -137,23 +159,34 @@ public final class GoveeLightController: NSObject, CBPeripheralDelegate {
         }
 
         // Connect if not already connected
+        peripheral.delegate = self
         if peripheral.state != .connected {
-            peripheral.delegate = self
             mgr.connect(peripheral: peripheral)
         } else {
-            // Already connected but discovering services
-            peripheral.delegate = self
-            peripheral.discoverServices([GoveeCommand.serviceUUID])
+            // Already connected: check if Govee service was already discovered
+            if let svc = peripheral.services?.first(where: { $0.uuid == GoveeCommand.serviceUUID }) {
+                peripheral.discoverCharacteristics([
+                    GoveeCommand.writeCharacteristicUUID,
+                    GoveeCommand.notifyCharacteristicUUID
+                ], for: svc)
+            } else {
+                peripheral.discoverServices([GoveeCommand.serviceUUID])
+            }
         }
     }
 
     private func writePacket(_ packet: Data, to characteristic: CBCharacteristic, on peripheral: CBPeripheral) {
-        let writeType: CBCharacteristicWriteType = characteristic.properties.contains(.writeWithoutResponse)
-            ? .withoutResponse
-            : .withResponse
+        let writeType: CBCharacteristicWriteType = characteristic.properties.contains(.write)
+            ? .withResponse
+            : .withoutResponse
 
         peripheral.writeValue(packet, for: characteristic, type: writeType)
-        logger.info("Transmitted Govee packet [\(packet.map { String(format: "%02hhX", $0) }.joined(separator: " "))] to \(peripheral.identifier)")
+        logger.info("Transmitted Govee packet [\(packet.map { String(format: "%02hhX", $0) }.joined(separator: " "))] to \(peripheral.identifier) (\(writeType == .withResponse ? "withResponse" : "withoutResponse"))")
+
+        if writeType == .withoutResponse {
+            self.isBusy[peripheral.identifier] = false
+            self.scheduleIdleDisconnect(for: peripheral.identifier, peripheral: peripheral)
+        }
     }
 
     private func scheduleIdleDisconnect(for deviceId: UUID, peripheral: CBPeripheral) {
@@ -261,16 +294,62 @@ public final class GoveeLightController: NSObject, CBPeripheralDelegate {
 
             self.writeCharacteristics[deviceId] = targetChar
 
+            // Subscribe to notify characteristic if available
+            if let notifyChar = characteristics.first(where: { $0.uuid == GoveeCommand.notifyCharacteristicUUID }) {
+                if notifyChar.properties.contains(.notify) {
+                    peripheral.setNotifyValue(true, for: notifyChar)
+                }
+            }
+
             // Flush queued packets
             if let packets = self.pendingPackets[deviceId], !packets.isEmpty {
                 for packet in packets {
                     self.writePacket(packet, to: targetChar, on: peripheral)
                 }
                 self.pendingPackets[deviceId] = nil
+            } else {
+                self.isBusy[deviceId] = false
+                self.scheduleIdleDisconnect(for: deviceId, peripheral: peripheral)
             }
+        }
+    }
 
-            self.isBusy[deviceId] = false
-            self.scheduleIdleDisconnect(for: deviceId, peripheral: peripheral)
+    public nonisolated func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: (any Error)?) {
+        Task { @MainActor in
+            let deviceId = peripheral.identifier
+            if let error = error {
+                self.logger.error("Write error on Govee device \(deviceId): \(error.localizedDescription)")
+                self.lastError[deviceId] = error.localizedDescription
+                self.isBusy[deviceId] = false
+            } else {
+                self.logger.info("Govee command acknowledged by hardware for \(deviceId)")
+                self.lastError[deviceId] = nil
+                self.isBusy[deviceId] = false
+                self.scheduleIdleDisconnect(for: deviceId, peripheral: peripheral)
+            }
+        }
+    }
+
+    public nonisolated func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: (any Error)?) {
+        Task { @MainActor in
+            let deviceId = peripheral.identifier
+            if let error = error {
+                self.logger.warning("didUpdateValue error on Govee device \(deviceId): \(error.localizedDescription)")
+                return
+            }
+            guard let data = characteristic.value, data.count >= 3 else { return }
+            let header = data[0]
+            let opcode = data[1]
+            let val = data[2]
+
+            // Only handle authentic query responses (header 0xAA, opcode 0x01)
+            // Do not treat 0x33 echo packets as status reports to prevent corrupting state
+            if header == 0xAA && opcode == 0x01 {
+                let isOn = (val == 0x01)
+                self.logger.info("Govee hardware verified power state for \(deviceId): \(isOn ? "ON" : "OFF")")
+                self.powerState[deviceId] = isOn
+                self.savePersistedState()
+            }
         }
     }
 

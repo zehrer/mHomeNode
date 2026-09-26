@@ -559,13 +559,17 @@ public final class BLEInspectorService: NSObject, @unchecked Sendable, CBPeriphe
         }
     }
 
-    private func cancelCurrentInspection() {
+    public func cancelCurrentInspection(disconnect: Bool = true) {
         timeoutWorkItem?.cancel()
         timeoutWorkItem = nil
         finishSettleWorkItem?.cancel()
         finishSettleWorkItem = nil
-        if let p = activePeripheral, let central = centralManager {
-            central.cancelPeripheralConnection(p)
+        if let p = activePeripheral {
+            if disconnect, let central = centralManager {
+                central.cancelPeripheralConnection(p)
+            } else if p.delegate === self {
+                p.delegate = nil
+            }
         }
         activeContinuation?.resume(throwing: NSError(domain: "BLEInspectorService", code: 3, userInfo: [NSLocalizedDescriptionKey: "Inspection cancelled"]))
         activeContinuation = nil

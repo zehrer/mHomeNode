@@ -825,28 +825,916 @@ final class AdvancedCLIBleScanner: NSObject, CBCentralManagerDelegate {
     }
 }
 
-// MARK: - CLI Argument Parsing
-var duration: TimeInterval = 8.0
-var verbose = false
-var probeTarget: String? = nil
+// MARK: - Interactive BLE REPL & GATT Debugger / Proxy Engine
+final class InteractiveBLERepl: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, CBPeripheralManagerDelegate {
+    private var central: CBCentralManager!
+    private var proxyManager: CBPeripheralManager!
+    
+    // Discovered devices list for indexed selection
+    private var discoveredDevices: [DiscoveredCLIDevice] = []
+    private var discoveredPeripherals: [UUID: CBPeripheral] = [:]
+    
+    // Active peripheral session
+    private var activePeripheral: CBPeripheral?
+    private var activeServices: [CBService] = []
+    private var activeCharacteristics: [CBCharacteristic] = []
+    private var activeNotifications: Set<CBUUID> = []
+    private var charValueCache: [CBUUID: Data] = [:]
+    
+    // Proxy state
+    private var isProxyActive: Bool = false
+    private var proxyName: String = "mHomeNode_Proxy"
+    private var proxyServices: [CBMutableService] = []
+    private var proxyCharMap: [CBUUID: CBMutableCharacteristic] = [:]
+    
+    // State flags
+    private var isScanning: Bool = false
+    private var pendingScan: Bool = false
+    private var pendingConnectTarget: String? = nil
+    private var isConnecting: Bool = false
+    private var isRunning: Bool = true
+    
+    override init() {
+        super.init()
+        central = CBCentralManager(delegate: self, queue: nil)
+        proxyManager = CBPeripheralManager(delegate: self, queue: nil)
+    }
+    
+    func start() {
+        printBanner()
+        
+        // Background input reader loop
+        DispatchQueue.global(qos: .userInteractive).async { [weak self] in
+            while let self = self, self.isRunning {
+                self.printPrompt()
+                guard let line = readLine() else { break }
+                let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+                if trimmed.isEmpty { continue }
+                
+                let sema = DispatchSemaphore(value: 0)
+                DispatchQueue.main.async {
+                    self.executeCommand(trimmed)
+                    sema.signal()
+                }
+                sema.wait()
+            }
+            exit(0)
+        }
+        
+        RunLoop.main.run()
+    }
+    
+    private func printBanner() {
+        print("""
+        \u{001B}[1;36m
+        ===================================================================================
+                       mHomeNode BLE REPL & Low-Level GATT Diagnostic Console              
+        ===================================================================================\u{001B}[0m
+        Type \u{001B}[1;33mhelp\u{001B}[0m for available commands, \u{001B}[1;33mscan start\u{001B}[0m to discover devices, or \u{001B}[1;33mexit\u{001B}[0m to quit.
+        """)
+    }
+    
+    private func printPrompt() {
+        var statusStr = "\u{001B}[31mDisconnected\u{001B}[0m"
+        if let p = activePeripheral {
+            let pName = p.name ?? "Unknown Device"
+            statusStr = "\u{001B}[32mConnected: \(pName)\u{001B}[0m"
+            if isProxyActive {
+                statusStr += " \u{001B}[35m[Proxy: \(proxyName)]\u{001B}[0m"
+            }
+        } else if isScanning {
+            statusStr = "\u{001B}[33mScanning\u{001B}[0m"
+        }
+        print("\u{001B}[1m[\(statusStr)] mHomeNode>\u{001B}[0m ", terminator: "")
+        fflush(stdout)
+    }
+    
+    private func printHelp() {
+        print("""
+        \u{001B}[1mCommands:\u{001B}[0m
+          \u{001B}[1;33mscan [start|stop]\u{001B}[0m               - Start or stop Bluetooth Low Energy scanning
+          \u{001B}[1;33mdevices\u{001B}[0m / \u{001B}[1;33mls\u{001B}[0m                     - List all discovered devices with index numbers
+          \u{001B}[1;33mconnect <index|name|uuid>\u{001B}[0m       - Connect to a peripheral (e.g. 'connect 1' or 'connect H70B5')
+          \u{001B}[1;33mdisconnect\u{001B}[0m                      - Disconnect from current peripheral
+          \u{001B}[1;33mstatus\u{001B}[0m                          - Show current connection and proxy status
+          \u{001B}[1;33mservices\u{001B}[0m                        - List GATT services discovered on connected peripheral
+          \u{001B}[1;33mchars [service_uuid]\u{001B}[0m            - List characteristics and their permissions (read/write/notify)
+          \u{001B}[1;33mread <char_uuid>\u{001B}[0m                - Read characteristic value (displays Hex and ASCII)
+          \u{001B}[1;33mwrite <char> <hex> [-r] [-c]\u{001B}[0m    - Write hex bytes to characteristic.
+                                              Flags: -r / --response (request write ack)
+                                                     -c / --checksum (auto-calculate XOR checksum)
+          \u{001B}[1;33mnotify <char> [on|off]\u{001B}[0m          - Subscribe to / unsubscribe from notifications
+          \u{001B}[1;33mproxy start [name]\u{001B}[0m              - Mirror connected device GATT services and advertise as proxy
+          \u{001B}[1;33mproxy stop\u{001B}[0m                      - Stop advertising and shutdown proxy
+          \u{001B}[1;33mhelp\u{001B}[0m                            - Print this help message
+          \u{001B}[1;33mclear\u{001B}[0m                           - Clear terminal screen
+          \u{001B}[1;33mexit\u{001B}[0m / \u{001B}[1;33mquit\u{001B}[0m                    - Exit REPL
+        """)
+    }
+    
+    // MARK: - Command Execution
+    private func executeCommand(_ rawLine: String) {
+        let parts = rawLine.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+        guard let cmd = parts.first?.lowercased() else { return }
+        let args = Array(parts.dropFirst())
+        
+        switch cmd {
+        case "help", "?":
+            printHelp()
+            
+        case "clear":
+            print("\u{001B}[2J\u{001B}[H")
+            
+        case "scan":
+            handleScanCommand(args)
+            
+        case "devices", "ls":
+            listDevices()
+            
+        case "connect":
+            handleConnectCommand(args)
+            
+        case "disconnect":
+            handleDisconnectCommand()
+            
+        case "status":
+            showStatus()
+            
+        case "services":
+            listServices()
+            
+        case "chars", "characteristics":
+            listCharacteristics(serviceQuery: args.first)
+            
+        case "read":
+            handleReadCommand(args)
+            
+        case "write":
+            handleWriteCommand(args)
+            
+        case "notify":
+            handleNotifyCommand(args)
+            
+        case "proxy":
+            handleProxyCommand(args)
+            
+        case "exit", "quit", "q":
+            print("\u{001B}[33mExiting mHomeNode CLI...\u{001B}[0m")
+            isRunning = false
+            if let p = activePeripheral {
+                central.cancelPeripheralConnection(p)
+            }
+            if isProxyActive {
+                proxyManager.stopAdvertising()
+            }
+            exit(0)
+            
+        default:
+            print("\u{001B}[31mUnknown command: '\(cmd)'. Type 'help' for instructions.\u{001B}[0m")
+        }
+    }
+    
+    // MARK: - Scan & Devices
+    private func handleScanCommand(_ args: [String]) {
+        let action = args.first?.lowercased() ?? "start"
+        if action == "stop" {
+            pendingScan = false
+            if isScanning {
+                central.stopScan()
+                isScanning = false
+                print("\u{001B}[33m[✓] Scan stopped. (\(discoveredDevices.count) devices in memory)\u{001B}[0m")
+            } else {
+                print("Scanner is not currently active.")
+            }
+        } else {
+            if central.state == .poweredOn {
+                central.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
+                isScanning = true
+                print("\u{001B}[32m[+] Continuous BLE scan active. Type 'devices' to view found devices or 'scan stop' to pause.\u{001B}[0m")
+            } else {
+                pendingScan = true
+                print("\u{001B}[33m[*] Bluetooth adapter initializing... Scan will start automatically when powered on.\u{001B}[0m")
+            }
+        }
+    }
+    
+    private func listDevices() {
+        if discoveredDevices.isEmpty {
+            print("\u{001B}[33mNo devices discovered yet. Run 'scan start' to search for nearby BLE devices.\u{001B}[0m")
+            return
+        }
+        
+        print("\n\u{001B}[1mDiscovered BLE Peripherals (\(discoveredDevices.count)):\u{001B}[0m")
+        print("---------------------------------------------------------------------------------------------------------")
+        print(" Idx | RSSI     | Conn | Family     | Name                             | Identifier")
+        print("---------------------------------------------------------------------------------------------------------")
+        
+        for (idx, dev) in discoveredDevices.enumerated() {
+            let idxStr = String(format: "%3d", idx + 1)
+            let rssiStr = String(format: "%4d dBm", dev.rssi)
+            let connStr = dev.isConnectable ? "\u{001B}[32mYes \u{001B}[0m" : "\u{001B}[37mNo  \u{001B}[0m"
+            let famStr = dev.family.padding(toLength: 10, withPad: " ", startingAt: 0)
+            let nameStr = (dev.resolvedName.isEmpty ? "Unknown" : dev.resolvedName).prefix(32).padding(toLength: 32, withPad: " ", startingAt: 0)
+            let idStr = dev.mac ?? dev.id
+            
+            print(" [\(idxStr)] | \(rssiStr) | \(connStr) | \(famStr) | \(nameStr) | \(idStr)")
+            if let mfg = dev.manufacturerDataHex, dev.family != "Apple" {
+                print("       └─ Mfg Data: \(mfg)")
+            }
+        }
+        print("---------------------------------------------------------------------------------------------------------")
+        print("Tip: Connect with \u{001B}[1;33mconnect <index>\u{001B}[0m (e.g. 'connect 1')\n")
+    }
+    
+    // MARK: - Connect & Disconnect
+    private func handleConnectCommand(_ args: [String]) {
+        guard let query = args.first else {
+            print("\u{001B}[31mUsage: connect <index | name | uuid>\u{001B}[0m")
+            return
+        }
+        
+        var targetPeripheral: CBPeripheral?
+        
+        // 1. Check if index number
+        if let idx = Int(query), idx >= 1 && idx <= discoveredDevices.count {
+            let dev = discoveredDevices[idx - 1]
+            if let u = UUID(uuidString: dev.id) {
+                targetPeripheral = discoveredPeripherals[u]
+            }
+        }
+        
+        // 2. Check if UUID
+        if targetPeripheral == nil, let u = UUID(uuidString: query) {
+            targetPeripheral = discoveredPeripherals[u] ?? central.retrievePeripherals(withIdentifiers: [u]).first
+        }
+        
+        // 3. Search by name substring
+        if targetPeripheral == nil {
+            let qLower = query.lowercased()
+            if let found = discoveredDevices.first(where: {
+                $0.resolvedName.lowercased().contains(qLower) || $0.rawName.lowercased().contains(qLower)
+            }) {
+                if let u = UUID(uuidString: found.id) {
+                    targetPeripheral = discoveredPeripherals[u]
+                }
+            }
+        }
+        
+        // 4. Also search discoveredPeripherals directly
+        if targetPeripheral == nil {
+            let qLower = query.lowercased()
+            for (_, p) in discoveredPeripherals {
+                if let name = p.name?.lowercased(), name.contains(qLower) {
+                    targetPeripheral = p
+                    break
+                }
+            }
+        }
 
-let args = CommandLine.arguments
-if args.contains("--live") {
-    duration = 0
-}
-if args.contains("-v") || args.contains("--verbose") {
-    verbose = true
-}
-if let durIdx = args.firstIndex(of: "--duration"), durIdx + 1 < args.count {
-    if let d = Double(args[durIdx + 1]) {
-        duration = d
+        guard let p = targetPeripheral else {
+            if isScanning {
+                pendingConnectTarget = query
+                print("\u{001B}[33m[*] Device '\(query)' not seen yet. Waiting for it to appear in scan...\u{001B}[0m")
+            } else {
+                print("\u{001B}[31m[-] Target '\(query)' not found in discovered devices. Run 'scan start' then 'devices'.\u{001B}[0m")
+            }
+            return
+        }
+        
+        if isScanning {
+            central.stopScan()
+            isScanning = false
+        }
+        
+        if let current = activePeripheral, current.identifier != p.identifier {
+            central.cancelPeripheralConnection(current)
+        }
+        
+        activePeripheral = p
+        p.delegate = self
+        isConnecting = true
+        activeServices = []
+        activeCharacteristics = []
+        activeNotifications.removeAll()
+        
+        print("\u{001B}[33m[*] Connecting to \(p.name ?? p.identifier.uuidString) [\(p.identifier)]...\u{001B}[0m")
+        central.connect(p, options: nil)
+    }
+    
+    private func handleDisconnectCommand() {
+        guard let p = activePeripheral else {
+            print("No peripheral is currently connected.")
+            return
+        }
+        if isProxyActive {
+            handleProxyCommand(["stop"])
+        }
+        print("\u{001B}[33m[*] Disconnecting from \(p.name ?? p.identifier.uuidString)...\u{001B}[0m")
+        central.cancelPeripheralConnection(p)
+        activePeripheral = nil
+        activeServices = []
+        activeCharacteristics = []
+    }
+    
+    private func showStatus() {
+        print("\n\u{001B}[1mBluetooth Session Status:\u{001B}[0m")
+        print("  • Adapter State:       \(central.state.rawValue == 5 ? "\u{001B}[32mPowered ON\u{001B}[0m" : "\u{001B}[31mOffline (\(central.state.rawValue))\u{001B}[0m")")
+        print("  • Background Scan:     \(isScanning ? "\u{001B}[32mActive\u{001B}[0m" : "Stopped")")
+        print("  • Discovered Devices:  \(discoveredDevices.count)")
+        if let p = activePeripheral {
+            let stateStr: String
+            switch p.state {
+            case .connected: stateStr = "\u{001B}[32mConnected\u{001B}[0m"
+            case .connecting: stateStr = "\u{001B}[33mConnecting...\u{001B}[0m"
+            case .disconnecting: stateStr = "\u{001B}[33mDisconnecting...\u{001B}[0m"
+            case .disconnected: stateStr = "\u{001B}[31mDisconnected\u{001B}[0m"
+            @unknown default: stateStr = "Unknown"
+            }
+            print("  • Target Peripheral:   \(p.name ?? "Unnamed") (\(p.identifier)) [\(stateStr)]")
+            print("  • Services Discovered: \(activeServices.count)")
+            print("  • Chars Discovered:    \(activeCharacteristics.count)")
+            print("  • Active Notifications:\(activeNotifications.count)")
+        } else {
+            print("  • Target Peripheral:   None")
+        }
+        print("  • GATT Mirror Proxy:   \(isProxyActive ? "\u{001B}[35mRunning (\(proxyName))\u{001B}[0m" : "Disabled")\n")
+    }
+    
+    // MARK: - GATT Operations
+    private func listServices() {
+        guard let _ = activePeripheral else {
+            print("\u{001B}[31m[-] Not connected to any peripheral. Use 'connect' first.\u{001B}[0m")
+            return
+        }
+        if activeServices.isEmpty {
+            print("No services discovered yet.")
+            return
+        }
+        
+        print("\n\u{001B}[1mGATT Services (\(activeServices.count)):\u{001B}[0m")
+        for (i, s) in activeServices.enumerated() {
+            let name = KnownGATTService.name(for: s.uuid.uuidString)
+            print(" [\(i + 1)] \u{001B}[1;36m\(s.uuid.uuidString)\u{001B}[0m  \(name)")
+        }
+        print("Tip: Use \u{001B}[1;33mchars [service_uuid]\u{001B}[0m to inspect characteristics.\n")
+    }
+    
+    private func listCharacteristics(serviceQuery: String?) {
+        guard let _ = activePeripheral else {
+            print("\u{001B}[31m[-] Not connected to any peripheral. Use 'connect' first.\u{001B}[0m")
+            return
+        }
+        
+        var targetServices = activeServices
+        if let sq = serviceQuery?.uppercased() {
+            targetServices = activeServices.filter { $0.uuid.uuidString.uppercased().contains(sq) }
+            if targetServices.isEmpty {
+                print("No service matching '\(sq)' found.")
+                return
+            }
+        }
+        
+        print("\n\u{001B}[1mGATT Characteristics:\u{001B}[0m")
+        for s in targetServices {
+            let sName = KnownGATTService.name(for: s.uuid.uuidString)
+            print("Service: \u{001B}[1;36m\(s.uuid.uuidString)\u{001B}[0m (\(sName))")
+            let chars = s.characteristics ?? []
+            if chars.isEmpty {
+                print("  └── (None)")
+            } else {
+                for (cIdx, c) in chars.enumerated() {
+                    let isLast = cIdx == chars.count - 1
+                    let prefix = isLast ? "  └──" : "  ├──"
+                    var propList: [String] = []
+                    if c.properties.contains(.read) { propList.append("Read") }
+                    if c.properties.contains(.write) { propList.append("Write") }
+                    if c.properties.contains(.writeWithoutResponse) { propList.append("WriteWithoutResp") }
+                    if c.properties.contains(.notify) { propList.append("Notify") }
+                    if c.properties.contains(.indicate) { propList.append("Indicate") }
+                    
+                    let cName = KnownGATTCharacteristic.name(for: c.uuid.uuidString)
+                    var line = "\(prefix) [\(propList.joined(separator: ", "))] \u{001B}[1m\(c.uuid.uuidString)\u{001B}[0m - \(cName)"
+                    
+                    if activeNotifications.contains(c.uuid) {
+                        line += " \u{001B}[32m[NOTIFY ACTIVE]\u{001B}[0m"
+                    }
+                    if let cached = charValueCache[c.uuid] {
+                        let hex = cached.map { String(format: "%02X", $0) }.joined(separator: " ")
+                        let ascii = String(data: cached, encoding: .utf8) ?? ""
+                        line += "\n        Value: [\(hex)]"
+                        if !ascii.isEmpty && ascii.allSatisfy({ $0.isASCII && !$0.isNewline }) {
+                            line += " \"\(ascii)\""
+                        }
+                    }
+                    print(line)
+                }
+            }
+            print("")
+        }
+    }
+    
+    private func findChar(query: String) -> CBCharacteristic? {
+        let q = query.uppercased()
+        if let match = activeCharacteristics.first(where: { $0.uuid.uuidString.uppercased() == q }) {
+            return match
+        }
+        if let match = activeCharacteristics.first(where: { $0.uuid.uuidString.uppercased().contains(q) }) {
+            return match
+        }
+        return nil
+    }
+    
+    private func handleReadCommand(_ args: [String]) {
+        guard let query = args.first else {
+            print("\u{001B}[31mUsage: read <char_uuid>\u{001B}[0m (e.g. 'read 2B10' or 'read 2A00')")
+            return
+        }
+        guard let p = activePeripheral else {
+            print("\u{001B}[31m[-] Not connected.\u{001B}[0m")
+            return
+        }
+        guard let c = findChar(query: query) else {
+            print("\u{001B}[31m[-] Characteristic matching '\(query)' not found. Type 'chars' to see available UUIDs.\u{001B}[0m")
+            return
+        }
+        guard c.properties.contains(.read) else {
+            print("\u{001B}[33m[!] Characteristic \(c.uuid) does not have the 'read' property.\u{001B}[0m")
+            return
+        }
+        
+        print("[*] Reading value for \(c.uuid.uuidString)...")
+        p.readValue(for: c)
+    }
+    
+    private func handleWriteCommand(_ args: [String]) {
+        guard args.count >= 2 else {
+            print("""
+            \u{001B}[31mUsage: write <char_uuid> <hex_data> [--response|-r] [--checksum|-c]\u{001B}[0m
+            Example: write 2B11 3301010000000000000000000000000000000033 --response
+            Example: write 2B11 330101 -c -r
+            """)
+            return
+        }
+        guard let p = activePeripheral else {
+            print("\u{001B}[31m[-] Not connected.\u{001B}[0m")
+            return
+        }
+        
+        let charQuery = args[0]
+        let rawHex = args[1].replacingOccurrences(of: "0x", with: "")
+            .replacingOccurrences(of: " ", with: "")
+            .replacingOccurrences(of: ":", with: "")
+        
+        guard let c = findChar(query: charQuery) else {
+            print("\u{001B}[31m[-] Characteristic '\(charQuery)' not found.\u{001B}[0m")
+            return
+        }
+        
+        let reqResponse = args.contains("-r") || args.contains("--response") || args.contains("-with-response")
+        let calcChecksum = args.contains("-c") || args.contains("--checksum")
+        
+        var bytes: [UInt8] = []
+        var idx = rawHex.startIndex
+        while idx < rawHex.endIndex {
+            let nextIdx = rawHex.index(idx, offsetBy: 2, limitedBy: rawHex.endIndex) ?? rawHex.endIndex
+            let byteStr = String(rawHex[idx..<nextIdx])
+            if let byte = UInt8(byteStr, radix: 16) {
+                bytes.append(byte)
+            } else {
+                print("\u{001B}[31m[-] Invalid hex string: '\(byteStr)'\u{001B}[0m")
+                return
+            }
+            idx = nextIdx
+        }
+        
+        // Auto-calculate Govee checksum if requested or if user gave 19 bytes for Govee frame
+        if calcChecksum || (bytes.count == 19 && (bytes[0] == 0x33 || bytes[0] == 0xAA)) {
+            var cs: UInt8 = 0
+            for b in bytes { cs ^= b }
+            bytes.append(cs)
+            print("Auto-calculated XOR checksum byte: 0x\(String(format: "%02X", cs)) (Total \(bytes.count) bytes)")
+        } else if bytes.count < 20 && calcChecksum {
+            // Pad to 19 bytes then XOR
+            while bytes.count < 19 { bytes.append(0) }
+            var cs: UInt8 = 0
+            for b in bytes { cs ^= b }
+            bytes.append(cs)
+            print("Padded to 20 bytes with checksum: 0x\(String(format: "%02X", cs))")
+        }
+        
+        let data = Data(bytes)
+        let writeType: CBCharacteristicWriteType = (reqResponse || !c.properties.contains(.writeWithoutResponse)) ? .withResponse : .withoutResponse
+        
+        print("\u{001B}[32m[-> WRITE]\u{001B}[0m To \(c.uuid.uuidString) [\(data.map { String(format: "%02X", $0) }.joined(separator: " "))] (\(writeType == .withResponse ? "withResponse" : "withoutResponse"))...")
+        p.writeValue(data, for: c, type: writeType)
+        
+        if writeType == .withoutResponse {
+            print("[✓] Written without response.")
+        }
+    }
+    
+    private func handleNotifyCommand(_ args: [String]) {
+        guard let query = args.first else {
+            print("\u{001B}[31mUsage: notify <char_uuid> [on|off]\u{001B}[0m")
+            return
+        }
+        guard let p = activePeripheral else {
+            print("\u{001B}[31m[-] Not connected.\u{001B}[0m")
+            return
+        }
+        guard let c = findChar(query: query) else {
+            print("\u{001B}[31m[-] Characteristic '\(query)' not found.\u{001B}[0m")
+            return
+        }
+        
+        let enable = (args.count > 1) ? (args[1].lowercased() != "off" && args[1].lowercased() != "false") : !activeNotifications.contains(c.uuid)
+        
+        print("[*] Setting notify = \(enable) on \(c.uuid.uuidString)...")
+        p.setNotifyValue(enable, for: c)
+    }
+    
+    // MARK: - BLE GATT Mirror Proxy
+    private func handleProxyCommand(_ args: [String]) {
+        let action = args.first?.lowercased() ?? "start"
+        if action == "stop" {
+            if isProxyActive {
+                proxyManager.stopAdvertising()
+                proxyManager.removeAllServices()
+                isProxyActive = false
+                proxyServices.removeAll()
+                proxyCharMap.removeAll()
+                print("\u{001B}[33m[✓] BLE GATT Mirror Proxy stopped.\u{001B}[0m")
+            } else {
+                print("Proxy is not active.")
+            }
+            return
+        }
+        
+        guard let p = activePeripheral, p.state == .connected else {
+            print("\u{001B}[31m[-] To start a proxy, you must first be connected to a real peripheral.\u{001B}[0m")
+            print("Tip: connect <device>, wait for services, then run 'proxy start [name]'.")
+            return
+        }
+        guard proxyManager.state == .poweredOn else {
+            print("\u{001B}[31m[-] CBPeripheralManager is not powered on (State: \(proxyManager.state.rawValue))\u{001B}[0m")
+            return
+        }
+        
+        if args.count > 1 {
+            proxyName = args[1]
+        } else {
+            proxyName = "\(p.name ?? "BLE")_Proxy"
+        }
+        
+        print("\n\u{001B}[1;35m[*] Initializing GATT Mirror Proxy for '\(p.name ?? "Device")' as '\(proxyName)'...\u{001B}[0m")
+        proxyManager.stopAdvertising()
+        proxyManager.removeAllServices()
+        proxyServices.removeAll()
+        proxyCharMap.removeAll()
+        
+        var primaryUUIDs: [CBUUID] = []
+        
+        for s in activeServices {
+            let mutableService = CBMutableService(type: s.uuid, primary: s.isPrimary)
+            var mutableChars: [CBMutableCharacteristic] = []
+            
+            for c in s.characteristics ?? [] {
+                var props: CBCharacteristicProperties = []
+                var perms: CBAttributePermissions = []
+                
+                if c.properties.contains(.read) {
+                    props.insert(.read)
+                    perms.insert(.readable)
+                }
+                if c.properties.contains(.write) {
+                    props.insert(.write)
+                    perms.insert(.writeable)
+                }
+                if c.properties.contains(.writeWithoutResponse) {
+                    props.insert(.writeWithoutResponse)
+                    perms.insert(.writeable)
+                }
+                if c.properties.contains(.notify) {
+                    props.insert(.notify)
+                }
+                if c.properties.contains(.indicate) {
+                    props.insert(.indicate)
+                }
+                
+                let initialVal = charValueCache[c.uuid]
+                let mChar = CBMutableCharacteristic(
+                    type: c.uuid,
+                    properties: props,
+                    value: (props.contains(.read) && !props.contains(.write)) ? initialVal : nil,
+                    permissions: perms
+                )
+                mutableChars.append(mChar)
+                proxyCharMap[c.uuid] = mChar
+            }
+            
+            mutableService.characteristics = mutableChars
+            proxyServices.append(mutableService)
+            proxyManager.add(mutableService)
+            if s.isPrimary {
+                primaryUUIDs.append(s.uuid)
+            }
+        }
+        
+        let advData: [String: Any] = [
+            CBAdvertisementDataLocalNameKey: proxyName,
+            CBAdvertisementDataServiceUUIDsKey: primaryUUIDs
+        ]
+        
+        proxyManager.startAdvertising(advData)
+        isProxyActive = true
+        
+        print("\u{001B}[1;32m[✓] Proxy is now ADVERTISING as '\(proxyName)' with \(proxyServices.count) mirrored services!\u{001B}[0m")
+        print("\u{001B}[37mOpen the official mobile app or a BLE scanner on your phone. Connect to '\(proxyName)'.")
+        print("Any writes from the app will be intercepted, printed here, and forwarded to the real device!\u{001B}[0m\n")
+    }
+    
+    // MARK: - CBCentralManagerDelegate
+    func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        if central.state == .poweredOn {
+            print("\u{001B}[32m[i] Central Manager Ready.\u{001B}[0m")
+            if pendingScan {
+                pendingScan = false
+                central.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
+                isScanning = true
+                print("\u{001B}[32m[+] Continuous BLE scan active. Type 'devices' to view found devices or 'scan stop' to pause.\u{001B}[0m")
+            }
+        } else {
+            print("\u{001B}[31m[!] Central Manager State: \(central.state.rawValue)\u{001B}[0m")
+        }
+    }
+    
+    func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
+        let idStr = peripheral.identifier.uuidString
+        let rawName = peripheral.name ?? (advertisementData[CBAdvertisementDataLocalNameKey] as? String) ?? ""
+        let isConn = (advertisementData[CBAdvertisementDataIsConnectable] as? Bool) ?? false
+        
+        discoveredPeripherals[peripheral.identifier] = peripheral
+        
+        var mfgHex: String? = nil
+        if let mfg = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data {
+            mfgHex = mfg.map { String(format: "%02X", $0) }.joined(separator: " ")
+        }
+        
+        // Identify family
+        var family = "Standard"
+        let lower = rawName.lowercased()
+        if lower.contains("govee") { family = "Govee" }
+        else if lower.contains("shelly") { family = "Shelly" }
+        else if lower.contains("qingping") { family = "Qingping" }
+        else if lower.contains("apple") || lower.contains("iphone") || lower.contains("mac") { family = "Apple" }
+        
+        if let existingIdx = discoveredDevices.firstIndex(where: { $0.id == idStr }) {
+            discoveredDevices[existingIdx].rssi = RSSI.intValue
+            discoveredDevices[existingIdx].isConnectable = isConn
+            if !rawName.isEmpty {
+                discoveredDevices[existingIdx].rawName = rawName
+                discoveredDevices[existingIdx].resolvedName = rawName
+            }
+            if let m = mfgHex { discoveredDevices[existingIdx].manufacturerDataHex = m }
+        } else {
+            let dev = DiscoveredCLIDevice(
+                id: idStr,
+                rawName: rawName,
+                resolvedName: rawName.isEmpty ? "Unknown (\(idStr.prefix(6)))" : rawName,
+                family: family,
+                vendor: nil,
+                category: "BLE Device",
+                rssi: RSSI.intValue,
+                isConnectable: isConn,
+                peripheral: peripheral,
+                mac: nil,
+                temperature: nil,
+                humidity: nil,
+                battery: nil,
+                pressure: nil,
+                manufacturerDataHex: mfgHex,
+                serviceDataHex: [:],
+                serviceUUIDs: [],
+                packetCount: 1,
+                firstSeen: Date(),
+                lastSeen: Date()
+            )
+            discoveredDevices.append(dev)
+        }
+
+        if let target = pendingConnectTarget {
+            let tLower = target.lowercased()
+            let nameMatch = rawName.lowercased().contains(tLower) || (peripheral.name?.lowercased().contains(tLower) ?? false)
+            let idMatch = idStr.lowercased() == tLower || (target.count >= 8 && idStr.lowercased().hasPrefix(tLower))
+            if nameMatch || idMatch {
+                pendingConnectTarget = nil
+                print("\n\u{001B}[32m[+] Target '\(target)' detected (\(rawName.isEmpty ? idStr : rawName))! Connecting...\u{001B}[0m")
+                handleConnectCommand([target])
+            }
+        }
+    }
+    
+    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        isConnecting = false
+        print("\u{001B}[32m[✓] Connected to \(peripheral.name ?? peripheral.identifier.uuidString)!\u{001B}[0m Discovering all services...")
+        peripheral.delegate = self
+        peripheral.discoverServices(nil)
+    }
+    
+    func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
+        isConnecting = false
+        activePeripheral = nil
+        print("\u{001B}[31m[-] Failed to connect: \(error?.localizedDescription ?? "Unknown error")\u{001B}[0m")
+    }
+    
+    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+        print("\n\u{001B}[33m[!] Disconnected from \(peripheral.name ?? peripheral.identifier.uuidString) (Reason: \(error?.localizedDescription ?? "Clean Disconnect"))\u{001B}[0m")
+        if activePeripheral?.identifier == peripheral.identifier {
+            activePeripheral = nil
+            activeServices = []
+            activeCharacteristics = []
+            activeNotifications.removeAll()
+            if isProxyActive {
+                handleProxyCommand(["stop"])
+            }
+        }
+    }
+    
+    // MARK: - CBPeripheralDelegate
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        if let error = error {
+            print("\u{001B}[31m[-] Discover services error: \(error.localizedDescription)\u{001B}[0m")
+            return
+        }
+        guard let services = peripheral.services else { return }
+        activeServices = services
+        print("[*] Discovered \(services.count) services. Discovering characteristics...")
+        for s in services {
+            peripheral.discoverCharacteristics(nil, for: s)
+        }
+    }
+    
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+        guard let chars = service.characteristics else { return }
+        for c in chars {
+            if !activeCharacteristics.contains(where: { $0.uuid == c.uuid }) {
+                activeCharacteristics.append(c)
+            }
+        }
+        
+        let allDone = activeServices.allSatisfy { $0.characteristics != nil }
+        if allDone {
+            print("\u{001B}[32m[✓] GATT Discovery complete: \(activeServices.count) services, \(activeCharacteristics.count) characteristics ready.\u{001B}[0m")
+        }
+    }
+    
+    func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+        if let error = error {
+            print("\u{001B}[31m[-] Value update error on \(characteristic.uuid): \(error.localizedDescription)\u{001B}[0m")
+            return
+        }
+        let data = characteristic.value ?? Data()
+        charValueCache[characteristic.uuid] = data
+        let hex = data.map { String(format: "%02X", $0) }.joined(separator: " ")
+        let ascii = String(data: data, encoding: .utf8) ?? ""
+        
+        var displayStr = "Hex: [\(hex)]"
+        if !ascii.isEmpty && ascii.allSatisfy({ $0.isASCII && !$0.isNewline }) {
+            displayStr += " ASCII: \"\(ascii)\""
+        }
+        
+        if activeNotifications.contains(characteristic.uuid) {
+            print("\n\u{001B}[1;36m[NOTIFY \(characteristic.uuid.uuidString)]\u{001B}[0m \(data.count) bytes: \(displayStr)")
+        } else {
+            print("\u{001B}[32m[READ \(characteristic.uuid.uuidString)]\u{001B}[0m \(data.count) bytes: \(displayStr)")
+        }
+        
+        // If proxy is active, forward notification to connected centrals
+        if isProxyActive, let mChar = proxyCharMap[characteristic.uuid] {
+            proxyManager.updateValue(data, for: mChar, onSubscribedCentrals: nil)
+            print("\u{001B}[1;35m[PROXY -> APP RELAY]\u{001B}[0m Forwarded notify for \(characteristic.uuid.uuidString) to app.")
+        }
+    }
+    
+    func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
+        if let error = error {
+            print("\u{001B}[31m[-] Write error on \(characteristic.uuid.uuidString): \(error.localizedDescription)\u{001B}[0m")
+        } else {
+            print("\u{001B}[32m[✓ VERIFIED] Write confirmed by peripheral for \(characteristic.uuid.uuidString)!\u{001B}[0m")
+        }
+    }
+    
+    func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
+        if let error = error {
+            print("\u{001B}[31m[-] Notification state error on \(characteristic.uuid.uuidString): \(error.localizedDescription)\u{001B}[0m")
+            return
+        }
+        if characteristic.isNotifying {
+            activeNotifications.insert(characteristic.uuid)
+            print("\u{001B}[32m[✓] Subscribed to notifications for \(characteristic.uuid.uuidString).\u{001B}[0m")
+        } else {
+            activeNotifications.remove(characteristic.uuid)
+            print("\u{001B}[33m[✓] Unsubscribed from notifications for \(characteristic.uuid.uuidString).\u{001B}[0m")
+        }
+    }
+    
+    // MARK: - CBPeripheralManagerDelegate (Proxy)
+    func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
+        if peripheral.state == .poweredOn {
+            // Ready for proxying
+        }
+    }
+    
+    func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
+        for req in requests {
+            let data = req.value ?? Data()
+            let hex = data.map { String(format: "%02X", $0) }.joined(separator: " ")
+            print("\n\u{001B}[1;35m[PROXY <- APP WRITE]\u{001B}[0m Char: \(req.characteristic.uuid.uuidString), \(data.count) bytes: [\(hex)]")
+            
+            // Forward to real physical peripheral
+            if let p = activePeripheral, p.state == .connected, let realChar = findChar(query: req.characteristic.uuid.uuidString) {
+                let writeType: CBCharacteristicWriteType = realChar.properties.contains(.write) ? .withResponse : .withoutResponse
+                print("\u{001B}[1;36m[PROXY -> DEVICE FORWARD]\u{001B}[0m Writing to real device (\(writeType == .withResponse ? "withResponse" : "withoutResponse"))...")
+                p.writeValue(data, for: realChar, type: writeType)
+            } else {
+                print("\u{001B}[31m[PROXY] Real characteristic not available to forward write.\u{001B}[0m")
+            }
+            
+            peripheral.respond(to: req, withResult: .success)
+        }
+    }
+    
+    func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveRead request: CBATTRequest) {
+        print("\n\u{001B}[1;35m[PROXY <- APP READ]\u{001B}[0m Char: \(request.characteristic.uuid.uuidString)")
+        if let cached = charValueCache[request.characteristic.uuid] {
+            request.value = cached
+            peripheral.respond(to: request, withResult: .success)
+        } else {
+            request.value = Data()
+            peripheral.respond(to: request, withResult: .success)
+        }
+    }
+    
+    func peripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager, error: Error?) {
+        if let error = error {
+            print("\u{001B}[31m[-] Proxy advertising failed: \(error.localizedDescription)\u{001B}[0m")
+        } else {
+            print("\u{001B}[32m[✓] Proxy advertising broadcasting successfully.\u{001B}[0m")
+        }
     }
 }
-if let probeIdx = args.firstIndex(of: "--probe"), probeIdx + 1 < args.count {
-    probeTarget = args[probeIdx + 1]
-} else if args.contains("--probe") {
-    probeTarget = "all"
+
+// MARK: - CLI Argument Parsing & Launch Mode
+let args = CommandLine.arguments
+
+if args.contains("-h") || args.contains("--help") {
+    print("""
+Usage: mHomeNodeCLI [options]
+
+Modes:
+  Interactive REPL (Default):
+    mHomeNodeCLI                     Start interactive BLE terminal session
+    mHomeNodeCLI -i / --repl         Explicitly start REPL
+
+  Automated Batch Scan:
+    mHomeNodeCLI --duration <sec>    Scan for N seconds, summarize, and exit
+    mHomeNodeCLI --live              Continuous live packet streaming
+    mHomeNodeCLI --probe <id|all>    Auto-connect and probe GATT services
+    mHomeNodeCLI -v / --verbose      Verbose advertisement payload printing
+""")
+    exit(0)
 }
 
-let scanner = AdvancedCLIBleScanner(duration: duration, verbose: verbose, probeTarget: probeTarget)
-RunLoop.main.run()
+let isExplicitRepl = args.contains("-i") || args.contains("--repl") || args.contains("--interactive")
+let isExplicitBatch = args.contains("--probe") || args.contains("--duration") || args.contains("--live")
+
+if isExplicitRepl || !isExplicitBatch {
+    // Default interactive mode when run directly
+    let repl = InteractiveBLERepl()
+    repl.start()
+} else {
+    // Automated batch scan mode
+    var duration: TimeInterval = 8.0
+    var verbose = false
+    var probeTarget: String? = nil
+
+    if args.contains("--live") {
+        duration = 0
+    }
+    if args.contains("-v") || args.contains("--verbose") {
+        verbose = true
+    }
+    if let durIdx = args.firstIndex(of: "--duration"), durIdx + 1 < args.count {
+        if let d = Double(args[durIdx + 1]) {
+            duration = d
+        }
+    }
+    if let probeIdx = args.firstIndex(of: "--probe"), probeIdx + 1 < args.count {
+        probeTarget = args[probeIdx + 1]
+    } else if args.contains("--probe") {
+        probeTarget = "all"
+    }
+
+    _ = AdvancedCLIBleScanner(duration: duration, verbose: verbose, probeTarget: probeTarget)
+    RunLoop.main.run()
+}

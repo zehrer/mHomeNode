@@ -8,6 +8,7 @@ public struct DeviceIdentificationResult: Sendable {
     public let macAddress: String?
     public let isHomeKitAccessory: Bool
     public let isHomeKitPaired: Bool
+    public let goveePowerState: Bool?
 
     public init(
         family: DeviceFamily,
@@ -15,7 +16,8 @@ public struct DeviceIdentificationResult: Sendable {
         resolvedName: String? = nil,
         macAddress: String? = nil,
         isHomeKitAccessory: Bool = false,
-        isHomeKitPaired: Bool = false
+        isHomeKitPaired: Bool = false,
+        goveePowerState: Bool? = nil
     ) {
         self.family = family
         self.btHomeData = btHomeData
@@ -23,6 +25,7 @@ public struct DeviceIdentificationResult: Sendable {
         self.macAddress = macAddress
         self.isHomeKitAccessory = isHomeKitAccessory
         self.isHomeKitPaired = isHomeKitPaired
+        self.goveePowerState = goveePowerState
     }
 }
 
@@ -193,11 +196,12 @@ public enum DeviceFingerprinter {
             )
         }
 
-        // 9. Identify Govee Devices (Outdoor lights, thermometers)
-        if lowerName.starts(with: "govee") {
-            var goveeModel = "Govee Device (\(name))"
+        // 9. Identify Govee Devices (Outdoor lights, curtain lights, thermometers)
+        let isGoveeNamed = lowerName.contains("govee") || lowerName.starts(with: "gvh") || lowerName.starts(with: "ihoment") || lowerName.contains("h70b") || lowerName.contains("h60") || lowerName.contains("h61")
+        if isGoveeNamed {
+            var goveeModel = name.isEmpty ? "Govee Device" : "Govee Device (\(name))"
             if lowerName.contains("h70b5") {
-                goveeModel = "Govee Outdoor Lights (H70B5)"
+                goveeModel = "Govee Curtain Lights 2 (H70B5)"
             } else if lowerName.contains("h70b3") {
                 goveeModel = "Govee Outdoor String Lights (H70B3)"
             } else if lowerName.contains("h5075") || lowerName.contains("h5074") {
@@ -427,13 +431,32 @@ public enum DeviceFingerprinter {
                 )
             }
 
-            // 21. Identify Govee / Intellirocks (Company ID 0xEC88)
-            if mfgId == 0xEC88 {
+            // 21. Identify Govee / Intellirocks (Company ID 0xEC88 or packet offset headers)
+            let isGoveeMfg = (mfgId == 0xEC88) ||
+                             (mfg.count >= 2 && mfg[0] == 0x88 && mfg[1] == 0xEC) ||
+                             (mfg.count >= 2 && mfg[0] == 0xEC && mfg[1] == 0x88) ||
+                             (mfg.count >= 3 && mfg[1] == 0x88 && mfg[2] == 0xEC) ||
+                             (mfg.count >= 3 && mfg[1] == 0xEC && mfg[2] == 0x88)
+
+            if isGoveeMfg {
+                var goveeModel = name.isEmpty ? "Govee Smart Device" : name
+                if lowerName.contains("h70b5") {
+                    goveeModel = "Govee Curtain Lights 2 (H70B5)"
+                } else if lowerName.contains("h70b3") {
+                    goveeModel = "Govee Outdoor String Lights (H70B3)"
+                }
+                var pState: Bool? = nil
+                if mfg.count >= 7 {
+                    let flag = mfg[6]
+                    if flag == 0x01 { pState = true }
+                    else if flag == 0x00 { pState = false }
+                }
                 return DeviceIdentificationResult(
                     family: .govee,
                     btHomeData: parsedBTHome,
-                    resolvedName: name.isEmpty ? "Govee Smart Device" : name,
-                    macAddress: resolvedMac
+                    resolvedName: goveeModel,
+                    macAddress: resolvedMac,
+                    goveePowerState: pState
                 )
             }
 

@@ -253,7 +253,7 @@ public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
         // 4. Check explicit light keywords, ensuring "led" is not a false match inside "qled", "oled", etc.
         let hasLed = low.contains(" led") || low.contains("led ") || low.contains("-led") || low.contains("_led") ||
             (low.contains("led") && !low.contains("qled") && !low.contains("oled") && !low.contains("titled") && !low.contains("scheduled"))
-        let hasLightTerms = low.contains("light") || low.contains("lamp") || low.contains("bulb") || low.contains("strip")
+        let hasLightTerms = low.contains("light") || low.contains("lamp") || low.contains("bulb") || low.contains("strip") || low.contains("curtain") || low.contains("vorhang") || low.contains("h70b") || low.contains("gvh") || low.contains("govee")
         return hasLightTerms || hasLed
     }
 
