@@ -913,7 +913,7 @@ final class InteractiveBLERepl: NSObject, CBCentralManagerDelegate, CBPeripheral
         print("""
         \u{001B}[1mCommands:\u{001B}[0m
           \u{001B}[1;33mscan [start|stop]\u{001B}[0m               - Start or stop Bluetooth Low Energy scanning
-          \u{001B}[1;33mdevices\u{001B}[0m / \u{001B}[1;33mls\u{001B}[0m                     - List all discovered devices with index numbers
+          \u{001B}[1;33mdevices [pattern]\u{001B}[0m / \u{001B}[1;33mls [pattern]\u{001B}[0m - List devices with wildcards (e.g. 'ls Go*' or 'ls *H70B*')
           \u{001B}[1;33mconnect <index|name|uuid>\u{001B}[0m       - Connect to a peripheral (e.g. 'connect 1' or 'connect H70B5')
           \u{001B}[1;33mdisconnect\u{001B}[0m                      - Disconnect from current peripheral
           \u{001B}[1;33mstatus\u{001B}[0m                          - Show current connection and proxy status
@@ -921,8 +921,8 @@ final class InteractiveBLERepl: NSObject, CBCentralManagerDelegate, CBPeripheral
           \u{001B}[1;33mchars [service_uuid]\u{001B}[0m            - List characteristics and their permissions (read/write/notify)
           \u{001B}[1;33mread <char_uuid>\u{001B}[0m                - Read characteristic value (displays Hex and ASCII)
           \u{001B}[1;33mwrite <char> <hex> [-r] [-c]\u{001B}[0m    - Write hex bytes to characteristic.
-                                              Flags: -r / --response (request write ack)
-                                                     -c / --checksum (auto-calculate XOR checksum)
+                                               Flags: -r / --response (request write ack)
+                                                      -c / --checksum (auto-calculate XOR checksum)
           \u{001B}[1;33mnotify <char> [on|off]\u{001B}[0m          - Subscribe to / unsubscribe from notifications
           \u{001B}[1;33mproxy start [name]\u{001B}[0m              - Mirror connected device GATT services and advertise as proxy
           \u{001B}[1;33mproxy stop\u{001B}[0m                      - Stop advertising and shutdown proxy
@@ -949,7 +949,7 @@ final class InteractiveBLERepl: NSObject, CBCentralManagerDelegate, CBPeripheral
             handleScanCommand(args)
             
         case "devices", "ls":
-            listDevices()
+            listDevices(filter: args.isEmpty ? nil : args.joined(separator: " "))
             
         case "connect":
             handleConnectCommand(args)
@@ -1018,19 +1018,66 @@ final class InteractiveBLERepl: NSObject, CBCentralManagerDelegate, CBPeripheral
         }
     }
     
-    private func listDevices() {
+    private func matchesGlob(pattern: String, text: String) -> Bool {
+        var cleanPat = pattern.trimmingCharacters(in: .whitespacesAndNewlines)
+        if (cleanPat.hasPrefix("\"") && cleanPat.hasSuffix("\"")) || (cleanPat.hasPrefix("'") && cleanPat.hasSuffix("'")) {
+            cleanPat = String(cleanPat.dropFirst().dropLast())
+        }
+
+        if cleanPat.contains("*") || cleanPat.contains("?") {
+            let escaped = NSRegularExpression.escapedPattern(for: cleanPat)
+            let regexPattern = "^" + escaped
+                .replacingOccurrences(of: "\\*", with: ".*")
+                .replacingOccurrences(of: "\\?", with: ".") + "$"
+            if let regex = try? NSRegularExpression(pattern: regexPattern, options: .caseInsensitive) {
+                let range = NSRange(text.startIndex..<text.endIndex, in: text)
+                return regex.firstMatch(in: text, options: [], range: range) != nil
+            }
+        }
+        return text.localizedCaseInsensitiveContains(cleanPat)
+    }
+
+    private func listDevices(filter: String? = nil) {
         if discoveredDevices.isEmpty {
             print("\u{001B}[33mNo devices discovered yet. Run 'scan start' to search for nearby BLE devices.\u{001B}[0m")
             return
         }
         
-        print("\n\u{001B}[1mDiscovered BLE Peripherals (\(discoveredDevices.count)):\u{001B}[0m")
+        let cleanFilter = filter?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let filtered: [(index: Int, dev: DiscoveredCLIDevice)]
+
+        if let query = cleanFilter, !query.isEmpty {
+            filtered = discoveredDevices.enumerated().compactMap { (idx, dev) in
+                let matchesName = matchesGlob(pattern: query, text: dev.resolvedName)
+                let matchesRaw = matchesGlob(pattern: query, text: dev.rawName)
+                let matchesFamily = matchesGlob(pattern: query, text: dev.family)
+                let matchesId = matchesGlob(pattern: query, text: dev.id)
+                let matchesMac = dev.mac != nil && matchesGlob(pattern: query, text: dev.mac!)
+                if matchesName || matchesRaw || matchesFamily || matchesId || matchesMac {
+                    return (idx + 1, dev)
+                }
+                return nil
+            }
+        } else {
+            filtered = discoveredDevices.enumerated().map { ($0 + 1, $1) }
+        }
+
+        if filtered.isEmpty {
+            print("\u{001B}[33mNo devices matched filter '\(cleanFilter ?? "")' (\(discoveredDevices.count) total devices in memory).\u{001B}[0m\n")
+            return
+        }
+
+        let title = cleanFilter != nil && !cleanFilter!.isEmpty
+            ? "Filtered BLE Peripherals (\(filtered.count) of \(discoveredDevices.count) matching '\(cleanFilter!)'):"
+            : "Discovered BLE Peripherals (\(discoveredDevices.count)):"
+
+        print("\n\u{001B}[1m\(title)\u{001B}[0m")
         print("---------------------------------------------------------------------------------------------------------")
         print(" Idx | RSSI     | Conn | Family     | Name                             | Identifier")
         print("---------------------------------------------------------------------------------------------------------")
         
-        for (idx, dev) in discoveredDevices.enumerated() {
-            let idxStr = String(format: "%3d", idx + 1)
+        for (idx1Based, dev) in filtered {
+            let idxStr = String(format: "%3d", idx1Based)
             let rssiStr = String(format: "%4d dBm", dev.rssi)
             let connStr = dev.isConnectable ? "\u{001B}[32mYes \u{001B}[0m" : "\u{001B}[37mNo  \u{001B}[0m"
             let famStr = dev.family.padding(toLength: 10, withPad: " ", startingAt: 0)
@@ -1043,7 +1090,7 @@ final class InteractiveBLERepl: NSObject, CBCentralManagerDelegate, CBPeripheral
             }
         }
         print("---------------------------------------------------------------------------------------------------------")
-        print("Tip: Connect with \u{001B}[1;33mconnect <index>\u{001B}[0m (e.g. 'connect 1')\n")
+        print("Tip: Connect with \u{001B}[1;33mconnect <index>\u{001B}[0m (e.g. 'connect \(filtered.first?.index ?? 1)')\n")
     }
     
     // MARK: - Connect & Disconnect

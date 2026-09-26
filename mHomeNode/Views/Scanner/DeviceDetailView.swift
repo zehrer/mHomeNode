@@ -381,11 +381,6 @@ public struct DeviceDetailView: View {
                                 }
                         }
 
-                        if let original = device.originalName ?? (device.name != "Unknown" ? device.name : nil), !original.isEmpty {
-                            LabeledContent("Advertised Name", value: original)
-                                .font(.subheadline)
-                        }
-
                         Picker("Room", selection: $selectedRoom) {
                             Text("Not Assigned").tag("")
                             ForEach(scannerVM.roomManagementService.rooms) { room in
