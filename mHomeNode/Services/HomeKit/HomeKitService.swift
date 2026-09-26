@@ -201,8 +201,32 @@ public final class HomeKitService: NSObject, HMHomeManagerDelegate, HMAccessoryD
             var isLight = false
             var brightnessVal: Int?
 
+            // Check if the accessory is categorized as a light in Apple Home
+            let catType = acc.category.categoryType
+            let catDesc = acc.category.localizedDescription.lowercased()
+            if catType == HMAccessoryCategoryTypeLightbulb ||
+               catType.lowercased().contains("light") ||
+               catType.lowercased().contains("lamp") ||
+               catDesc.contains("light") ||
+               catDesc.contains("licht") ||
+               catDesc.contains("glühbirne") ||
+               catDesc.contains("lampe") ||
+               catDesc.contains("leuchte") {
+                isLight = true
+            }
+
             for service in acc.services {
                 let st = service.serviceType
+                let sName = service.name.lowercased()
+                if st == HMServiceTypeLightbulb ||
+                   service.associatedServiceType == HMServiceTypeLightbulb ||
+                   (service.associatedServiceType?.lowercased().contains("light") == true) ||
+                   sName.contains("light") ||
+                   sName.contains("licht") ||
+                   sName.contains("lampe") ||
+                   sName.contains("leuchte") {
+                    isLight = true
+                }
 
                 if st == HMServiceTypeTemperatureSensor {
                     for char in service.characteristics where char.characteristicType == HMCharacteristicTypeCurrentTemperature {
@@ -250,6 +274,7 @@ public final class HomeKitService: NSObject, HMHomeManagerDelegate, HMAccessoryD
                             char.readValue { _ in }
                             if let num = char.value as? NSNumber {
                                 brightnessVal = num.intValue
+                                isLight = true
                             }
                         }
                     }

@@ -65,11 +65,18 @@ public struct RoomDetailView: View {
     }
 
     private var lightDevices: [DiscoveredDevice] {
-        roomDevices.filter { $0.isLightingDevice }
+        roomDevices.filter { dev in
+            if dev.isLightingDevice { return true }
+            if let hk = scannerVM.findHomeKitData(for: dev), hk.isLight { return true }
+            return false
+        }
     }
 
     private var plugDevices: [DiscoveredDevice] {
-        roomDevices.filter { $0.isSwitchablePlug }
+        roomDevices.filter { dev in
+            if let hk = scannerVM.findHomeKitData(for: dev), hk.isLight { return false }
+            return dev.isSwitchablePlug
+        }
     }
 
     private var otherDevices: [DiscoveredDevice] {

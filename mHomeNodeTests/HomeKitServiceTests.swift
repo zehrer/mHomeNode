@@ -195,4 +195,24 @@ final class HomeKitServiceTests: XCTestCase {
         XCTAssertTrue(floors.contains("Upper Floor"))
         XCTAssertTrue(floors.contains("Basement"))
     }
+
+    func testHomeKitAccessoryDataConfiguredAsLight() {
+        let accId = UUID()
+        let plugAsLight = HomeKitAccessoryData(
+            id: accId,
+            name: "Glasschrank Matter",
+            roomName: "Wohnzimmer",
+            model: "Shelly Plug S",
+            manufacturer: "Shelly",
+            isReachable: true,
+            isSwitchable: true,
+            isPowerOn: false,
+            isLight: true,
+            brightness: nil
+        )
+
+        XCTAssertTrue(plugAsLight.isSwitchable)
+        XCTAssertTrue(plugAsLight.isLight)
+        XCTAssertEqual(plugAsLight.name, "Glasschrank Matter")
+    }
 }

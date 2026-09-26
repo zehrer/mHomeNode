@@ -90,6 +90,10 @@ public struct LightDeviceCard: View {
             if let ctrl = controller {
                 Button {
                     ctrl.togglePower(for: device.id)
+                    #if canImport(UIKit)
+                    let generator = UIImpactFeedbackGenerator(style: .light)
+                    generator.impactOccurred()
+                    #endif
                 } label: {
                     ZStack {
                         Circle()
@@ -100,8 +104,8 @@ public struct LightDeviceCard: View {
                             ProgressView()
                                 .controlSize(.small)
                         } else {
-                            Image(systemName: isLightOn ? "power.circle.fill" : "power")
-                                .font(.system(size: 24, weight: .semibold))
+                            Image(systemName: "power")
+                                .font(.headline.weight(.semibold))
                                 .foregroundColor(isLightOn ? .yellow : .secondary)
                         }
                     }
