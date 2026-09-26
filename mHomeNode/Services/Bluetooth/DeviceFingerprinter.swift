@@ -200,7 +200,8 @@ public enum DeviceFingerprinter {
         let isGoveeNamed = lowerName.contains("govee") || lowerName.starts(with: "gvh") || lowerName.starts(with: "ihoment") || lowerName.contains("h70b") || lowerName.contains("h60") || lowerName.contains("h61")
         if isGoveeNamed {
             var goveeModel = name.isEmpty ? "Govee Device" : "Govee Device (\(name))"
-            let suffix = name.components(separatedBy: "_").last.flatMap { $0 != name && $0.count <= 6 ? " \($0)" : "" } ?? ""
+            let parts = name.components(separatedBy: "_")
+            let suffix = (parts.count >= 2 && (parts.last?.count ?? 0) <= 6) ? " \(parts.last!)" : ""
             if lowerName.contains("h70b5") {
                 goveeModel = "Govee Curtain Lights 2 (H70B5\(suffix))"
             } else if lowerName.contains("h70b3") {
@@ -443,7 +444,8 @@ public enum DeviceFingerprinter {
 
             if isGoveeMfg {
                 var goveeModel = name.isEmpty ? "Govee Smart Device" : name
-                let suffix = name.components(separatedBy: "_").last.flatMap { $0 != name && $0.count <= 6 ? " \($0)" : "" } ?? ""
+                let parts = name.components(separatedBy: "_")
+                let suffix = (parts.count >= 2 && (parts.last?.count ?? 0) <= 6) ? " \(parts.last!)" : ""
                 if lowerName.contains("h70b5") {
                     goveeModel = "Govee Curtain Lights 2 (H70B5\(suffix))"
                 } else if lowerName.contains("h70b3") {
