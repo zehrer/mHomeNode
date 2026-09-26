@@ -11,6 +11,10 @@ public struct RoomDetailView: View {
     public var onSelectDevice: ((DiscoveredDevice) -> Void)?
 
     @State private var showSensorsDetail: Bool = false
+    private let twoColumnGrid = [
+        GridItem(.flexible(), spacing: 10),
+        GridItem(.flexible(), spacing: 10)
+    ]
 
     public init(
         scannerVM: ScannerViewModel,
@@ -484,20 +488,22 @@ public struct RoomDetailView: View {
                         }
                     }
 
-                    ForEach(plugDevices) { device in
-                        PlugDeviceCard(
-                            device: device,
-                            controller: scannerVM.shellyController,
-                            onSelect: {
-                                onSelectDevice?(device)
-                            }
-                        )
-                    }
+                    LazyVGrid(columns: twoColumnGrid, spacing: 10) {
+                        ForEach(plugDevices) { device in
+                            PlugDeviceCard(
+                                device: device,
+                                controller: scannerVM.shellyController,
+                                onSelect: {
+                                    onSelectDevice?(device)
+                                }
+                            )
+                        }
 
-                    ForEach(homeKitPlugs) { hk in
-                        HomeKitAccessoryCard(accessory: hk) {
-                            Task {
-                                await scannerVM.toggleHomeKitPower(for: hk.id)
+                        ForEach(homeKitPlugs) { hk in
+                            HomeKitAccessoryCard(accessory: hk) {
+                                Task {
+                                    await scannerVM.toggleHomeKitPower(for: hk.id)
+                                }
                             }
                         }
                     }
@@ -546,21 +552,23 @@ public struct RoomDetailView: View {
                         }
                     }
 
-                    ForEach(lightDevices) { device in
-                        LightDeviceCard(
-                            device: device,
-                            serverRoom: serverRoom,
-                            controller: scannerVM.lightController,
-                            onSelect: {
-                                onSelectDevice?(device)
-                            }
-                        )
-                    }
+                    LazyVGrid(columns: twoColumnGrid, spacing: 10) {
+                        ForEach(lightDevices) { device in
+                            LightDeviceCard(
+                                device: device,
+                                serverRoom: serverRoom,
+                                controller: scannerVM.lightController,
+                                onSelect: {
+                                    onSelectDevice?(device)
+                                }
+                            )
+                        }
 
-                    ForEach(homeKitLights) { hk in
-                        HomeKitAccessoryCard(accessory: hk) {
-                            Task {
-                                await scannerVM.toggleHomeKitPower(for: hk.id)
+                        ForEach(homeKitLights) { hk in
+                            HomeKitAccessoryCard(accessory: hk) {
+                                Task {
+                                    await scannerVM.toggleHomeKitPower(for: hk.id)
+                                }
                             }
                         }
                     }

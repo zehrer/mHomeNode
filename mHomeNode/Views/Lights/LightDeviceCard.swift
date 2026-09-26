@@ -31,7 +31,7 @@ public struct LightDeviceCard: View {
     }
 
     public var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             // Interactive State Icon / Toggle Button
             Button {
                 controller?.togglePower(for: device.id)
@@ -43,7 +43,7 @@ public struct LightDeviceCard: View {
                 ZStack {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .fill(isLightOn ? Color.yellow.opacity(0.22) : Color(.tertiarySystemFill))
-                        .frame(width: 40, height: 40)
+                        .frame(width: 38, height: 38)
 
                     if isBusy {
                         ProgressView()
@@ -63,43 +63,36 @@ public struct LightDeviceCard: View {
             Button {
                 onSelect?()
             } label: {
-                HStack(spacing: 8) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: 6) {
-                            Text(device.displayTitle)
-                                .font(.headline)
-                                .foregroundColor(.primary)
-                                .lineLimit(1)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 4) {
+                        Text(device.displayTitle)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(.primary)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
 
-                            if isLightOn && currentBrightness < 100 {
-                                Text("\(currentBrightness)%")
-                                    .font(.caption.weight(.medium))
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-
-                        if let err = controller?.lastError[device.id] {
-                            Text(err)
-                                .font(.caption2)
-                                .foregroundColor(.red)
-                                .lineLimit(1)
+                        if isLightOn && currentBrightness < 100 {
+                            Text("\(currentBrightness)%")
+                                .font(.caption2.weight(.medium))
+                                .foregroundColor(.secondary)
                         }
                     }
 
-                    Spacer(minLength: 8)
-
-                    if onSelect != nil {
-                        Image(systemName: "chevron.right")
+                    if let err = controller?.lastError[device.id] {
+                        Text(err)
                             .font(.caption2)
-                            .foregroundColor(Color(.tertiaryLabel))
+                            .foregroundColor(.red)
+                            .lineLimit(1)
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .shadow(color: Color.black.opacity(0.03), radius: 3, x: 0, y: 1)

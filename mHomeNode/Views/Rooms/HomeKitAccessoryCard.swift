@@ -33,12 +33,12 @@ public struct HomeKitAccessoryCard: View {
             generator.impactOccurred()
             #endif
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 // Interactive State Icon
                 ZStack {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .fill(isOn ? activeColor.opacity(0.22) : Color(.tertiarySystemFill))
-                        .frame(width: 40, height: 40)
+                        .frame(width: 38, height: 38)
 
                     Image(systemName: iconName)
                         .font(.headline)
@@ -46,21 +46,22 @@ public struct HomeKitAccessoryCard: View {
                         .shadow(color: isOn ? activeColor.opacity(0.5) : Color.clear, radius: 6)
                 }
 
-                HStack(spacing: 6) {
+                HStack(spacing: 4) {
                     Text(accessory.name)
-                        .font(.headline)
+                        .font(.subheadline.weight(.semibold))
                         .foregroundColor(.primary)
-                        .lineLimit(1)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
 
                     Image(systemName: "house.fill")
                         .font(.caption2)
                         .foregroundColor(.orange)
                 }
-
-                Spacer(minLength: 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
             .background(Color(.secondarySystemGroupedBackground))
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .shadow(color: Color.black.opacity(0.03), radius: 3, x: 0, y: 1)
