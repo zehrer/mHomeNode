@@ -32,7 +32,7 @@ public enum ControlInterface: String, Codable, Sendable {
 }
 
 public struct DiscoveredDevice: Identifiable, Sendable, Equatable, Codable {
-    public let id: UUID
+    public var id: UUID
     public var name: String
     public var originalName: String?
     public var rssi: Int

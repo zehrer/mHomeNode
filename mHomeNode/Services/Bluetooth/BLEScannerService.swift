@@ -21,19 +21,59 @@ public final class BLEScannerService: NSObject, BLEConnectionManager {
     public let inspectorService = BLEInspectorService()
 
     private var pendingScanStart: Bool = false
+    private var pruneTimer: Timer?
 
     public init(ignoreService: IgnoreService? = nil, storageService: DeviceStorageService? = nil) {
         let ign = ignoreService ?? .shared
         self.ignoreService = ign
         let storage = storageService ?? .shared
         self.storageService = storage
-        let initialDevices = storage.loadDevices()
-        self.devices = initialDevices
+        var initialDevices = storage.loadDevices()
+
+        // Startup cleanup for Apple devices: deduplicate by specific name, keeping the latest entry
+        let preCount = initialDevices.count
+        var seenAppleNames = [String: DiscoveredDevice]()
+        var nonAppleOrAnonymous: [DiscoveredDevice] = []
+        for dev in initialDevices {
+            if dev.family == .apple && !dev.isHomeKitAccessory && DeviceFingerprinter.isSpecificAppleName(dev.name) {
+                let key = dev.name.lowercased()
+                if let existing = seenAppleNames[key] {
+                    var keeper = dev.lastSeen > existing.lastSeen ? dev : existing
+                    let other = dev.lastSeen > existing.lastSeen ? existing : dev
+                    if keeper.assignedRoom == nil { keeper.assignedRoom = other.assignedRoom }
+                    if keeper.customName == nil { keeper.customName = other.customName }
+                    seenAppleNames[key] = keeper
+                } else {
+                    seenAppleNames[key] = dev
+                }
+            } else {
+                nonAppleOrAnonymous.append(dev)
+            }
+        }
+        var cleanedInitial = nonAppleOrAnonymous + Array(seenAppleNames.values)
+
+        // TTL cleanup for stale ephemeral Apple devices (> 60 mins, unassigned)
+        let now = Date()
+        let activeRegIds = Set(LocationManagementService.shared.activeLocation.devices.map { $0.id.uppercased() })
+        cleanedInitial.removeAll { dev in
+            guard dev.family == .apple && !dev.isHomeKitAccessory else { return false }
+            let hasRoom = dev.assignedRoom != nil && !(dev.assignedRoom?.isEmpty ?? true)
+            let hasCustomName = dev.customName != nil && !(dev.customName?.isEmpty ?? true)
+            guard !hasRoom && !hasCustomName else { return false }
+            let key = (dev.macAddress ?? dev.id.uuidString).uppercased()
+            guard !activeRegIds.contains(key) else { return false }
+            return now.timeIntervalSince(dev.lastSeen) > 3600
+        }
+
+        if cleanedInitial.count != preCount {
+            storage.scheduleSave(cleanedInitial)
+        }
+        self.devices = cleanedInitial
 
         let bleQueue = DispatchQueue(label: "net.zehrer.homenode.bleQueue", qos: .userInitiated)
         let worker = BLECentralWorker(
             queue: bleQueue,
-            initialDevices: initialDevices,
+            initialDevices: cleanedInitial,
             ignoredRecords: ign.ignoredRecords
         )
         self.worker = worker
@@ -53,6 +93,17 @@ public final class BLEScannerService: NSObject, BLEConnectionManager {
         worker.onDevicesBatched = { [weak self] snapshot, periphs in
             Task { @MainActor [weak self] in
                 self?.applyBatchUpdate(snapshot: snapshot, peripherals: periphs)
+            }
+        }
+
+        worker.onDeviceRotated = { [weak self] oldId, newId in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.logger.info("Apple device rotated address: \(oldId.uuidString) -> \(newId.uuidString)")
+                LocationManagementService.shared.migrateDeviceId(
+                    oldDeviceId: oldId.uuidString,
+                    newDeviceId: newId.uuidString
+                )
             }
         }
 
@@ -99,6 +150,17 @@ public final class BLEScannerService: NSObject, BLEConnectionManager {
                 } else {
                     self.inspectorService.didDisconnect(peripheral: peripheral, error: error)
                 }
+            }
+        }
+
+        schedulePruneTimer()
+    }
+
+    private func schedulePruneTimer() {
+        pruneTimer?.invalidate()
+        pruneTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.pruneEphemeralDevices(maxAge: 3600)
             }
         }
     }
@@ -216,6 +278,35 @@ public final class BLEScannerService: NSObject, BLEConnectionManager {
         worker.syncDevices(devices)
     }
 
+    /// Prunes ephemeral Apple devices (no assigned room, no custom name) unseen for > maxAge seconds.
+    @discardableResult
+    public func pruneEphemeralDevices(maxAge: TimeInterval = 3600) -> Int {
+        let now = Date()
+        let activeRegIds = Set(LocationManagementService.shared.activeLocation.devices.map { $0.id.uppercased() })
+
+        let beforeCount = devices.count
+        devices.removeAll { dev in
+            guard dev.family == .apple else { return false }
+            guard !dev.isHomeKitAccessory else { return false }
+            let hasRoom = dev.assignedRoom != nil && !(dev.assignedRoom?.isEmpty ?? true)
+            let hasCustomName = dev.customName != nil && !(dev.customName?.isEmpty ?? true)
+            guard !hasRoom && !hasCustomName else { return false }
+            let key = (dev.macAddress ?? dev.id.uuidString).uppercased()
+            guard !activeRegIds.contains(key) else { return false }
+
+            return now.timeIntervalSince(dev.lastSeen) > maxAge
+        }
+
+        let removedCount = beforeCount - devices.count
+        if removedCount > 0 {
+            logger.info("Pruned \(removedCount) stale ephemeral Apple device(s) (older than \(Int(maxAge))s).")
+            storageService.scheduleSave(devices)
+            worker.syncDevices(devices)
+        }
+        return removedCount
+    }
+
+
     public func updateRoom(for deviceId: UUID, room: String?) {
         if let index = devices.firstIndex(where: { $0.id == deviceId }) {
             devices[index].assignedRoom = room
@@ -281,9 +372,7 @@ public final class BLEScannerService: NSObject, BLEConnectionManager {
         }
 
         self.devices = merged
-        for (k, v) in peripherals {
-            self.peripheralMap[k] = v
-        }
+        self.peripheralMap = peripherals
 
         // Passively synchronize real-time power state from BLE advertisement packets
         for dev in merged {
@@ -508,6 +597,7 @@ private final class BLECentralWorker: NSObject, CBCentralManagerDelegate, @unche
     private var batchTimer: DispatchSourceTimer?
 
     var onDevicesBatched: (@Sendable ([DiscoveredDevice], [UUID: CBPeripheral]) -> Void)?
+    var onDeviceRotated: (@Sendable (UUID, UUID) -> Void)?
     var onStateChanged: (@Sendable (CBManagerState) -> Void)?
     var onDidConnect: (@Sendable (CBPeripheral) -> Void)?
     var onDidFailToConnect: (@Sendable (CBPeripheral, Error?) -> Void)?
@@ -669,13 +759,48 @@ private final class BLECentralWorker: NSObject, CBCentralManagerDelegate, @unche
         )
         let now = Date()
 
-        // Lookup existing device: first by UUID, then by MAC address
+        // Lookup existing device: first by UUID, then by MAC address, then by Apple device name
         var existingDev = deviceMap[peripheral.identifier]
         if existingDev == nil, let mac = identification.macAddress?.uppercased(), let existingId = macToId[mac] {
             existingDev = deviceMap[existingId]
         }
 
+        var rotatedFromId: UUID? = nil
+        if existingDev == nil && identification.family == .apple && !identification.isHomeKitAccessory {
+            let candidateName: String?
+            if DeviceFingerprinter.isSpecificAppleName(resolvedName) {
+                candidateName = resolvedName
+            } else if DeviceFingerprinter.isSpecificAppleName(rawName) {
+                candidateName = rawName
+            } else {
+                candidateName = nil
+            }
+
+            if let candidateName = candidateName {
+                let matchingDevices = deviceMap.values.filter { dev in
+                    dev.family == .apple && !dev.isHomeKitAccessory && (
+                        dev.name.caseInsensitiveCompare(candidateName) == .orderedSame ||
+                        (dev.originalName != nil && dev.originalName!.caseInsensitiveCompare(candidateName) == .orderedSame) ||
+                        (dev.customName != nil && dev.customName!.caseInsensitiveCompare(candidateName) == .orderedSame)
+                    )
+                }
+                if let bestMatch = matchingDevices.max(by: { $0.lastSeen < $1.lastSeen }) {
+                    existingDev = bestMatch
+                    if bestMatch.id != peripheral.identifier {
+                        rotatedFromId = bestMatch.id
+                    }
+                }
+            }
+        }
+
         if var dev = existingDev {
+            if let oldId = rotatedFromId {
+                deviceMap.removeValue(forKey: oldId)
+                peripheralMap.removeValue(forKey: oldId)
+                dev.id = peripheral.identifier
+                onDeviceRotated?(oldId, peripheral.identifier)
+            }
+
             peripheralMap[dev.id] = peripheral
             dev.rssi = rssiVal
             dev.rssiHistory.append(rssiVal)

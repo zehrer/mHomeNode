@@ -195,6 +195,43 @@ public final class LocationManagementService {
         logger.info("Removed device \(norm) from location '\(self.locations[idx].name)'")
     }
 
+    /// Migrates a registered device from an old identifier to a new identifier (e.g. after BLE RPA rotation)
+    public func migrateDeviceId(oldDeviceId: String, newDeviceId: String) {
+        let oldNorm = oldDeviceId.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        let newNorm = newDeviceId.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        guard !oldNorm.isEmpty && !newNorm.isEmpty && oldNorm != newNorm else { return }
+
+        var didChange = false
+        for lIdx in 0..<locations.count {
+            if let oldIdx = locations[lIdx].devices.firstIndex(where: { $0.id.uppercased() == oldNorm }) {
+                if let newIdx = locations[lIdx].devices.firstIndex(where: { $0.id.uppercased() == newNorm }) {
+                    if locations[lIdx].devices[newIdx].assignedRoom == nil {
+                        locations[lIdx].devices[newIdx].assignedRoom = locations[lIdx].devices[oldIdx].assignedRoom
+                    }
+                    if locations[lIdx].devices[newIdx].customName == nil {
+                        locations[lIdx].devices[newIdx].customName = locations[lIdx].devices[oldIdx].customName
+                    }
+                    locations[lIdx].devices.remove(at: oldIdx)
+                } else {
+                    let oldRec = locations[lIdx].devices[oldIdx]
+                    locations[lIdx].devices[oldIdx] = LocationDeviceRecord(
+                        id: newNorm,
+                        customName: oldRec.customName,
+                        assignedRoom: oldRec.assignedRoom,
+                        vendorFamily: oldRec.vendorFamily,
+                        firstRegistered: oldRec.firstRegistered,
+                        lastSeenAt: Date()
+                    )
+                }
+                didChange = true
+                logger.info("Migrated device record in location '\(self.locations[lIdx].name)' from \(oldNorm) to \(newNorm)")
+            }
+        }
+        if didChange {
+            saveLocationsToDisk()
+        }
+    }
+
     // MARK: - Location CRUD
 
     public func saveLocation(_ location: ManagedLocation) {

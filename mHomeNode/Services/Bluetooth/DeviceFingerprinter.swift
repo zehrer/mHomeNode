@@ -626,4 +626,21 @@ public enum DeviceFingerprinter {
         }
         return parseGoveePowerState(from: data)
     }
+
+    /// Determines if a name is specific enough to identify a recurring Apple client device across BLE address rotations
+    public static func isSpecificAppleName(_ name: String) -> Bool {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        let lower = trimmed.lowercased()
+        let genericNames: Set<String> = [
+            "apple device",
+            "find my / airtag",
+            "find my accessory",
+            "unknown",
+            "homekit accessory",
+            "homekit device (unpaired)"
+        ]
+        return !genericNames.contains(lower)
+    }
 }
+
